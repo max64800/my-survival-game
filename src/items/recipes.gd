@@ -2,7 +2,7 @@ class_name Recipes
 ## Every recipe (progression doc sections 1.6, 3.2, 4, 5.4, 6, 10.2).
 ## Each recipe: station, inputs {item: count}, output item + count, seconds (0 = instant),
 ## unlock = the items that make it appear when first picked up ([] = known from the start),
-##          or "rune"/"ruin" (taught by a rune or a ruin scroll).
+##          or "rune"/"ruin"/"dungeon" (taught by a rune, a ruin page, or only its own named page: bronze, F697).
 ## "water" in the doc means 1 water_bucket here (a clean waterskin sip comes later).
 
 const HAND := "hand"
@@ -104,20 +104,21 @@ const LIST := {
 	"crossbow_stone": {station = "workbench", inputs = {plank_root = 4, rope = 3, stone = 4}, output = "crossbow_stone", count = 1, unlock = ["rope"]},
 	"crossbow_copper": {station = "anvil", inputs = {copper_ingot = 30, plank_root = 3, rope = 2}, output = "crossbow_copper", count = 1, unlock = "ruin"},
 	# Bronze (F697 step 4, owner Nov 25): copper's amounts with Bronze Ingots, halfway between copper and silver.
-	# Locked ("ruin") until step 5 puts one bronze page on each dungeon's recipe stand (the Pickaxe page in Mossgate's big chest).
-	"helm_bronze": {station = "anvil", inputs = {bronze_ingot = 30, leather = 10}, output = "helm_bronze", count = 1, unlock = "ruin"},
-	"mail_bronze": {station = "anvil", inputs = {bronze_ingot = 30, leather = 10}, output = "mail_bronze", count = 1, unlock = "ruin"},
-	"greaves_bronze": {station = "anvil", inputs = {bronze_ingot = 30, leather = 10}, output = "greaves_bronze", count = 1, unlock = "ruin"},
-	"boots_bronze": {station = "anvil", inputs = {bronze_ingot = 30, leather = 10}, output = "boots_bronze", count = 1, unlock = "ruin"},
-	"shield_bronze": {station = "anvil", inputs = {bronze_ingot = 30, plank_root = 4, leather = 2}, output = "shield_bronze", count = 1, unlock = "ruin"},
-	"crossbow_bronze": {station = "anvil", inputs = {bronze_ingot = 30, plank_root = 3, rope = 2}, output = "crossbow_bronze", count = 1, unlock = "ruin"},
-	"spear_bronze": {station = "anvil", inputs = {bronze_ingot = 30, plank_root = 3, leather = 1}, output = "spear_bronze", count = 1, unlock = "ruin"},
-	"axe_bronze": {station = "anvil", inputs = {bronze_ingot = 15, plank_root = 3, leather = 1}, output = "axe_bronze", count = 1, unlock = "ruin"},
-	"sword_bronze": {station = "anvil", inputs = {bronze_ingot = 30, plank_root = 2, leather = 1}, output = "sword_bronze", count = 1, unlock = "ruin"},
-	"mace_bronze": {station = "anvil", inputs = {bronze_ingot = 30, plank_root = 2, leather = 1}, output = "mace_bronze", count = 1, unlock = "ruin"},
-	"axe_2h_bronze": {station = "anvil", inputs = {bronze_ingot = 30, plank_root = 3, leather = 2}, output = "axe_2h_bronze", count = 1, unlock = "ruin"},
-	"mace_2h_bronze": {station = "anvil", inputs = {bronze_ingot = 30, plank_root = 3, leather = 2}, output = "mace_2h_bronze", count = 1, unlock = "ruin"},
-	"pickaxe_bronze": {station = "anvil", inputs = {bronze_ingot = 15, plank_root = 4, leather = 2}, output = "pickaxe_bronze", count = 1, unlock = "ruin"},
+	# unlock = "dungeon": only a named page teaches it (never a random ruin page). Step 5 puts one on each dungeon's
+	# recipe stand (the Pickaxe page in Mossgate's big chest).
+	"helm_bronze": {station = "anvil", inputs = {bronze_ingot = 30, leather = 10}, output = "helm_bronze", count = 1, unlock = "dungeon"},
+	"mail_bronze": {station = "anvil", inputs = {bronze_ingot = 30, leather = 10}, output = "mail_bronze", count = 1, unlock = "dungeon"},
+	"greaves_bronze": {station = "anvil", inputs = {bronze_ingot = 30, leather = 10}, output = "greaves_bronze", count = 1, unlock = "dungeon"},
+	"boots_bronze": {station = "anvil", inputs = {bronze_ingot = 30, leather = 10}, output = "boots_bronze", count = 1, unlock = "dungeon"},
+	"shield_bronze": {station = "anvil", inputs = {bronze_ingot = 30, plank_root = 4, leather = 2}, output = "shield_bronze", count = 1, unlock = "dungeon"},
+	"crossbow_bronze": {station = "anvil", inputs = {bronze_ingot = 30, plank_root = 3, rope = 2}, output = "crossbow_bronze", count = 1, unlock = "dungeon"},
+	"spear_bronze": {station = "anvil", inputs = {bronze_ingot = 30, plank_root = 3, leather = 1}, output = "spear_bronze", count = 1, unlock = "dungeon"},
+	"axe_bronze": {station = "anvil", inputs = {bronze_ingot = 15, plank_root = 3, leather = 1}, output = "axe_bronze", count = 1, unlock = "dungeon"},
+	"sword_bronze": {station = "anvil", inputs = {bronze_ingot = 30, plank_root = 2, leather = 1}, output = "sword_bronze", count = 1, unlock = "dungeon"},
+	"mace_bronze": {station = "anvil", inputs = {bronze_ingot = 30, plank_root = 2, leather = 1}, output = "mace_bronze", count = 1, unlock = "dungeon"},
+	"axe_2h_bronze": {station = "anvil", inputs = {bronze_ingot = 30, plank_root = 3, leather = 2}, output = "axe_2h_bronze", count = 1, unlock = "dungeon"},
+	"mace_2h_bronze": {station = "anvil", inputs = {bronze_ingot = 30, plank_root = 3, leather = 2}, output = "mace_2h_bronze", count = 1, unlock = "dungeon"},
+	"pickaxe_bronze": {station = "anvil", inputs = {bronze_ingot = 15, plank_root = 4, leather = 2}, output = "pickaxe_bronze", count = 1, unlock = "dungeon"},
 	"crossbow_silver": {station = "anvil", inputs = {silver_ingot = 4, plank_mushroom = 3, spider_silk = 1}, output = "crossbow_silver", count = 1, unlock = ["silver_ingot"]},
 	"bolt_stone": {station = "workbench", inputs = {plank_root = 1, stone = 2}, output = "bolt_stone", count = 10, unlock = ["rope"]},
 	"bolt_metal": {station = "anvil", inputs = {plank_root = 1, copper_ingot = 1}, output = "bolt_metal", count = 10, unlock = ["copper_ingot"]},
@@ -320,6 +321,8 @@ static func random_page(roll: float) -> String:
 static func unlock_hint(id: String) -> String:
 	var u = LIST[id].unlock
 	if u is String:
+		if u == "dungeon":
+			return "learned from a %s found in dungeons" % Items.display_name(PAGE_OF_KIND[page_kind(id)])
 		return "learned from a %s found in ruins" % Items.display_name(PAGE_OF_KIND[page_kind(id)]) if u == "ruin" else "learned from a rune"
 	if u.is_empty():
 		return ""

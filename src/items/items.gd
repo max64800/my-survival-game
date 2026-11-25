@@ -245,7 +245,7 @@ static func _data() -> Dictionary:
 		for g in Gems.EPIC:
 			_all["gem_" + g] = {name = Gems.EPIC[g].name, color = Gems.EPIC[g].color, short = "E" + g.left(1).to_upper(), kind = "gem", stack = 5}
 		for r in Recipes.LIST:  # a dungeon's page always teaches the same copper recipe, and its name says which (owner, Nov 19, F237)
-			if Recipes.LIST[r].unlock is String and Recipes.LIST[r].unlock == "ruin" and Recipes.LIST[r].station == "anvil":
+			if Recipes.LIST[r].unlock is String and Recipes.LIST[r].unlock in ["ruin", "dungeon"] and Recipes.LIST[r].station == "anvil":
 				var pg: String = Recipes.PAGE_OF_KIND[Recipes.page_kind(r)]
 				_all["page_" + r] = DATA[pg].merged({name = "%s: %s" % [DATA[pg].name, display_name(Recipes.LIST[r].output)], recipe = r, icon_of = pg}, true)
 		for id in Foods.DISHES:

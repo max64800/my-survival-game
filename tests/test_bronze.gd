@@ -22,7 +22,10 @@ func test_every_bronze_item_has_recipe_model_and_icon() -> void:
 		var r: Dictionary = Recipes.LIST.get(id, {})
 		check_eq(r.get("station", ""), "anvil", id + " at the anvil")
 		check(r.get("inputs", {}).has("bronze_ingot"), id + " needs bronze ingots")
-		check_eq(r.get("unlock", ""), "ruin", id + " is locked until a page teaches it")
+		check_eq(r.get("unlock", ""), "dungeon", id + " is locked until its own page teaches it")
+		check(not Recipes.page_recipes("armour_page").has(id) and not Recipes.page_recipes("weapon_page").has(id)
+			and not Recipes.page_recipes("tool_page").has(id), id + ": no random ruin page teaches it")
+		check(Items.exists("page_" + id), id + " has its own named page (for step 5)")
 		check(ResourceLoader.exists("res://assets/icons/%s.png" % id), id + " icon")
 		check(ResourceLoader.exists("res://assets/models/items/%s.glb" % id), id + " model")
 

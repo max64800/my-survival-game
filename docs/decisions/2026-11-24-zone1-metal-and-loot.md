@@ -107,6 +107,11 @@ Signposts are drawn from the world seed, so every player sees the same ones. Not
    ✅ Done Nov 25: `Mat.TIN` (6), `CaveMaker._is_tin` (Mossy only, a little rare, 4 m clear of `reserved`,
    7 m from places), fleck look in `bake_terrain_looks.py`, item `tin_ore`; tests in test_cave_maker + test_keep_clear.
 4. **Bronze ingot + 13 bronze items** (recoloured copper models, ~1.3× stats), bronze recipes at the anvil (locked).
+   ✅ Done Nov 25: owner picked **halfway** between copper and silver (not 1.3×: silver is only 1.27× copper).
+   Bronze keeps copper's tier + `boost = 0.15` (`Items.boost`/`Items.rank`): +15% damage, +5% shield block (65%);
+   armour 6/10/7/5, pickaxe/axe power 15. `bronze_ingot` smelter recipe unlocks on tin ore; 13 anvil recipes are
+   `unlock = "dungeon"` (only their own named `page_<id>`, never a random ruin page) until step 5. Paint: `tools/art/make_bronze.py`. Auto-smelt does NOT make bronze (it would eat
+   stored copper ingots). Test: `tests/test_bronze.gd`.
 5. **Switch the dungeon stands to bronze** + Bronze Pickaxe page in Mossgate's big chest. Copper recipes now only from ruins.
 6. **Skull signposts** (new model, art round, owner OK), with the recipe picture and the "learned" tick.
 7. **Own bronze models** (later, small batches).
