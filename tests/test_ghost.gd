@@ -403,3 +403,48 @@ func test_the_mace_eases_back_without_a_jump() -> void:
 		check(worst < 3.0, "%s's mace eases back without a jump (%.1fx at %.0f%%)" % [kind[0], worst, worst_at * 100])
 		model.free()
 
+
+## Owner, Nov 25 (4th round): "I don't want ghosts to have the stun whatsoever ... anytime they teleport, they should
+## teleport behind me, facing me, and always attack" (a hard hit used to daze it: it came back and did nothing).
+func test_a_hard_hit_never_stuns_a_ghost_and_it_still_swings_facing_you() -> void:
+	await _setup()
+	var m := _spawn("ghost_b", Vector3(4, 0, 0))
+	check(m != null, "a ghost appears")
+	if m == null:
+		_teardown()
+		return
+	await tree.process_frame
+	m.alert(1)
+	auth.monsters._hurt_monster(m, 1, 40, 500.0)  # (a big two-handed mace blow's worth of stun, and more)
+	check(not m.stun.is_stunned(), "no stun from the hardest blow")
+	m.start_knockdown(3.0)
+	check(not m.rig.knocked_down, "and it never falls apart")
+	var swung := false
+	var facing := -1.0
+	for i in 120:
+		await tree.physics_frame
+		if String(m._attack.get("name", "")) == "Ambush Chop":
+			swung = true
+			var fwd := -m.model.global_basis.z * Vector3(1, 0, 1)
+			facing = fwd.normalized().dot(((player.global_position - m.global_position) * Vector3(1, 0, 1)).normalized())
+			break
+	check(swung, "it comes back and swings at once")
+	check(facing > 0.8, "facing you (%.2f)" % facing)
+	_teardown()
+
+
+## Owner, Nov 25: "the blue ghost will just run towards me and not do anything until I hit him": its only blow is a
+## lunge, and lunges never started closer than 2 m.
+func test_the_blue_ghost_swings_when_right_next_to_you() -> void:
+	await _setup()
+	var m := _spawn("ghost_b", Vector3(1.4, 0, 0))
+	check(m != null, "a ghost appears")
+	if m == null:
+		_teardown()
+		return
+	await tree.process_frame
+	check(not m._pick_attack(1.2, auth.monsters).is_empty(), "it has a blow at 1.2 m")
+	var miner: Monster = _spawn("lost_miner", Vector3(-3, 0, 0)) if Monsters.LIST.has("lost_miner") else null
+	if miner:
+		check(miner._pick_attack(1.2, auth.monsters).is_empty(), "(a Lost Miner still circles close up: its leap needs room)")
+	_teardown()

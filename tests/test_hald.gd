@@ -524,6 +524,35 @@ func test_ghosts_find_a_spot_behind_you_in_the_tomb() -> void:
 	r.root.free()
 
 
+## Owner, Nov 25 (4th round: "I can bait them and they get stuck on the stairs"): a Wrathful Shade from the Hall of
+## Names follows you all the way up the Grand Stair (it stood at the foot of the Grand Stair, then on its top step, for good).
+func test_a_ghost_follows_you_up_the_grand_stair() -> void:
+	var r := _rig()
+	var d: Dictionary = r.d
+	var mgr: MonsterManager = r.auth.monsters
+	await tree.physics_frame
+	await tree.physics_frame
+	r.player.global_position = DungeonMap.to_world(d, Vector3(20.0, 0.3, 33.0))  # in the Wardens' Hall, at the top
+	var uid: int = mgr._next_uid
+	mgr._ev_spawn(uid, "ghost_b", DungeonMap.to_world(d, Vector3(20.0, -8.0 + 0.55, 21.5)), false, 0, "")
+	var m: Monster = mgr.get_monster(uid)
+	m.dungeon = d
+	m.dungeon_room = "names_hall"
+	await tree.physics_frame
+	m.alert(1)
+	var best := INF
+	var top_y := -INF
+	for i in 900:
+		await tree.physics_frame
+		var to: Vector3 = r.player.global_position - m.global_position
+		best = minf(best, Vector2(to.x, to.z).length())
+		top_y = maxf(top_y, m.global_position.y)
+		if best < 3.2:
+			break
+	check(best < 3.2, "it reaches you at the top (closest %.1f m, highest it got %.1f m)" % [best, top_y - DungeonMap.to_world(d, Vector3.ZERO).y])
+	r.root.free()
+
+
 func test_the_shield_brother_drops_the_bronze_key() -> void:
 	var root := Node3D.new()
 	tree.root.add_child(root)

@@ -1727,10 +1727,12 @@ func _ev_shell(uid: int, hidden: bool) -> void:
 ## A ghost fades into mist and comes back at `to` (Ghost; the host picked the spot after a quarter of its health).
 ## Its swing is called off: the hits it was about to land are dropped everywhere.
 func ghost_fade(m: Monster, to: Vector3) -> void:
-	if m.state == Monster.State.STUNNED:
-		m.stun.stunned_left = 0.0  # (the mist shakes off its daze: it gets up on its next step, then swings)
-	else:
-		m.state = Monster.State.CHASE
+	# Owner, Nov 25 (4th round): "anytime they teleport they should teleport behind me, facing me, and always attack":
+	# no daze or push from your hit is carried along; it comes back chasing (CHASE swings the ambush at once).
+	m.stun.stunned_left = 0.0
+	m.stun.value = 0.0
+	m._knock = Vector3.ZERO
+	m.state = Monster.State.CHASE
 	m._attack = {}
 	m._best_dist = INF  # (F873: it came back further away: that isn't "can't get closer", so it doesn't give up)
 	m._no_progress = 0.0

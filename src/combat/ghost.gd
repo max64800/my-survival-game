@@ -301,7 +301,12 @@ static func show_fade(m: Monster, to: Vector3) -> void:
 	t.tween_callback(func() -> void:
 		m.global_position = to
 		m.set("_net_pos", to)  # (a friend's copy doesn't glide there: it is there)
-		m.velocity = Vector3.ZERO)
+		m.velocity = Vector3.ZERO
+		m.set("_knock", Vector3.ZERO)  # (the push of your hit doesn't carry it on at the new spot)
+		# It shows again facing you (you stand between where it was and where it comes back; owner, Nov 25).
+		var back := (from - to) * Vector3(1, 0, 1)
+		if back.length() > 0.1:
+			model.rotation.y = atan2(-back.x, -back.z))
 	t.tween_interval(DOTS_FLY - 0.1)  # (it starts to show again as the last dots arrive)
 	t.tween_method(func(f: float) -> void: set_fade(model, f), 0.0, 1.0, FADE_IN)
 

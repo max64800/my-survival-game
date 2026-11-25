@@ -107,6 +107,14 @@ func setup(p_uid: int, p_kind: String, p_leader: bool, p_home: Vector3, p_varian
 	stun = StunMeter.new(data.stun * (Monsters.LEADER.stun if leader else 1.0) * (Monsters.VARIANT_STATS.stun if variant != "" else 1.0), 3.0)
 	state = State.SLEEP if data.get("sleeps", false) else State.IDLE
 	_timer = randf_range(3.0, 8.0)
+	if data.get("ghost", false):
+		# Owner, Nov 25 (4th round): "I don't want ghosts to have the stun whatsoever": no hit, parry or blow ever
+		# fills a ghost's stun (no stars, no falling apart), so after every mist jump it can swing at once.
+		stun.max_value = 1.0e9  # (not INF: a friend's copy multiplies it by 0)
+		# "I can bait them and they get stuck on the stairs": the stone stairs are 45-degree slopes, just too steep
+		# for a creature's default grip (45): it slid back down. It climbs what a dwarf climbs (Dwarf: 52).
+		floor_max_angle = deg_to_rad(52.0)
+		floor_snap_length = 0.45
 
 
 func _ready() -> void:
@@ -322,7 +330,7 @@ func knock(push: Vector3) -> void:
 
 ## Host: non-lethal knockdown for `duration` seconds (falls apart, then rises). Used by finisher and stun.
 func start_knockdown(duration: float) -> void:
-	if rig == null or data.get("boss", false):
+	if rig == null or data.get("boss", false) or data.get("ghost", false):  # (ghosts: never stunned, owner Nov 25)
 		return
 	_kd_daze = duration
 	if _knock.length() > 6.0:
@@ -487,6 +495,11 @@ func think(delta: float, mgr: Node) -> void:
 				_ceiling_check = 0.25
 				_ceiling = _rock_above()
 			_alt = minf(_alt, _ceiling - _body_height() - CEILING_ROOM)
+	# Owner, Nov 25 (4th round): "anytime they teleport ... they should always attack": whatever it was doing as it
+	# faded (a swing called off, a stagger from your parry), it comes back chasing, and CHASE swings the ambush.
+	if data.get("ghost", false) and has_meta("ghost_ambush") and state in [State.ATTACK, State.RECOVER, State.STUNNED, State.ALERT, State.RETURN] and target_peer != 0:
+		state = State.CHASE
+		_attack = {}
 	match state:
 		State.SLEEP:
 			_move(delta, Vector3.ZERO, 0.0)
@@ -582,7 +595,7 @@ func think(delta: float, mgr: Node) -> void:
 			if Ghost.hidden(self):  # F659: a ghost in dots waits where they gather (no moving or swinging unseen)
 				_move(delta, Vector3.ZERO, 0.0)
 				return
-			if Ghost.ambush_due(self) and to.y < 1.3:  # F873: it shows again right behind you and swings at once
+			if Ghost.ambush_due(self):  # F873: it shows again right behind you, facing you, and swings at once
 				model.rotation.y = atan2(-to.x, -to.z)
 				_start_attack(Ghost.ambush(data), mgr)
 				return
@@ -861,7 +874,7 @@ func _pick_attack(dist: float, mgr: Node = null) -> Dictionary:
 	for a in attack_options():
 		if a.has("raise_miners") and (mgr == null or mgr.raisable_statues(self).is_empty()):
 			continue
-		if dist <= a.reach and dist >= a.get("min_reach", 0.0) and (not a.get("lunge", false) or dist > 2.0) 				and _clock >= float(_rest_until.get(a.name, 0.0)):
+		if dist <= a.reach and dist >= a.get("min_reach", 0.0) and (not a.get("lunge", false) or dist > 2.0 or (a.get("small_lunge", false) and data.get("ghost", false))) 				and _clock >= float(_rest_until.get(a.name, 0.0)):
 			options.append(a)
 	if options.is_empty():
 		return {}
@@ -918,7 +931,12 @@ func _drop_ahead(dir: Vector3) -> bool:
 	wall.collision_mask = World.TERRAIN_LAYER
 	if not space.intersect_ray(wall).is_empty():
 		return false
-	var q := PhysicsRayQueryParameters3D.create(ahead + Vector3.UP * 0.6, ahead + Vector3.DOWN * (MAX_DROP + 0.1))
+	# Owner, Nov 25: "they get stuck on the stairs": walking right up the middle of a steep stair, the wall ray slid
+	# along the seam between its two stone slabs and found nothing, and this ray started 0.6 m up, already under the
+	# slab that rises ahead: it saw only the floor far below (a "pit"), so it stood at the foot of the stair forever.
+	# Now it starts as high as a stair rises over that distance (45 degrees), so it lands on the steps.
+	var up := 0.6 + (float(data.get("size", 1.0)) * 0.5 + 0.6)
+	var q := PhysicsRayQueryParameters3D.create(ahead + Vector3.UP * up, ahead + Vector3.DOWN * (MAX_DROP + 0.1))
 	q.collision_mask = World.TERRAIN_LAYER
 	return space.intersect_ray(q).is_empty()
 
@@ -958,6 +976,24 @@ func may_step(p: Vector3, from := Vector3.INF) -> bool:
 	if not outside_now and DungeonMap.space_at(dungeon, p + Vector3.UP * 0.5) != dungeon_room:
 		return false
 	return DungeonBuild.instance == null or not DungeonBuild.instance.near_crusher(p)
+
+
+## Owner, Nov 25: "I can bait them and they get stuck on the stairs": at the top of the Grand Stair the hall's floor
+## edge is a lip a hand high; a ghost's round feet pressed against it as a wall and it stood there for good. A ghost
+## (mist, it barely touches the ground) rises over a low edge when there is room just above it.
+const STEP_UP := 0.45
+func _step_up(dir: Vector3) -> void:
+	var flat := Vector3(dir.x, 0.0, dir.z).normalized() * 0.3
+	if test_move(global_transform, Vector3.UP * STEP_UP):
+		return  # a ceiling over it
+	var was := global_position
+	global_position += Vector3.UP * STEP_UP
+	var hit := move_and_collide(flat, true)
+	if hit and hit.get_normal().y < 0.5:
+		global_position = was  # a real wall up there too: no step
+		return
+	global_position += hit.get_travel() if hit else flat
+	apply_floor_snap()
 
 
 func _move(delta: float, dir: Vector3, speed: float) -> void:
@@ -1006,6 +1042,8 @@ func _move(delta: float, dir: Vector3, speed: float) -> void:
 	else:
 		_rest = 0.0
 	move_and_slide()
+	if data.get("ghost", false) and dir.length() > 0.1 and is_on_floor() and is_on_wall():
+		_step_up(dir)
 	if global_position.y < CaveMaker.Y_MIN - 20.0:
 		global_position = home + Vector3.UP
 	if _falling != "" and is_on_floor():
