@@ -82,6 +82,11 @@ const LIST := {
 		station = {"workbench": 3, "mason": 3, "anvil": 2}},
 	"roof_45_inner": {name = "Roof Corner In (steep)", group = "roof", size = Vector3(2, 2, 2), units = 4, place = "cell", shape = "roof_inner", rise = 2.0, model_lift = 0.2,
 		station = {"workbench": 3, "mason": 3, "anvil": 2}},
+	# The spire roof (owner, Nov 25, F895): one sixth of a pointed 6-sided tile roof on a 2 m triangle (`tri`: it snaps
+	# like the triangle floor); six on a hexagon of triangles make the whole spire (Brickcrown Keep's left tower).
+	# Hearthbrick only (curved tiles, rule 4); its point is the triangle's point (z = -1.155).
+	"roof_spire": {name = "Spire Roof", group = "roof", size = Vector3(2, 3, TRI_DEPTH), units = 4, place = "cell", shape = "roof_spire", tri = true,
+		rise = 3.0, families = ["clay_brick"], station = {"workbench": 3, "mason": 3, "anvil": 2}},
 	# --- supports
 	"beam": {name = "Beam", group = "support", size = Vector3(2, 0.3, 0.3), units = 2, place = "edge", station = ALL},
 	"beam_half": {name = "Short Beam", group = "support", size = Vector3(1, 0.3, 0.3), units = 1, place = "edge", station = ALL},
@@ -656,7 +661,7 @@ const DOORS := ["door", "gate_leaf"]
 
 
 static func is_tri(piece: String) -> bool:
-	return LIST[piece].get("shape", "") == "tri"
+	return LIST[piece].get("shape", "") == "tri" or LIST[piece].get("tri", false)
 
 
 ## A piece is "square-turned" when it lies on the normal grid (0/90/180/270° and not a triangle).

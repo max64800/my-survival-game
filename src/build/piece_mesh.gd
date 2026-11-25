@@ -56,6 +56,7 @@ static func _make(piece: String, style: String, detail: bool) -> ArrayMesh:
 		"roof": _roof(s, float(info.rise))
 		"ridge": _ridge(s, float(info.rise))
 		"roof_outer": _roof_outer(s, float(info.rise))
+		"roof_spire": _roof_spire(s, float(info.rise))
 		"roof_inner": _roof_inner(s, float(info.rise))
 		"gable": _gable(s, float(info.rise))
 		"arch": _arch(s)
@@ -226,6 +227,19 @@ static func _roof_outer(s: Vector3, rise: float) -> void:
 	_face([a, d, top], Vector3.LEFT)
 	_face([b, c, top], Vector3(1, 1, 0))
 	_face([c, d, top], Vector3(0, 1, 1))
+
+
+## One sixth of a pointed 6-sided roof (F895): the 2 m triangle at the bottom, rising to its point (z = -1.155).
+static func _roof_spire(s: Vector3, rise: float) -> void:
+	var k := s.x * 0.5
+	var a := Vector3(-k, 0, Pieces.TRI_IN * k)
+	var b := Vector3(k, 0, Pieces.TRI_IN * k)
+	var p := Vector3(0, 0, -Pieces.TRI_OUT * k)
+	var top := Vector3(0, rise, -Pieces.TRI_OUT * k)
+	_face([a, b, p], Vector3.DOWN)
+	_face([a, b, top], Vector3(0, 0.5, 1))
+	_face([b, p, top], Vector3(0.87, 0, -0.5))
+	_face([p, a, top], Vector3(-0.87, 0, -0.5))
 
 
 ## Inside corner (a valley): high along the back and the left, low at the front-right corner.

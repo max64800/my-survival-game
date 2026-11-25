@@ -3049,7 +3049,11 @@ func _brickcrown() -> void:
 		_hex_ladder(nk + Vector3(0, ny, 0), 6, B)
 		_hex_layer("floor_triangle", nk + Vector3(0, ny + 2.0, 0), 0, 6, B)
 	_add("door", B, nk + _dir(0) * _APO + Vector3(0, w3, 0), 0)
+	# the lookout (F895, Nov 25): railings between 6 brick pillars, and the pointed tile spire on the pillars
+	# (six roof_spire pieces, one on each triangle; the hole over the ladder stays covered by the roof)
 	_hex_edges(nk + Vector3(0, w3 + 6.75, 0), 0, func(_j): return "railing", B)
+	_hex_pillars(nk + Vector3(0, w3 + 6.75, 0), 0, B)
+	_hex_layer("roof_spire", nk + Vector3(0, w3 + 8.75, 0), 0, -1, B)
 	_hex_bands(nk + Vector3(0, w3 + 6.45, 0), 0, S)
 	_ring_off = Vector3.ZERO
 	# --- the curtain wall (stone, 2 m thick): a guard room, the gate passage, a store room; a gallery above with

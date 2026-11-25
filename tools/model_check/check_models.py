@@ -30,7 +30,9 @@ SHIMMER_MIN = 0.0004  # m² (4 cm²): smaller overlaps are ignored
 OUT_MIN = 0.005  # m: sticking out less than 5 mm is ignored
 TRI_IN, TRI_OUT = 0.57735027, 1.1547005
 ROOFS = {"roof_26": (1.0, 2.0), "roof_45": (2.0, 2.0), "roof_26_ridge": (0.5, 1.0), "roof_45_ridge": (1.0, 1.0),
-	"roof_26_outer": (1.0, 2.0), "roof_26_inner": (1.0, 2.0), "roof_45_outer": (2.0, 2.0), "roof_45_inner": (2.0, 2.0)}
+	"roof_26_outer": (1.0, 2.0), "roof_26_inner": (1.0, 2.0), "roof_45_outer": (2.0, 2.0), "roof_45_inner": (2.0, 2.0),
+	"roof_spire": (2.6, 1.732)}   # (a triangle: only spots inside it are measured)
+TRI_SHAPES = ("tri", "roof_spire")
 
 
 # ---------------- piece sizes from the game's own list ----------------
@@ -282,7 +284,7 @@ def check_outline(name, tris, sizes):
 		for v in t:
 			note("below the bottom", -v.y, v)
 			note("above the top", v.y - size[1] - OVER_TOP.get(piece, 0.0), v)
-			if shape == "tri":
+			if shape in TRI_SHAPES:
 				# edges: front z = +TRI_IN, and the two slanted sides through the point (0, -TRI_OUT)
 				note("past the front edge", v.z - TRI_IN, v)
 				for sx in (-1, 1):
@@ -314,8 +316,13 @@ def check_roof(name, tris):
 	holes = 0
 	low = 0
 	g = [-0.8 + 0.05 * i for i in range(33)]  # 5 cm apart, so rafters are always measured
-	for x in g:
-		for z in g:
+	spots_xz = [(x, z) for x in g for z in g]
+	if piece == "roof_spire":   # a triangle: spots inside it, 3 cm in from the edges (the joints between pieces)
+		gz = [-1.1 + 0.05 * i for i in range(34)]
+		spots_xz = [(x, z) for x in [-0.95 + 0.05 * i for i in range(39)] for z in gz
+			if z < TRI_IN - 0.03 and all(x * sx * math.sqrt(3) / 2 - 0.5 * z < TRI_OUT / 2 - 0.03 for sx in (-1, 1))]
+	for (x, z) in spots_xz:
+		if True:
 			top = bvh.ray_cast(Vector((x, 10, z)), Vector((0, -1, 0)))
 			bot = bvh.ray_cast(Vector((x, -5, z)), Vector((0, 1, 0)))
 			if top[0] is None:
@@ -326,7 +333,7 @@ def check_roof(name, tris):
 				if bot[0].y < 0.02 and top[0].y > 0.4:
 					low += 1  # filled down to the floor here
 	out = []
-	spots = len(g) * len(g)
+	spots = len(spots_xz)
 	if holes:
 		out.append("%d of %d spots you can see the sky through (holes)" % (holes, spots))
 	if thick:
