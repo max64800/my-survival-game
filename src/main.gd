@@ -341,17 +341,11 @@ func _ready() -> void:
 			session.join_direct(address, port)
 
 
-## What happened when a monster's attack reached us (shown briefly at the top of the screen).
+## What happened when a monster's attack reached us (only an ailment gets words now, F870).
 func _on_defended(r: Dictionary) -> void:
 	if dwarf and r.result == "hit":
 		dwarf.model.react("hit")
-	match r.result:
-		"block":
-			hud.show_toast("Blocked %s (−%d)" % [r.name, roundi(r.damage)], 1.2)
-		"dodge":
-			hud.show_toast("Dodged!", 1.0)
-		"hit":
-			hud.show_toast("Hit by %s (−%d)" % [r.name, roundi(r.damage)], 1.2)
+	# (F870, owner Nov 25: no "Blocked / Dodged / Hit by" words: the thud, the ring and the red flash show it)
 	if r.has("ailment"):
 		var what: String = {"poison": "You are poisoned!", "burn": "You are burning!", "chill": "You are chilled!", "frozen": "You are frozen!"}.get(r.ailment, "")
 		hud.show_toast(what + "  (" + r.name + ")", 2.0)

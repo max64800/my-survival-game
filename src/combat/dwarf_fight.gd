@@ -217,7 +217,7 @@ func got_parry() -> void:
 	_riposte_until = clock + Combat.RIPOSTE_TIME
 	if has_shield() and _ps() and _ps().progress.has_star("shield", 100):
 		_ps().vitals.stamina = minf(_ps().vitals.max_stamina(), _ps().vitals.stamina + 20.0)  # Shield ★100: stamina back
-	message.emit("Perfect parry!", Color(1.0, 0.85, 0.3))
+	# (F870: no parry words on screen: the spark star and the ringing blade show it, MonsterManager._parry_feel)
 
 
 ## Called every physics frame by the dwarf. Returns a speed multiplier for walking.

@@ -95,6 +95,28 @@ static func hit(parent: Node, pos: Vector3, body: String, dir: Vector3, heavy :=
 		burst(parent, pos, Color(1.0, 0.95, 0.7), 10, sp * 1.3, dir, 180.0, true, big)  # a bright ring of sparks all around
 
 
+## A perfect parry (F870, owner Nov 25: "no words: a bright spark star on the weapons"): a white-hot star of sparks
+## flying out all around where the weapons meet, a ring of them sideways, and a quick flash of light. Returns the flash.
+static func parry_star(parent: Node, pos: Vector3, facing: Vector3) -> OmniLight3D:
+	var hot := Color(1.0, 0.97, 0.9)
+	burst(parent, pos, hot, 22, 6.5, Vector3.UP, 180.0, false, 1.5)  # the star: every way at once
+	var side := facing.cross(Vector3.UP)
+	side = side.normalized() if side.length() > 0.05 else Vector3.RIGHT
+	for sgn in [-1.0, 1.0]:  # two long streaks out to the sides, like blades scraping
+		burst(parent, pos, hot, 8, 8.0, side * sgn, 12.0, false, 1.2)
+	var flash := OmniLight3D.new()
+	flash.name = "ParryFlash"
+	flash.light_color = Color(1.0, 0.93, 0.8)
+	flash.light_energy = 6.0
+	flash.omni_range = 4.5
+	parent.add_child(flash)
+	flash.global_position = pos
+	var t := flash.create_tween()
+	t.tween_property(flash, "light_energy", 0.0, 0.22)
+	t.tween_callback(flash.queue_free)
+	return flash
+
+
 ## A soft puff of dust that drifts up and fades (digging, landing, things breaking).
 ## `extents` > 0 = spread over a box that size around `pos` (a new piece's foot, F724).
 static func dust(parent: Node, pos: Vector3, color: Color, amount: int = 5, size: float = 0.45, extents := Vector3.ZERO) -> void:

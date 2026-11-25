@@ -188,3 +188,10 @@ All CC0 (public domain), checked on each page. Trimmed, loudness-matched and con
 | Hundreds of bats screaming and coming out of their nest | felix.blume | https://freesound.org/s/245768/ | CC0 | bat_screech_0 (MAYBE) |
 | Bat chirp (close-up) | coelhoigor | https://freesound.org/s/455593/ | CC0 | bat_screech_1 (MAYBE) |
 | Pickaxe2 | NoisyRedFox | https://freesound.org/s/760566/ | CC0 | dig_rock_0 |
+
+### Freesound sounds, F870 parry and block (Nov 25, 2026)
+
+| Title | Author | Link | Licence | Used as |
+|---|---|---|---|---|
+| Single Sword Clash.MP3 | FunWithSound | https://freesound.org/s/361482/ | CC0 | parry_ring_0 (two real swords; one clash cut out, clock rumble filtered, faded) |
+| Sword Thud.wav | sefu2010 | https://freesound.org/s/435210/ | CC0 | block_thud_0 (cut to one hit, softened) |

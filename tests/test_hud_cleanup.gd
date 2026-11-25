@@ -47,3 +47,19 @@ func test_skill_pops_up_when_it_grows() -> void:
 	check(pop.text().begins_with("Level 2"), "a level up shows: '%s'" % pop.text())
 	check_eq(SkillPopup._gain([0, Progression.skill_xp_to_next(0) - 5], 1, 3), 8, "XP over a skill level-up is counted right")
 	pop.free()
+
+
+## F870 step 2: a perfect parry has no words: a spark star + a flash + a ringing blade; a normal block is a dull thud.
+func test_parry_is_a_spark_not_words() -> void:
+	check(not FileAccess.get_file_as_string("res://src/combat/dwarf_fight.gd").contains('"Perfect parry!"'), "no Perfect parry word")
+	var main_src := FileAccess.get_file_as_string("res://src/main.gd")
+	check(not main_src.contains('"Dodged!"') and not main_src.contains('"Blocked %s'), "no Blocked / Dodged words")
+	check(not Sfx._variants("parry_ring").is_empty(), "a ringing blade sound")
+	check(not Sfx._variants("block_thud").is_empty(), "a dull thud for a block")
+	var at := Node3D.new()
+	tree.root.add_child(at)
+	var flash := Fx.parry_star(at, Vector3(0, 1, 0), Vector3.FORWARD)
+	var sparks := at.get_children().filter(func(c): return c is CPUParticles3D)
+	check(sparks.size() >= 3, "a star of sparks (and two streaks)")
+	check(flash != null and flash.light_energy > 0.0, "a flash of light")
+	at.free()

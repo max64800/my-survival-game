@@ -1163,8 +1163,8 @@ func _judge_incoming() -> void:
 					dwarf.got_parry()
 		result.name = hit.name
 		match result.result:
-			"parry": Sfx.ui("parry", -2.0)
-			"block": Sfx.ui("block", -4.0)
+			"parry": _parry_feel(m, dwarf)
+			"block": Sfx.ui("block_thud", -4.0)  # a normal block: a dull thud (F870); a perfect parry rings
 			"hit": Sfx.ui("hit_heavy" if result.damage >= 15 else "hit", -2.0)
 		defended.emit(result)
 		if result.result == "parry":
@@ -1173,6 +1173,23 @@ func _judge_incoming() -> void:
 
 
 const BLOCK_SHARE := {"burn": 1.0, "chill": 0.5, "poison": 0.0}  ## how much of each effect gets through a block
+const PARRY_STOP := 0.14  ## a perfect parry: both fighters freeze a moment (the "tiny slow-down", F870)
+
+
+## A perfect parry, with no words (F870, owner Nov 25): the blade rings, a spark star flies where the weapons meet,
+## and both fighters freeze a moment. Only the parrying player's game shows it (like the hit freeze).
+func _parry_feel(m: Monster, dwarf: Node3D) -> void:
+	Sfx.ui("parry", -2.0)
+	Sfx.ui("parry_ring", -3.0)
+	if m == null or dwarf == null:
+		return
+	var at := dwarf.global_position.lerp(m.global_position, 0.4) + Vector3.UP * 1.1  # (a bit nearer the dwarf: the weapon)
+	Fx.parry_star(_root, at, m.global_position - dwarf.global_position)
+	m.hit_stop(PARRY_STOP)
+	if dwarf.has_method("hit_stop"):
+		dwarf.hit_stop(PARRY_STOP)
+	if dwarf.has_method("add_shake"):
+		dwarf.add_shake(0.2)
 
 
 ## A creature hit us: Edge Quartz armor hurts it back, Storm Topaz armor may stun it (host).
