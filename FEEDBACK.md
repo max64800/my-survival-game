@@ -189,7 +189,7 @@ Fixed items get ~~crossed out~~, never deleted, so we can see the whole history.
 - [ ] **F881. Bats and Rock Snails die with a dwarf's death sound. They need their own death sounds.** *From: you (PC, Nov 25, play). Said: 1×*
 - [ ] **F882. Repair station: the gear names need a better font, and stone gear says "needs station level 2" (only copper gear should). Make clear what the level is for.** *From: you (PC, Nov 25, play). Said: 1×*
 - [ ] **F883. Refilling the lantern sounds like a gulp of water. It needs an oil/lantern sound.** *From: you (PC, Nov 25, play). Said: 1×*
-- [ ] **F884. The drip water bucket doesn't work: placed right under the drips, it says "no drips here, place it under a dripping stalactite".** *From: you (PC, Nov 25, play). Said: 1×* Goes with F654.
+- [ ] **F884. The drip water bucket doesn't work: placed right under the drips, it says "no drips here, place it under a dripping stalactite".** *From: you (PC, Nov 25, play). Said: 1×* Goes with F654. 🛠 in progress (Nov 25 play notes chat, Nov 25)
 - [ ] **F885. Every resource you pick up should pop up on the left: its picture and the amount.** *From: you (PC, Nov 25, play). Said: 1×*
 - [ ] **F886. With a chest open, you can't left-click and drag an item to another slot (right-click to the chest works).** *From: you (PC, Nov 25, play). Said: 1×*
 - [ ] **F887. Note for later: a recycling bench.** *From: you (PC, Nov 25, play). Said: 1×*
