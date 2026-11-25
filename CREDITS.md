@@ -152,3 +152,14 @@ All CC0 (public domain), checked on each page. Trimmed, loudness-matched and con
 | Ceramic Plate Set Down.wav | bbrocer | https://freesound.org/s/382643/ | CC0 | build_brick_0, build_brick_1 (MAYBE; two takes cut from it) |
 | Ceramic clank and sliding over wooden table.wav | kessir | https://freesound.org/s/264757/ | CC0 | build_brick_2 (MAYBE) |
 (Shovel_dirt.wav 353907 is now cut to its first 1.2 s as dig_soft_1; "bricks" 735273 is cut to one clatter as build_brick_3.)
+
+### Freesound sounds, owner's picks round 5 (Nov 25, 2026)
+
+| Title | Author | Link | Licence | Used as |
+|---|---|---|---|---|
+| Horses running final.wav | C-V | https://freesound.org/s/583261/ | CC0 | beetle_rumble_0 (charge stomps) |
+| Stampede | bevibeldesign | https://freesound.org/s/350425/ | CC0 | beetle_rumble_1 (MAYBE) |
+| thud.wav | OtisJames | https://freesound.org/s/215162/ | CC0 | hit_heavy_2 (MAYBE) |
+| Hundreds of bats screaming and coming out of their nest | felix.blume | https://freesound.org/s/245768/ | CC0 | bat_screech_0 (MAYBE) |
+| Bat chirp (close-up) | coelhoigor | https://freesound.org/s/455593/ | CC0 | bat_screech_1 (MAYBE) |
+| Pickaxe2 | NoisyRedFox | https://freesound.org/s/760566/ | CC0 | dig_rock_0 |
