@@ -31,3 +31,10 @@
   step forward, so it is right in front of the bridge and all columns stand on flat ground.
 - Couldn't look at the republished 3D page myself: starting a local web server was blocked.
 - `git pull` blocked by another chat's unsaved CREDITS.md changes; never stashed, merged later.
+- After the dip moved, two checks still looked for it in the old spot (and the dig grid was too coarse for the
+  shorter dip). Fix: the checks look in the new spot and the dip is dug in half-metre steps.
+- Pushing failed: this PC's main and GitHub's main both have other chats' commits that clash (Hald tomb test,
+  JOURNAL.md). Merge undone, left for the chats that own those files; my commits are saved locally.
+- Owner's play test: old triangle brick texture (F725, 2x), junk should vanish after rebuilding (F864), rebuilt roofs
+  look plain (F865), back against the cave rock (F866), attach the round tower (F867), clearer windows (F868),
+  doors close after 30 s (F869: never built).
