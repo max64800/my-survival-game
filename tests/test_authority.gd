@@ -922,6 +922,31 @@ func test_shovel_takes_the_pebbles_with_the_ground() -> void:
 	_teardown()
 
 
+## F890 (owner, Nov 25): "left click to flatten, right click to raise (needs 3 stone per block)".
+func test_shovel_right_click_raises_the_ground() -> void:
+	await _setup(42)
+	var feet := player.global_position
+	var fl := world.maker.find_floor(feet.x, feet.z, feet.y + 1.0)
+	if fl != Vector3.INF:
+		player.global_position = fl
+		feet = fl
+	var at := feet + Vector3(2.5, 0.0, 0.0)
+	at.y = _floor_y(at, feet.y)
+	ps.inventory.slots[0] = {id = "masons_shovel", count = 1}
+	auth.request_select_slot(1, 0)
+	check_eq(auth.request_use(1, at, Vector3.UP, 0.0), "", "no stone: nothing happens")
+	ps.inventory.add("stone", 4)
+	var logged := auth.edit_log.size()
+	check_eq(auth.request_use(1, at, Vector3.UP, 0.0), "raised", "with stone it raises the ground")
+	check(_floor_y(at, feet.y) > at.y + 0.6, "the floor there is now higher (%.2f m)" % (_floor_y(at, feet.y) - at.y))
+	check_eq(ps.inventory.count_of("stone"), 1, "it took 3 stone")
+	check_eq(auth.edit_log.size(), logged + 1, "saved with the digs (and sent to friends)")
+	check_eq(auth.request_use(1, at, Vector3.UP, 0.0), "", "1 stone left: not enough for another block")
+	ps.inventory.add("stone", 3)
+	check_eq(auth.request_use(1, feet, Vector3.UP, 0.0), "", "never under your own feet")
+	_teardown()
+
+
 ## The smooth floor's height under `p` (scanning down from 2 m above `y`).
 func _floor_y(p: Vector3, y: float) -> float:
 	var h := y + 2.0

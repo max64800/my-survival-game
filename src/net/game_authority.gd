@@ -1867,6 +1867,7 @@ func _judge_hit(ps: PlayerState, point: Vector3, normal: Vector3) -> Dictionary:
 const LEVEL_R := 1.0  ## the Mason's Shovel flattens a patch this far around where you aim (about 2 m across)
 const LEVEL_HEAD := 1.9  ## and clears rock up to this high above your feet
 const FILL_R := 1.0  ## (the rock is stored in 1 m steps: smaller balls hardly change it)
+const RAISE_COST := 3  ## stone per block the shovel's right click raises (owner, Nov 25)
 
 
 ## The Mason's Shovel (owner, Nov 17: "leveling the ground"): one swing flattens the patch where you aim to the height
@@ -1914,6 +1915,38 @@ func _judge_level(ps: PlayerState, point: Vector3) -> Dictionary:
 	_give_dig_drops(ps, counts, c + Vector3.UP * 0.8)
 	give_xp(_peer_of(ps), 1, "mining")
 	return {state = "dug", hits = 1, needed = 1, material = Mat.STONE, point = point, levelled = true}
+
+
+## The Mason's Shovel's right click (F890, owner Nov 25: "left click to flatten, right click to raise, 3 stone per
+## block"): one block of stone piles up on the floor where you aim (about 1 m high in the middle), for RAISE_COST
+## stone. Never on top of anyone (a dwarf or a creature standing there).
+func _raise_ground(ps: PlayerState, aim_point: Vector3, aim_normal: Vector3) -> String:
+	if not aim_point.is_finite() or not aim_normal.is_finite() or aim_normal.normalized().y < 0.5:
+		return ""
+	if _chest(ps).distance_to(aim_point) > REACH + 1.0:
+		_tell_feedback(_peer_of(ps), {state = "too_far", point = aim_point})
+		return ""
+	if ps.inventory.count_of("stone") < RAISE_COST:
+		_tell_feedback(_peer_of(ps), {state = "blocked", point = aim_point, why = "Needs %d stone to raise the ground." % RAISE_COST})
+		return ""
+	var blocked := monsters != null and monsters.standing_over(aim_point)
+	for other: PlayerState in players.values():
+		var at: Vector3 = other.node.global_position
+		if Vector2(at.x - aim_point.x, at.z - aim_point.z).length() < FILL_R + 0.5 and absf(at.y - aim_point.y) < 2.0:
+			blocked = true
+	if blocked:
+		_tell_feedback(_peer_of(ps), {state = "blocked", point = aim_point, why = "Someone is standing there."})
+		return ""
+	var n := world.apply_fill(aim_point, FILL_R, Mat.STONE)
+	if n <= 0:
+		return ""
+	var edit := Vector4(aim_point.x, aim_point.y, aim_point.z, pack_fill(Mat.STONE, FILL_R))
+	edit_log.append(edit)
+	_ev_dig.rpc(edit)
+	ps.inventory.remove("stone", RAISE_COST)
+	_send_inventory(_peer_of(ps))
+	give_xp(_peer_of(ps), 1, "mining")
+	return "raised"
 
 
 ## Host: fill a ball of rock with `mat` on every computer (levelling: F159). Returns the voxels filled here.
@@ -2176,7 +2209,9 @@ func request_use(peer_id: int, aim_point: Vector3, aim_normal: Vector3, yaw: flo
 				_give_dig_drops(ps, counts, aim_point + aim_normal * 1.0)
 			return "thrown"
 		"shovel":
-			return _plant_seed(ps, aim_point, aim_normal)  # with a Root Seed in the bag (owner, Nov 18)
+			if ps.inventory.count_of("root_seed") > 0:
+				return _plant_seed(ps, aim_point, aim_normal)  # with a Root Seed in the bag (owner, Nov 18)
+			return _raise_ground(ps, aim_point, aim_normal)  # F890: right click raises the ground
 		"station":
 			var on_wall := id in Station.ON_WALL and aim_normal.is_finite() and absf(aim_normal.normalized().y) < 0.3
 			if not aim_point.is_finite() or (aim_normal.normalized().y < 0.6 and not on_wall) or _chest(ps).distance_to(aim_point) > REACH + 1.0:
