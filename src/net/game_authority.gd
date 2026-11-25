@@ -1773,6 +1773,8 @@ func request_hit(peer_id: int, point: Vector3, normal: Vector3) -> Dictionary:
 ## Copper is too hard for plain stone (F115): you need a Fang Pickaxe (Workbench level 2) or better.
 ## Returns why not ("" = this pickaxe can mine it). `tool` "" = bare hands.
 static func ore_too_hard(mat: int, tool: String) -> String:
+	if mat == Mat.TIN:  # F697: tin comes after copper
+		return "" if Items.tier(tool) >= 1 else "Tin is too hard for this pickaxe. Make a Copper Pickaxe at the Anvil."
 	if mat != Mat.COPPER or Items.tier(tool) >= 1 or Items.info(tool).get("copper", false):
 		return ""
 	return "Copper is too hard for stone. Make a Fang Pickaxe (Workbench level 2: 4 bat fangs, 1 leather)."
@@ -1830,7 +1832,7 @@ func _judge_hit(ps: PlayerState, point: Vector3, normal: Vector3) -> Dictionary:
 	var too_hard := ore_too_hard(mat, "" if bare else ps.selected_item())
 	if too_hard != "":
 		return {state = "blocked", material = mat, point = point, why = too_hard}
-	if mat == Mat.COPPER or mat == Mat.SILVER:
+	if Mat.is_ore(mat):
 		power *= ps.progress.ore_power_mult()  # Ore Smasher
 	var needed := Mat.hits_needed(mat, power, tool_tier)
 	if needed == 0:
@@ -3255,7 +3257,7 @@ func _give_dig_drops(ps: PlayerState, counts: Dictionary, pos: Vector3) -> void:
 		var per: int = Mat.VOXELS_PER_ITEM.get(mat, 3)
 		var n := maxi(voxels, 0) / per
 		ps.leftovers[mat] = voxels - n * per  # (below zero = hits paid in advance, taken off later digs)
-		var ore: bool = mat == Mat.COPPER or mat == Mat.SILVER
+		var ore: bool = Mat.is_ore(mat)
 		if ore and ps.leftovers[mat] >= 0:
 			n = maxi(n, 1)  # always feel rewarded for hitting ore (the hits already paid count too)
 			if randf() < Gems.bonus(ps.inventory.get_slot(ps.hand_slot())).get("extra_ore", 0.0):

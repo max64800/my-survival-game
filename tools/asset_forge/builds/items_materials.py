@@ -35,9 +35,9 @@ def rock(kind, seed=1):
 	lump((0.06, 0.05, 0.045), (-0.12, -0.06, 0.04), kit.tex_mat(kind, "dark"), seed=seed + 2)
 
 
-def ore(metal, seed=3):
-	lump((0.17, 0.14, 0.12), (0, 0, 0.11), kit.tex_mat("stone", "b"), seed=seed)
-	m = kit.tex_mat(metal, "c")
+def ore(metal, seed=3, rock="stone", variant="c"):
+	lump((0.17, 0.14, 0.12), (0, 0, 0.11), kit.tex_mat(rock, "b"), seed=seed)
+	m = kit.tex_mat(metal, variant)
 	r = random.Random(seed)
 	for k in range(6):
 		a = r.uniform(0, 6.28)
@@ -413,6 +413,7 @@ B = {
 	"basalt": lambda: rock("basalt"), "brown_rock": lambda: rock("brownrock"), "sporestone": lambda: rock("sporestone"),
 	"amberrock": lambda: rock("amberrock"), "ancient_brick": lambda: bricks("brick", True),
 	"copper_ore": lambda: ore("copper"), "silver_ore": lambda: ore("silver"),
+	"tin_ore": lambda: ore("silver", seed=8, rock="greystone", variant="b"),  # F697: dull grey chips in grey stone
 	"crystal_blue": lambda: crystal("c_blue", (0.25, 0.6, 1.0)), "crystal_green": lambda: crystal("c_green", (0.35, 0.95, 0.4)),
 	"crystal_violet": lambda: crystal("c_violet", (0.6, 0.35, 1.0)), "crystal_amber": lambda: crystal("c_amber", (1.0, 0.65, 0.2)),
 	"crystal_white": lambda: crystal("c_white", (0.92, 0.94, 1.0)), "crystal_red": lambda: crystal("c_red", (1.0, 0.3, 0.25)),

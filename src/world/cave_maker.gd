@@ -103,6 +103,11 @@ const ORE_CELL := 2  ## ore veins are decided on a 2 m grid
 const ORE_THRESHOLD := 0.66  ## Jungle silver
 ## Mossy copper is very rare (feedback F14): about 1.3% of wall rock, 1/6 of before (was 0.66 → 8%).
 const COPPER_THRESHOLD := 0.915
+## Zone 1 tin (F697): grey-silver specks in ordinary Mossy walls everywhere, a little rarer than the old all-over copper.
+const TIN_THRESHOLD := 0.93
+## Tin keeps this far (m) from anything built: ruins, towers, dungeons and their paths and stairs (placement rule, Nov 17).
+const TIN_KEEP_CLEAR := 4.0
+const TIN_POI_CLEAR := 7.0  ## and this far from a place's middle (camps, shrines, halls)
 const SOLID_FILL := -6.0  ## SDF value used for blocks that are all rock
 
 var seed: int
@@ -152,6 +157,7 @@ var _grid := {}  ## Vector3i cell -> [PackedInt32Array rooms, PackedInt32Array s
 var _poi_biome := "mossy"  ## while planning: which biome new places belong to
 var _wall_noise := FastNoiseLite.new()
 var _ore_noise := FastNoiseLite.new()
+var _tin_noise := FastNoiseLite.new()
 var _dirt_noise := FastNoiseLite.new()
 var _rock_noise := FastNoiseLite.new()
 var _style_noise := FastNoiseLite.new()
@@ -291,6 +297,7 @@ var spire_spot := {}  ## where the Lantern Spire goes (F479; the same)
 var manor_spot := {}  ## where the Hearth Manor goes (F479; the same)
 var prow_hall_spot := {}  ## where the Prow Hall goes (F656 + F657; the same)
 var twin_gate_spot := {}  ## where the Twin Gate goes (F479 + F656 + F657; the same)
+var smeltery_spot := {}  ## where the Smeltery Terraces go (F845; the same)
 var reserved: Array[Dictionary] = []  ## {pos, r, h}: a circle of ground (r wide), from pos.y up to pos.y + h
 var dungeons: Array[Dictionary] = []  ## layout 14: the dungeons dug into the rock (DungeonMap.place)
 
@@ -449,6 +456,17 @@ func _reserve_tower() -> void:
 					_cols[i] = Vector4(1.0e7, 1.0e7, _cols[i].z, _cols[i].w)
 		if not twin_gate_spot.is_empty():
 			reserve(twin_gate_spot.pos, RuinTwinGate.REACH + 3.0, RuinTwinGate.WALL_TOP)
+	# The Smeltery Terraces (owner, Nov 25, F845): a circle out past the furnace and the watch turret, up past the
+	# chimney (after the Twin Gate, whose cavern it leaves alone). No spot clear of the columns: like the Twin Gate.
+	if not RuinTower.load_plan(RuinSmeltery.PLAN_PATH).is_empty():
+		smeltery_spot = RuinSmeltery.pick(self)
+		if smeltery_spot.is_empty():
+			smeltery_spot = RuinSmeltery.pick(self, true)
+			if not smeltery_spot.is_empty():
+				for i in RuinSmeltery.columns_in(self, smeltery_spot):
+					_cols[i] = Vector4(1.0e7, 1.0e7, _cols[i].z, _cols[i].w)
+		if not smeltery_spot.is_empty():
+			reserve(smeltery_spot.pos, RuinSmeltery.REACH + 3.0, RuinSmeltery.HEIGHT + 2.0)
 
 
 ## Layout 8 (owner, Nov 17): 1 or 2 smaller stone columns (5 to 11 m wide) in the plain big caverns, the same kind as
@@ -1215,6 +1233,10 @@ func _setup_noise() -> void:
 	_ore_noise.noise_type = FastNoiseLite.TYPE_SIMPLEX
 	_ore_noise.frequency = 0.11
 	_ore_noise.fractal_type = FastNoiseLite.FRACTAL_NONE
+	_tin_noise.seed = seed + 404
+	_tin_noise.noise_type = FastNoiseLite.TYPE_SIMPLEX
+	_tin_noise.frequency = 0.13
+	_tin_noise.fractal_type = FastNoiseLite.FRACTAL_NONE
 	_dirt_noise.seed = seed + 202
 	_dirt_noise.frequency = 0.05
 	# Sharp, rocky walls (feedback F19): "cellular" noise makes angular facets, like broken stone.
@@ -2353,6 +2375,8 @@ func material_at(p: Vector3i) -> int:
 		return Mat.DIRT
 	if _is_ore(p):
 		return pal.ore
+	if _is_tin(p):
+		return Mat.TIN
 	var s := _smooth_at(pf)
 	if _smooth_at(pf + Vector3.UP) > 0.0:
 		return pal.floor
@@ -2582,6 +2606,30 @@ func _is_ore(p: Vector3i) -> bool:
 	return n + depth_bonus > ORE_THRESHOLD
 
 
+## Tin (F697): only in Mossy Hollows (Zone 1), decided on the same 2 m grid as copper, never where copper is, and
+## never in or near anything built (`is_reserved`: ruins, towers, dungeons, their paths and stairs; below their floors too).
+func _is_tin(p: Vector3i) -> bool:
+	if p.x >= SLAB_X + SLAB_W * 0.5:
+		return false
+	var cell := Vector3(floori(p.x / float(ORE_CELL)), floori(p.y / float(ORE_CELL)), floori(p.z / float(ORE_CELL)))
+	var mid := cell * ORE_CELL + Vector3.ONE * (ORE_CELL * 0.5)
+	if _tin_noise.get_noise_3dv(mid) <= TIN_THRESHOLD:
+		return false
+	return not tin_kept_clear(mid)
+
+
+## Is p ground where tin may never grow? Built places, from a little under their floors to over their tops, and
+## the special places (camps, shrines, halls...).
+func tin_kept_clear(p: Vector3) -> bool:
+	# (tin is decided per 2 m block, so look a little above and below its middle too)
+	if is_reserved(p, TIN_KEEP_CLEAR) or is_reserved(p + Vector3.UP * 3.0, TIN_KEEP_CLEAR) or is_reserved(p - Vector3.UP * 2.5, TIN_KEEP_CLEAR):
+		return true
+	for q in pois:
+		if p.distance_squared_to(q.pos) < TIN_POI_CLEAR * TIN_POI_CLEAR:
+			return true
+	return false
+
+
 # ---------------------------------------------------------------- voxel generation
 
 ## Fills a Voxel Tools buffer for the block starting at `origin`.
@@ -2630,6 +2678,8 @@ func generate_block(buf: VoxelBuffer, origin: Vector3i) -> void:
 		buf.fill_f(SOLID_FILL, SDF)
 		buf.fill(pal.rock, IDX)
 		_fill_ore(buf, origin, size, pal.ore)
+		if pal.rock == Mat.STONE:
+			_fill_tin(buf, origin, size)
 		if touches_border:
 			_fill_border(buf, origin, size)
 		return
@@ -2685,6 +2735,8 @@ func generate_block(buf: VoxelBuffer, origin: Vector3i) -> void:
 					m = Mat.DIRT
 				elif _is_ore(pi):
 					m = p_ore
+				elif p_rock == Mat.STONE and _is_tin(pi):
+					m = Mat.TIN
 				elif grid[base + y + 1] > 0.0:
 					m = p_floor
 				elif grid[base + y + 2] > 0.0:
@@ -2778,6 +2830,16 @@ func _fill_ore(buf: VoxelBuffer, origin: Vector3i, size: Vector3i, ore: int) -> 
 				if _is_ore(p):
 					var mn := Vector3i(cx, cy, cz)
 					buf.fill_area(ore, mn, (mn + Vector3i.ONE * ORE_CELL).min(size), VoxelBuffer.CHANNEL_INDICES)
+
+
+func _fill_tin(buf: VoxelBuffer, origin: Vector3i, size: Vector3i) -> void:
+	for cz in range(0, size.z, ORE_CELL):
+		for cx in range(0, size.x, ORE_CELL):
+			for cy in range(0, size.y, ORE_CELL):
+				var p := origin + Vector3i(cx, cy, cz)
+				if not _is_ore(p) and _is_tin(p):
+					var mn := Vector3i(cx, cy, cz)
+					buf.fill_area(Mat.TIN, mn, (mn + Vector3i.ONE * ORE_CELL).min(size), VoxelBuffer.CHANNEL_INDICES)
 
 
 func _fill_border(buf: VoxelBuffer, origin: Vector3i, size: Vector3i) -> void:

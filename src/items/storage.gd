@@ -10,7 +10,7 @@ const REACH := 4.5
 const SIZES := {"barrel": 8, "chest_small": 16, "chest_stone": 24, "chest_copper": 36, "crate_ore": 60, "grave": Inventory.EQUIP_START, "builder": 24,
 	"rebuild": 24, "chest_loot": 16, "recipe_stand": 4}  ## (rebuild: the Rebuilding Chest at a ruin, owner Nov 19; docs/design/ruin-rebuild-plan.md)
 ## The Ore Crate only takes ores, stone types, clay and crystals (doc 8 storage table).
-const ORE_CRATE := ["stone", "dirt", "moss", "clay", "copper_ore", "silver_ore", "sporestone", "amberrock", "marble", "basalt", "brown_rock"]
+const ORE_CRATE := ["stone", "dirt", "moss", "clay", "copper_ore", "tin_ore", "silver_ore", "sporestone", "amberrock", "marble", "basalt", "brown_rock"]
 
 var auth: GameAuthority
 var boxes := {}  ## id -> {kind, inv: Inventory, node: Node3D, owner: int}
@@ -164,7 +164,7 @@ static func accepts(kind: String, item: String) -> bool:
 		return true
 	if _piece_extras().has(item):
 		return true  # fiber for rugs and banners, crystals for sconces...
-	return Pieces.FAMILIES.has(item) or item in ["stone", "dirt", "moss", "clay", "copper_ore", "copper_ingot",
+	return Pieces.FAMILIES.has(item) or item in ["stone", "dirt", "moss", "clay", "copper_ore", "tin_ore", "copper_ingot",
 		"sporestone", "amberrock", "silver_ore", "mushroom_flesh"]  # what a builder carves out of the Jungle
 
 

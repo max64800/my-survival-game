@@ -8,12 +8,14 @@ What it does, in plain words:
      without a seam, nudges its colour toward the material's usual colour, and makes a bump
      (normal) map from the painting's light and dark.
   3. Materials without a sheet get their base look mirrored 4 ways (still 4 looks).
+     Tin ore (6, F697) is the painted stone with chunky grey-silver flecks painted on top (fleck_looks).
   4. Writes assets/textures/terrain/terrain_albedo.png / terrain_normal.png: 64 slices,
      slice = material number * 4 + look. The terrain shader picks the look per spot.
 
 Usage:  python3 tools/art/bake_terrain_looks.py [preview.png]
 Needs:  Python 3 with numpy and pillow.
 """
+import math
 import os
 import sys
 
@@ -27,6 +29,8 @@ SIZE = 512
 MATS = 16
 LOOKS = 4
 SHEET_FOR = {0: "moss", 1: "stone", 2: "dirt", 5: "clay"}  # Mat number -> sheet name
+FLECKS_ON = {6: 1}  # Mat number -> the material whose looks it paints flecks on (tin on stone)
+TIN = (165, 171, 178)  # grey-silver, a little cool
 COLOUR_MATCH = 0.8  # how far each painted tile's average colour moves to the material's usual colour
 BUMP = 5.0
 
@@ -117,26 +121,69 @@ def mirrored_looks(alb, nrm):
     return out
 
 
+def fleck_looks(looks, seed):
+    """Tin (F697): each stone look with clusters of chunky flecks. Every fleck is a lopsided 5-7 sided chip (never a
+    perfect circle), a light worn rim on its upper-left, a dark gap around it. Drawn wrapped so the tile still repeats.
+    The flecks also go in the alpha channel: the shader gives them a soft metal glint."""
+    from PIL import ImageDraw
+    rng = np.random.default_rng(seed)
+    out = []
+    for k, (alb, _) in enumerate(looks):
+        mask = Image.new("L", (SIZE, SIZE), 0)
+        rim = Image.new("L", (SIZE, SIZE), 0)
+        dm, dr = ImageDraw.Draw(mask), ImageDraw.Draw(rim)
+        for _c in range(int(rng.integers(7, 10))):
+            cx, cy = rng.uniform(0, SIZE, 2)
+            for _f in range(int(rng.integers(5, 11))):
+                fx, fy = cx + rng.normal(0, 34), cy + rng.normal(0, 34)
+                r = rng.uniform(6, 17)
+                sides = int(rng.integers(5, 8))
+                turn = rng.uniform(0, 6.28)
+                pts = [(math.cos(turn + 6.283 * i / sides) * r * rng.uniform(0.6, 1.15),
+                        math.sin(turn + 6.283 * i / sides) * r * rng.uniform(0.5, 1.0)) for i in range(sides)]
+                for ox in (-SIZE, 0, SIZE):
+                    for oy in (-SIZE, 0, SIZE):
+                        dm.polygon([(fx + x + ox, fy + y + oy) for x, y in pts], fill=255)
+                        dr.polygon([(fx + x * 0.7 - r * 0.2 + ox, fy + y * 0.7 - r * 0.2 + oy) for x, y in pts], fill=255)
+        m = np.asarray(mask).astype(np.float32) / 255.0
+        hi = np.asarray(rim).astype(np.float32) / 255.0 * m
+        gap = np.clip(blur_wrap(m, 2.5) * 1.6 - m, 0, 1)  # a dark ring just outside each fleck
+        x = np.asarray(alb.convert("RGB")).astype(np.float32)
+        lum = (x @ np.array([0.299, 0.587, 0.114], dtype=np.float32))[..., None] / 120.0
+        metal = np.array(TIN, dtype=np.float32) * (0.7 + 0.3 * lum) * (0.82 + 0.3 * hi[..., None])
+        x = x * (1 - 0.55 * gap[..., None])
+        x = x * (1 - m[..., None]) + metal * m[..., None]
+        x = np.clip(x, 0, 255)
+        a = Image.fromarray(x.astype(np.uint8)).convert("RGBA")
+        a.putalpha(Image.fromarray((np.clip(m * 0.9, 0, 1) * 255).astype(np.uint8)))
+        out.append((a, normal_from(x)))
+    return out
+
+
 def main():
     base_a = Image.open(os.path.join(TEX, "base", "terrain_albedo_16.png")).convert("RGBA")
     base_n = Image.open(os.path.join(TEX, "base", "terrain_normal_16.png")).convert("RGB")
     albedo = Image.new("RGBA", (SIZE, SIZE * MATS * LOOKS))
     normal = Image.new("RGB", (SIZE, SIZE * MATS * LOOKS))
     painted = {}
+    all_looks = {}
     for m in range(MATS):
         box = (0, m * SIZE, SIZE, (m + 1) * SIZE)
         a, n = base_a.crop(box), base_n.crop(box)
         name = SHEET_FOR.get(m)
         if name and os.path.exists(os.path.join(SHEETS, name + "_sheet.png")):
             looks = painted[m] = painted_looks(name, np.asarray(a.convert("RGB")).astype(np.float32))
+        elif m in FLECKS_ON:
+            looks = painted[m] = fleck_looks(all_looks[FLECKS_ON[m]], seed=m)
         else:
             looks = mirrored_looks(a, n)
+        all_looks[m] = looks
         for k, (la, ln) in enumerate(looks):
             albedo.paste(la, (0, (m * LOOKS + k) * SIZE))
             normal.paste(ln, (0, (m * LOOKS + k) * SIZE))
     albedo.save(os.path.join(TEX, "terrain_albedo.png"), optimize=True)
     normal.save(os.path.join(TEX, "terrain_normal.png"), optimize=True)
-    print("painted:", sorted(SHEET_FOR[m] for m in painted) or "none")
+    print("painted:", sorted(SHEET_FOR.get(m, "flecks%d" % m) for m in painted) or "none")
     if len(sys.argv) > 1 and painted:  # preview for people: each tile repeated 2x2 so seams would show
         prev = Image.new("RGB", (LOOKS * 512, len(painted) * 512))
         for r, m in enumerate(sorted(painted)):

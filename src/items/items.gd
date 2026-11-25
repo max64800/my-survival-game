@@ -23,6 +23,7 @@ const DATA := {
 	"amberrock": {name = "Amberrock", color = Color(0.85, 0.65, 0.25), short = "Am"},
 	# --- ores and crystals
 	"copper_ore": {name = "Copper Ore", color = Color(0.85, 0.5, 0.25), short = "Cu"},
+	"tin_ore": {name = "Tin Ore", color = Color(0.68, 0.7, 0.72), short = "Sn"},  ## F697: copper ingot + tin = bronze
 	"silver_ore": {name = "Silver Ore", color = Color(0.78, 0.8, 0.85), short = "Ag"},
 	"crystal_blue": {name = "Blue Glow Crystal", color = Color(0.4, 0.75, 1.0), short = "Cr", kind = "fuel", fuel = 240.0},
 	"crystal_green": {name = "Green Glow Crystal", color = Color(0.4, 1.0, 0.5), short = "Cg", kind = "fuel", fuel = 240.0},

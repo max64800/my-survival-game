@@ -306,3 +306,65 @@ func test_clutter_keeps_clear_of_boxes() -> void:
 	snap.free()
 	w.free()
 	CaveMaker.use_layout(was)
+
+
+## Placement rule (owner, Nov 17) for tin (F697): no tin ore in or under anything built (ruins, towers, the Outpost,
+## dungeons and their doorways, paths and stairs) or at a place, on several seeds. Checks the rock the game really
+## makes (generate_block), not only the rule.
+func test_tin_keeps_out_of_built_places() -> void:
+	var was := CaveMaker.layout
+	CaveMaker.use_layout(CaveMaker.LAYOUT_LATEST)
+	for sd in [42, 7, 1234]:
+		var m := CaveMaker.new(sd)
+		var rng := RandomNumberGenerator.new()
+		rng.seed = sd
+		var bad := 0
+		var looked := 0
+		for z in m.reserved:
+			var c: Vector3 = z.pos
+			var r: float = float(z.r) + 1.0
+			for i in 600:
+				var p := c + Vector3(rng.randf_range(-r, r), rng.randf_range(-3.0, float(z.h) + 5.0), rng.randf_range(-r, r))
+				if Vector2(p.x - c.x, p.z - c.z).length() > r:
+					continue
+				looked += 1
+				if m._is_tin(Vector3i(p.floor())) or m.material_at(Vector3i(p.floor())) == Mat.TIN:
+					bad += 1
+		for d in m.dungeons:
+			for i in 600:
+				var lo: Vector3 = d.wlo
+				var hi: Vector3 = d.whi
+				var p := Vector3(rng.randf_range(lo.x, hi.x), rng.randf_range(lo.y, hi.y), rng.randf_range(lo.z, hi.z))
+				if DungeonMap.covers(d, p):
+					looked += 1
+					if m._is_tin(Vector3i(p.floor())):
+						bad += 1
+		for q in m.pois:
+			for i in 60:
+				var p: Vector3 = q.pos + Vector3(rng.randf_range(-5, 5), rng.randf_range(-3, 5), rng.randf_range(-5, 5))
+				if p.distance_to(q.pos) > 5.5:
+					continue
+				looked += 1
+				if m._is_tin(Vector3i(p.floor())):
+					bad += 1
+		check(looked > 1000, "seed %d: looked at plenty of built ground (%d)" % [sd, looked])
+		check_eq(bad, 0, "seed %d: no tin in built places" % sd)
+		# The real rock around each built place, as the game builds it.
+		for z in m.reserved:
+			var tp: Vector3 = z.pos
+			var buf := VoxelBuffer.new()
+			buf.create(16, 16, 16)
+			buf.set_channel_depth(VoxelBuffer.CHANNEL_INDICES, VoxelBuffer.DEPTH_8_BIT)
+			var origin := Vector3i(floori(tp.x / 16) * 16, floori((tp.y - 3.0) / 16) * 16, floori(tp.z / 16) * 16)
+			m.generate_block(buf, origin)
+			var tin := 0
+			for x in 16:
+				for y in 16:
+					for zz in 16:
+						var p := Vector3(origin + Vector3i(x, y, zz))
+						if buf.get_voxel(x, y, zz, VoxelBuffer.CHANNEL_INDICES) == Mat.TIN and m.is_reserved(p):
+							tin += 1
+							if tin == 1:
+								print("  tin at %s, sdf %.2f, is_tin %s, material %d" % [str(p), m.sdf_at(p), str(m._is_tin(Vector3i(p))), m.material_at(Vector3i(p))])
+			check_eq(tin, 0, "seed %d: no tin in the ground blocks at %s" % [sd, str(tp)])
+	CaveMaker.use_layout(was)

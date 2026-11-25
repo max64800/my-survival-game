@@ -1,6 +1,6 @@
 shader_type spatial;
 // Paints the dig-anywhere rock. Each voxel has a material number (see mat.gd):
-// 0 moss, 1 stone, 2 dirt, 3 copper ore, 4 border rock, 5 clay,
+// 0 moss, 1 stone, 2 dirt, 3 copper ore, 4 border rock, 5 clay, 6 tin ore,
 // 8 mycelium, 9 silver ore, 11 amberrock, 13 sporestone, 14 old dwarf stone (a dungeon's walls), 15 the world's edge.
 //
 // The look: hand-painted textures (tools/art/bake_terrain_looks.py), 4 slices (looks)
@@ -26,7 +26,9 @@ const vec3 GLOW[16] = vec3[16](
 	vec3(0.0), vec3(0.0), vec3(0.0),
 	vec3(0.95, 0.42, 0.12) * 0.55,  // 3 copper
 	vec3(0.40, 0.20, 0.75) * 1.2,   // 4 border rock
-	vec3(0.0), vec3(0.0), vec3(0.0), vec3(0.0),
+	vec3(0.0),
+	vec3(0.80, 0.84, 0.88) * 0.35,  // 6 tin (a soft grey glint, dimmer than copper)
+	vec3(0.0), vec3(0.0),
 	vec3(0.75, 0.85, 1.0) * 0.6,    // 9 silver
 	vec3(0.0), vec3(0.0), vec3(0.0),
 	vec3(0.65, 0.30, 0.95) * 0.6,   // 13 sporestone specks
@@ -35,7 +37,7 @@ const vec3 GLOW[16] = vec3[16](
 const float ROUGH[16] = float[16](0.95, 0.82, 0.93, 0.8, 0.75, 0.68, 0.8, 0.8,
 	0.92, 0.8, 0.8, 0.7, 0.8, 0.84, 0.8, 0.85);
 // Ores: the veins are metal.
-const float METAL[16] = float[16](0.0, 0.0, 0.0, 0.85, 0.0, 0.0, 0.0, 0.0,
+const float METAL[16] = float[16](0.0, 0.0, 0.0, 0.85, 0.0, 0.0, 0.8, 0.0,
 	0.0, 0.9, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
 
 varying vec4 v_indices;

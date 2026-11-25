@@ -209,6 +209,7 @@ const GATHER := {
 	"clay": "dig the reddish clay patches",
 	"moss": "dig the green mossy ground",
 	"copper_ore": "mine copper in the Copper Deeps (far, low caverns) with a Fang Pickaxe",
+	"tin_ore": "mine the grey-silver specks in Mossy Hollows' stone walls with a Copper Pickaxe",
 	"bat_fang": "hunt cave bats",
 	"glow_gland": "hunt rock beetles",
 	"crystal_blue": "mine the glowing blue crystals with a pickaxe",
@@ -279,6 +280,7 @@ const RUIN_COPPER := {
 	manor = ["shield_copper", "axe_copper"],
 	prow_hall = ["sword_copper", "mace_copper"],
 	twin_gate = ["axe_2h_copper", "mace_2h_copper"],
+	smeltery = [],
 }
 
 

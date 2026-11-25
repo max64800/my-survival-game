@@ -104,6 +104,8 @@ Signposts are drawn from the world seed, so every player sees the same ones. Not
    ✅ Done Nov 24: `Recipes.RUIN_COPPER` (ruin name -> pages); `RuinTower.main_chest` = the chest with the most recipe
    pages. The Old Kiln isn't in the game yet, so the Outpost holds the Copper Greaves page until it is (move it then).
 3. **Tin ore.** New wall material + drop + vein look + placement + test (never in built places). Needs Copper Pickaxe.
+   ✅ Done Nov 25: `Mat.TIN` (6), `CaveMaker._is_tin` (Mossy only, a little rare, 4 m clear of `reserved`,
+   7 m from places), fleck look in `bake_terrain_looks.py`, item `tin_ore`; tests in test_cave_maker + test_keep_clear.
 4. **Bronze ingot + 13 bronze items** (recoloured copper models, ~1.3× stats), bronze recipes at the anvil (locked).
 5. **Switch the dungeon stands to bronze** + Bronze Pickaxe page in Mossgate's big chest. Copper recipes now only from ruins.
 6. **Skull signposts** (new model, art round, owner OK), with the recipe picture and the "learned" tick.

@@ -57,8 +57,8 @@ static func _mesh_for(id: String) -> Mesh:
 	var m := BoxMesh.new()
 	m.size = Vector3(0.26, 0.2, 0.22)
 	var glow := 0.0
-	if id in ["crystal_blue", "glowcap", "copper_ore"]:
-		glow = 0.8 if id != "copper_ore" else 0.25
+	if id in ["crystal_blue", "glowcap", "copper_ore", "tin_ore"]:
+		glow = 0.25 if id.ends_with("_ore") else 0.8
 	m.material = Look.mat(Items.color(id), "", glow, 0.03)  # a lumpy little chunk
 	_mesh_cache[id] = m
 	return m

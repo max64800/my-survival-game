@@ -95,7 +95,7 @@ func test_two_biomes_joined_by_gates() -> void:
 		var floor_y: float = p.y - 1.0
 		check(c.sdf_at(Vector3(p.x - 4.0, floor_y + 0.5, p.z)) > 0.0, "open tunnel on the Mossy side of the plug")
 		check(c.sdf_at(Vector3(p.x + 4.0, floor_y + 0.5, p.z)) > 0.0, "open tunnel on the Jungle side of the plug")
-	check_eq(c.material_at(Vector3i(c.rooms[0].center.round()) + Vector3i(0, -40, 0)) in [Mat.STONE, Mat.COPPER, Mat.DIRT, Mat.CLAY, Mat.MOSS], true, "Mossy rock under the start")
+	check_eq(c.material_at(Vector3i(c.rooms[0].center.round()) + Vector3i(0, -40, 0)) in [Mat.STONE, Mat.COPPER, Mat.TIN, Mat.DIRT, Mat.CLAY, Mat.MOSS], true, "Mossy rock under the start")
 
 
 ## F115: Mossy copper only in the Copper Deeps (far from the start, low down), and rich there.
@@ -252,3 +252,41 @@ func test_rock_is_chunky_blocks() -> void:
 	CaveMaker.rock_style = "blocks"
 	check_near(c.sdf_at(Vector3(g0)), CaveMaker.BLEND_SAFE * c.block_value(c._smooth_at(Vector3(g0)), g0, c._smooth_at(Vector3(g0 + Vector3i.UP))), 0.0001, "near a wall, sdf_at matches the blocks at grid points")
 	CaveMaker.rock_style = style
+
+
+## F697: tin ore = grey-silver specks in ordinary Mossy walls all over Zone 1 (not one special area), a little rare;
+## none in the Jungle; never where copper is.
+func test_tin_in_mossy_walls() -> void:
+	for sd in [8, 42]:
+		var c := CaveMaker.new(sd)
+		var rng := RandomNumberGenerator.new()
+		rng.seed = sd
+		var tin := 0
+		var regions := {}
+		for i in 6000:
+			var p := Vector3i(rng.randi_range(-190, -10), rng.randi_range(-60, 10), rng.randi_range(-190, 190))
+			if c._is_tin(p):
+				tin += 1
+				regions[Vector2i(p.x / 60, p.z / 60)] = true
+				check(not c._is_ore(p) or c.material_at(p) != Mat.TIN, "seed %d: copper wins where both are" % sd)
+		var frac := tin / 6000.0
+		check(frac > 0.002 and frac < 0.03, "seed %d: tin is a little rare (%.4f)" % [sd, frac])
+		check(regions.size() >= 4, "seed %d: tin all around, not in one spot (%d areas)" % [sd, regions.size()])
+		var jungle := 0
+		for i in 2000:
+			var p := Vector3i(int(CaveMaker.SLAB_X + CaveMaker.SLAB_W) + rng.randi_range(1, 180), rng.randi_range(-60, 10), rng.randi_range(-190, 190))
+			if c._is_tin(p):
+				jungle += 1
+		check_eq(jungle, 0, "seed %d: no tin in the Fungal Jungle" % sd)
+
+
+## F697: tin drops Tin Ore and needs a Copper Pickaxe (the Fang Pickaxe isn't enough).
+func test_tin_needs_the_copper_pickaxe() -> void:
+	check_eq(Mat.DROP_ITEM[Mat.TIN], "tin_ore", "tin drops Tin Ore")
+	check(Mat.is_ore(Mat.TIN), "tin counts as ore (always gives one, Ore Smasher)")
+	check(GameAuthority.ore_too_hard(Mat.TIN, "pickaxe_stone").contains("Copper Pickaxe"), "stone bounces off and says what you need")
+	check(GameAuthority.ore_too_hard(Mat.TIN, "pickaxe_fang") != "", "so does the Fang Pickaxe")
+	check(GameAuthority.ore_too_hard(Mat.TIN, "") != "", "and bare hands")
+	check_eq(GameAuthority.ore_too_hard(Mat.TIN, "pickaxe_copper"), "", "the Copper Pickaxe mines it")
+	check(Mat.hits_needed(Mat.TIN, 13, 1) > 0, "and it takes a few swings")
+	check(Items.icon("tin_ore") != null, "Tin Ore has its picture")
