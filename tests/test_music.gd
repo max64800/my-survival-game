@@ -35,3 +35,24 @@ func test_music_volume_is_remembered() -> void:
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(TEST_PATH))
 	SoundSettings.music_volume = old
 	SoundSettings.apply()
+
+
+func test_music_blends_and_waits() -> void:
+	# F879 (owner, Nov 25): tracks fade into each other, and a 5 s trip into a cave doesn't swap the music.
+	check(Music.hold_time("explore", "cave") > 5.0, "a quick cave visit keeps the outside music")
+	check(Music.hold_time("cave", "explore") > 5.0, "a quick step outside keeps the cave music")
+	check_eq(Music.hold_time("explore", "combat"), 0.0, "a fight starts its music at once")
+	check_eq(Music.hold_time("cave", "boss"), 0.0, "so does a boss")
+	check(Music.hold_time("combat", "explore") < Music.hold_time("explore", "cave"), "after a fight the calm comes back sooner")
+	check_eq(Music.hold_time("", "explore"), 0.0, "the first music plays at once")
+	# Halfway through the blend both tracks are still clearly heard (the old fade had the new one at -40 dB).
+	check(Music.fade_db(0.5) > -7.0, "half way: both well heard (%.1f dB)" % Music.fade_db(0.5))
+	check_eq(Music.fade_db(0.0), -80.0, "silent at the end")
+	# Run it for a bit (no game: it's "explore"): one track starts, fades up, and nothing breaks.
+	var m := Music.new()
+	tree.root.add_child(m)
+	for i in 20:
+		m._process(0.5)
+	check_eq(m.state, "explore", "outside music plays")
+	check(m._cur != null and m._cur.volume_db > -1.0, "faded all the way up")
+	m.queue_free()

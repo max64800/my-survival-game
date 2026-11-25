@@ -17,7 +17,12 @@ const STINGERS := ["ruin_small", "ruin_medium", "ruin_large", "boss_defeated", "
 const RUIN_SIZE := {"outpost": "small", "tower": "small", "manor": "large", "spire": "large"}
 const BOSS_RANGE := 40.0
 const COMBAT_RANGE := 18.0
-const FADE := 3.0  ## seconds to cross from one track to the next
+const FADE := 4.0  ## seconds to cross from one track to the next (F879: they blend, one fades out as the next fades in)
+## F879 (owner, Nov 25: "popping into a cave for 5 s and back home shouldn't swap the music"): how long the new
+## mood must last before the music changes. A fight or a boss starts its music at once; after a fight the calm music
+## waits a little; between outside and a cave it waits longer.
+const HOLD_CALM := 15.0
+const HOLD_AFTER_FIGHT := 6.0
 const DUCK_DB := -8.0  ## the music dips this much while a stinger plays
 const STINGER_DB := {"recipe_cook": -8.0}  ## the cooking harp is meant to be quiet
 
@@ -29,8 +34,11 @@ var _cur: AudioStreamPlayer
 var _stinger := AudioStreamPlayer.new()
 var _last := {}  ## state -> last track, so one never repeats right away
 var _timer := 0.0
-var _gap := 0.0  ## silence between calm tracks
 var _duck := 0.0
+var _duck_db := 0.0
+var _w := {}  ## player -> how loud it is now (0..1, plain loudness, so the cross sounds even)
+var _want := ""  ## the mood right now (the music follows once it has lasted long enough)
+var _held := 0.0  ## how long _want has lasted
 
 
 static func stream(name: String) -> AudioStream:
@@ -45,6 +53,20 @@ static func state_for(in_cave: bool, boss_near: bool, fighting: bool) -> String:
 	if fighting:
 		return "combat"
 	return "cave" if in_cave else "explore"
+
+
+## How long `to` must last before the music leaves `from` for it.
+static func hold_time(from: String, to: String) -> float:
+	if from == "" or to in ["combat", "boss"]:
+		return 0.0
+	if from in ["combat", "boss"]:
+		return HOLD_AFTER_FIGHT
+	return HOLD_CALM
+
+
+## Loudness (0..1) to decibels for the player (silent at 0).
+static func fade_db(w: float) -> float:
+	return linear_to_db(w) if w > 0.001 else -80.0
 
 
 static func ruin_stinger(ruin_name: String) -> String:
@@ -74,26 +96,34 @@ func play_stinger(name: String) -> void:
 
 func _process(delta: float) -> void:
 	_duck = maxf(_duck - delta, 0.0)
-	var duck_db := DUCK_DB if _duck > 0.0 else 0.0
-	var other := _b if _cur == _a else _a
-	if _cur != null:
-		_cur.volume_db = move_toward(_cur.volume_db, duck_db, 40.0 / FADE * delta)
-	if other.playing:
-		other.volume_db = move_toward(other.volume_db, -80.0, 40.0 / FADE * delta)
-		if other.volume_db <= -79.0:
-			other.stop()
+	_duck_db = move_toward(_duck_db, DUCK_DB if _duck > 0.0 else 0.0, 16.0 * delta)
+	for p: AudioStreamPlayer in [_a, _b]:
+		var w: float = move_toward(float(_w.get(p, 0.0)), 1.0 if p == _cur else 0.0, delta / FADE)
+		_w[p] = w
+		p.volume_db = fade_db(w) + _duck_db
+		if p != _cur and w <= 0.0 and p.playing:
+			p.stop()
 	_timer -= delta
 	if _timer > 0.0:
 		return
 	_timer = 0.5
 	var now := _look()
-	var ended := _cur == null or not _cur.playing
-	if now != state or ended:
-		if now == state and state == "explore":  # a calm track ended: breathe a little before the next
-			_gap -= 0.5
-			if _gap > 0.0:
-				return
+	if now != _want:
+		_want = now
+		_held = 0.0
+	else:
+		_held += 0.5
+	if now != state and _held >= hold_time(state, now):
 		_play(now)
+	elif _cur == null or not _cur.playing or _left(_cur) < FADE:
+		_play(state)  # the track is ending: the next one fades in over its last seconds
+
+
+## Seconds left in the track `p` is playing.
+func _left(p: AudioStreamPlayer) -> float:
+	if p.stream == null:
+		return 0.0
+	return p.stream.get_length() - p.get_playback_position()
 
 
 ## What the local player is doing right now.
@@ -142,7 +172,7 @@ func _play(new_state: String) -> void:
 		return
 	var next := _b if _cur == _a else _a
 	next.stream = s
+	_w[next] = 0.0
 	next.volume_db = -80.0
 	next.play()
 	_cur = next
-	_gap = randf_range(10.0, 30.0)  # (only used by calm tracks)
