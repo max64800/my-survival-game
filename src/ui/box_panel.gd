@@ -112,6 +112,7 @@ func refresh() -> void:
 				b.add_theme_stylebox_override(look, UiKit.style("slot", 5))
 			b.add_theme_stylebox_override("hover", UiKit.style("slot_selected", 5))
 			b.pressed.connect(func(): GameAuthority.instance.storage.ask_transfer(box_id, true, i))
+			b.set_drag_forwarding(_drag.bind(i), _can_drop.bind(i), _drop.bind(i))  # F886: drag to a chosen slot
 			_grid.add_child(b)
 	for i in inv.slots.size():
 		var b: Button = _grid.get_child(i)
@@ -202,3 +203,20 @@ static func _need_row(parent: Control, need: Dictionary) -> void:
 func _process(_d: float) -> void:
 	if visible:
 		refresh()
+
+
+## F886: drag a stack out of the chest (onto a bag slot or another chest slot), or from your bag onto a chest slot.
+func _drag(_at: Vector2, i: int) -> Variant:
+	var s: Dictionary = GameAuthority.instance.storage.get_box(box_id).inv.get_slot(i)
+	if s.is_empty():
+		return null
+	set_drag_preview(Hud.drag_picture(s.id))
+	return {slot_drag = true, from_box = true, i = i}
+
+
+func _can_drop(_at: Vector2, data: Variant, i: int) -> bool:
+	return data is Dictionary and data.get("slot_drag", false) and not (data.from_box and data.i == i)
+
+
+func _drop(_at: Vector2, data: Variant, i: int) -> void:
+	GameAuthority.instance.storage.ask_place(box_id, data.from_box, data.i, true, i)

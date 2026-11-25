@@ -42,6 +42,7 @@ var _pause: Control
 var _loading: Control
 var _loading_bar: ProgressBar
 var _swap_from := -1
+var _box_click := -1  ## the bag slot pressed while a chest is open (a click = into the chest, F886)
 var _hover_slot := -1  ## the bag slot under the mouse (for "press 1-9 to put it on the hotbar", F155)
 const VITAL_BAR_H := [38.0, 30.0]  ## health and stamina bar heights, frame included (F247)
 const STUN_BAR_H := 20.0  ## your stun meter's bar (chat 15)
@@ -508,6 +509,7 @@ func _make_slot(index: int, key: String) -> Control:
 	panel.custom_minimum_size = Vector2(SLOT_SIZE, SLOT_SIZE)
 	panel.name = "Slot%d" % index
 	panel.gui_input.connect(_on_slot_input.bind(index))
+	panel.set_drag_forwarding(_slot_drag.bind(index), _slot_can_drop.bind(index), _slot_drop.bind(index))  # F886
 	panel.mouse_entered.connect(func(): _hover_slot = index)
 	panel.mouse_exited.connect(func(): if _hover_slot == index: _hover_slot = -1)
 	_slot_panels[index] = panel
@@ -784,6 +786,13 @@ static func wear_color(f: float) -> Color:
 
 
 func _on_slot_input(event: InputEvent, index: int) -> void:
+	if event is InputEventMouseButton and not event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+		# A chest is open: a click (let go on the same slot, no drag) puts the stack in the chest (F886: on the
+		# press it went at once, so you couldn't drag it to a slot of your choice).
+		if _box_click == index and box_panel.visible and _bag_panel.visible:
+			GameAuthority.instance.storage.ask_transfer(box_panel.box_id, false, index)
+		_box_click = -1
+		return
 	if not (event is InputEventMouseButton and event.pressed):
 		return
 	if not _bag_panel.visible:
@@ -827,7 +836,7 @@ func _on_slot_input(event: InputEvent, index: int) -> void:
 			_refresh_slots()
 			return
 	if box_panel.visible:
-		GameAuthority.instance.storage.ask_transfer(box_panel.box_id, false, index)
+		_box_click = index  # (it goes into the chest when you let go, unless you drag it somewhere)
 		return
 	if _swap_from < 0:
 		_swap_from = index
@@ -838,6 +847,51 @@ func _on_slot_input(event: InputEvent, index: int) -> void:
 		GameAuthority.instance.ask_swap(_swap_from, index)
 		_swap_from = -1
 	_refresh_slots()
+
+
+## F886 (owner, Nov 25): drag a stack (hold the left button, let go over another slot): around your bag, into a
+## chosen chest slot, or out of the chest to a chosen bag slot. A plain click still does what it did.
+func _slot_drag(_at: Vector2, index: int) -> Variant:
+	if not _bag_panel.visible or Input.is_key_pressed(KEY_SHIFT):
+		return null
+	var s := GameAuthority.instance.get_player(peer_id).inventory.get_slot(index)
+	if s.is_empty():
+		return null
+	_box_click = -1
+	(_slot_panels[index] as Control).set_drag_preview(drag_picture(s.id))
+	return {slot_drag = true, from_box = false, i = index}
+
+
+func _slot_can_drop(_at: Vector2, data: Variant, index: int) -> bool:
+	return data is Dictionary and data.get("slot_drag", false) and (data.from_box or data.i != index)
+
+
+func _slot_drop(_at: Vector2, data: Variant, index: int) -> void:
+	var auth := GameAuthority.instance
+	_swap_from = -1
+	if data.from_box:
+		auth.storage.ask_place(box_panel.box_id, true, data.i, false, index)
+	elif Inventory.is_equip_index(data.i) or Inventory.is_equip_index(index):
+		auth.ask_equip_move(data.i, index)
+	elif auth.get_player(peer_id).inventory.swap_allowed(data.i, index):
+		auth.ask_swap(data.i, index)
+	else:
+		show_toast("That doesn't go in that slot (or the backpack isn't empty).", 2.5)
+	_refresh_slots()
+
+
+## The item's picture under the mouse while you drag it.
+static func drag_picture(id: String) -> Control:
+	var holder := Control.new()
+	var pic := TextureRect.new()
+	pic.texture = Items.icon(id)
+	pic.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	pic.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	pic.size = Vector2(56, 56)
+	pic.position = Vector2(-28, -28)
+	pic.modulate.a = 0.85
+	holder.add_child(pic)
+	return holder
 
 
 static var _outlines := {}

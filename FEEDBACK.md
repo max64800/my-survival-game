@@ -190,9 +190,8 @@ Fixed items get ~~crossed out~~, never deleted, so we can see the whole history.
 - [ ] **F882. Repair station: the gear names need a better font, and stone gear says "needs station level 2" (only copper gear should). Make clear what the level is for.** *From: you (PC, Nov 25, play). Said: 1×*
 - [ ] **F883. Refilling the lantern sounds like a gulp of water. It needs an oil/lantern sound.** *From: you (PC, Nov 25, play). Said: 1×*
 - [ ] **F885. Every resource you pick up should pop up on the left: its picture and the amount.** *From: you (PC, Nov 25, play). Said: 1×*
-- [ ] **F886. With a chest open, you can't left-click and drag an item to another slot (right-click to the chest works).** *From: you (PC, Nov 25, play). Said: 1×* 🛠 in progress (Nov 25 play notes chat, Nov 25)
 - [ ] **F887. Note for later: a recycling bench.** *From: you (PC, Nov 25, play). Said: 1×*
-- [ ] **F888. Crafting should take items from nearby chests and barrels, not only from your bag ("a big thing in crafting games").** *From: you (PC, Nov 25, play). Said: 1×*
+- [ ] **F888. Crafting should take items from nearby chests and barrels, not only from your bag ("a big thing in crafting games").** *From: you (PC, Nov 25, play). Said: 1×* 🛠 in progress (Nov 25 play notes chat, Nov 25)
 - [ ] **F889. A chest button "store the same ones": puts from your bag only the kinds already in that chest (e.g. mushrooms into the mushroom barrel).** *From: you (PC, Nov 25, play). Said: 1×*
 - [ ] **F890. The shovel should raise the ground too, not only flatten it.** *From: you (PC, Nov 25, play). Said: 1×*
 - [ ] **F891. Pebbles stay floating after you level the ground with the shovel.** *From: you (PC, Nov 25, play). Said: 1×*

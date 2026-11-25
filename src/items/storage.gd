@@ -45,6 +45,22 @@ func ask_transfer(box_id: int, from_box: bool, slot: int) -> void:
 		_rpc_transfer.rpc_id(1, box_id, from_box, slot)
 
 
+## F886 (owner, Nov 25: "with a chest open, I can't left-click and drag to another slot"): drag a stack onto a
+## chosen slot, in the chest or in your bag (bag -> chest, chest -> bag, chest -> chest). An empty slot takes it,
+## the same kind tops up, anything else swaps places.
+func ask_place(box_id: int, from_box: bool, from_i: int, to_box: bool, to_i: int) -> void:
+	if auth.is_host():
+		request_place(auth.local_peer_id(), box_id, from_box, from_i, to_box, to_i)
+	else:
+		_rpc_place.rpc_id(1, box_id, from_box, from_i, to_box, to_i)
+
+
+@rpc("any_peer", "reliable")
+func _rpc_place(box_id: int, from_box: bool, from_i: int, to_box: bool, to_i: int) -> void:
+	if auth.is_host():
+		request_place(multiplayer.get_remote_sender_id(), box_id, from_box, from_i, to_box, to_i)
+
+
 ## The build hammer's E on a chest or barrel: pick it up to put it somewhere else (owner, Nov 17). Only when it's
 ## empty (its things would have nowhere to go), never a Builder's Chest or a grave.
 func ask_pick_up(box_id: int) -> void:
@@ -117,6 +133,53 @@ func request_transfer(peer_id: int, box_id: int, from_box: bool, slot: int) -> b
 		return false
 	_changed(box_id)
 	return true
+
+
+func request_place(peer_id: int, box_id: int, from_box: bool, from_i: int, to_box: bool, to_i: int) -> bool:
+	var ps := auth.get_player(peer_id)
+	var box := get_box(box_id)
+	if ps == null or box.is_empty() or _far(ps, box):
+		return false
+	var src: Inventory = box.inv if from_box else ps.inventory
+	var dst: Inventory = box.inv if to_box else ps.inventory
+	if from_i < 0 or from_i >= src.slots.size() or to_i < 0 or to_i >= dst.slots.size() or (src == dst and from_i == to_i):
+		return false
+	var a: Dictionary = src.slots[from_i]
+	var b: Dictionary = dst.slots[to_i]
+	if a.is_empty():
+		return false
+	if not _fits(box.kind, dst, to_box, to_i, a) or not _fits(box.kind, src, from_box, from_i, b):
+		return false
+	if src == ps.inventory and Inventory.is_equip_index(from_i) or dst == ps.inventory and Inventory.is_equip_index(to_i):
+		return false  # (gear slots: dress from the bag, not straight from a chest)
+	if to_box:
+		a.erase("worn")  # put in a box = taken off (F825)
+	if from_box:
+		b.erase("worn")
+	if not b.is_empty() and b.id == a.id and a.size() <= 2 and b.size() <= 2:
+		var room := Items.stack_size(a.id) - int(b.count)
+		var n := mini(room, int(a.count))
+		if n <= 0:
+			return false
+		b.count = int(b.count) + n
+		a.count = int(a.count) - n
+		if a.count <= 0:
+			src.slots[from_i] = {}
+	else:
+		src.slots[from_i] = b
+		dst.slots[to_i] = a
+	src.changed.emit()
+	if dst != src:
+		dst.changed.emit()
+	_changed(box_id)
+	return true
+
+
+## Can this slot take the item? (A box only what it accepts; your bag's own rules for its slots.)
+static func _fits(kind: String, inv: Inventory, is_box: bool, i: int, item: Dictionary) -> bool:
+	if item.is_empty():
+		return true
+	return accepts(kind, item.id) if is_box else inv.fits(i, item)
 
 
 ## Moves one slot into another bag. Slots with their own data (a half-empty waterskin's sips)

@@ -60,6 +60,34 @@ func test_chest_place_fill_and_empty() -> void:
 	_teardown()
 
 
+## F886 (owner, Nov 25): drag a stack onto the slot you choose, in the chest or in your bag.
+func test_drag_to_a_chosen_slot() -> void:
+	await _setup()
+	var st := auth.storage
+	var id := st.create_box("chest_small", player.global_position + Vector3(1.5, 0, 0), 0.0)
+	var bag := ps.inventory
+	var b0 := Inventory.HOTBAR_SIZE + 3  # a bag slot
+	bag.slots[b0] = {id = "stone", count = 20}
+	check(st.request_place(1, id, false, b0, true, 5), "bag -> chest slot 5")
+	check_eq(st.get_box(id).inv.slots[5].get("count", 0), 20, "the stones are in slot 5")
+	check(bag.slots[b0].is_empty(), "gone from the bag")
+	check(st.request_place(1, id, true, 5, true, 9), "chest slot 5 -> chest slot 9")
+	check(st.get_box(id).inv.slots[5].is_empty() and st.get_box(id).inv.slots[9].get("id", "") == "stone", "moved inside the chest")
+	bag.slots[b0] = {id = "stone", count = 10}
+	check(st.request_place(1, id, false, b0, true, 9), "the same kind tops up")
+	check_eq(st.get_box(id).inv.slots[9].get("count", 0), 30, "30 stones in slot 9")
+	bag.slots[b0 + 1] = {id = "copper_ore", count = 4}
+	check(st.request_place(1, id, true, 9, false, b0 + 1), "chest -> a bag slot with something else: they swap")
+	check_eq(bag.slots[b0 + 1].get("id", ""), "stone", "stones in that bag slot")
+	check_eq(st.get_box(id).inv.slots[9].get("id", ""), "copper_ore", "the ore went into the chest")
+	var bid := st.create_box("builder", player.global_position + Vector3(-1.5, 0, 0), 0.0)
+	bag.slots[b0 + 2] = {id = "dish_jungle_pie", count = 1}
+	check(not st.request_place(1, bid, false, b0 + 2, true, 0), "a Builder's Chest still won't take a pie")
+	var far := st.create_box("chest_small", player.global_position + Vector3(20, 0, 0), 0.0)
+	check(not st.request_place(1, far, false, b0 + 2, true, 0), "not from 20 m away")
+	_teardown()
+
+
 func test_too_far_from_chest() -> void:
 	await _setup()
 	var id := auth.storage.create_box("chest_small", player.global_position + Vector3(20, 0, 0), 0.0)
@@ -132,6 +160,59 @@ func test_box_menu_closes_when_emptied() -> void:
 	_teardown()
 
 
+## F886: a real mouse drag in the chest menu moves the stack to the slot you let go on; a plain click still takes it.
+func test_drag_in_the_chest_menu() -> void:
+	await _setup()
+	var spot := world.maker.find_floor(player.global_position.x + 1.5, player.global_position.z, player.global_position.y + 1.0)
+	var id := auth.storage.create_box("chest_small", spot, 0.0)
+	auth.storage.put(id, "stone", 5)
+	var was_size := tree.root.size
+	tree.root.size = Vector2i(1280, 800)  # (the test window is tiny: the slots must be inside it)
+	var panel := BoxPanel.new()
+	tree.root.add_child(panel)
+	panel.open(id)
+	panel.refresh()
+	await tree.process_frame
+	await tree.process_frame
+	var g: GridContainer = panel._grid
+	var from: Vector2 = (g.get_child(0) as Control).get_global_rect().get_center()
+	var to: Vector2 = (g.get_child(3) as Control).get_global_rect().get_center()
+	await _mouse(MOUSE_BUTTON_LEFT, true, from)
+	for k in 6:
+		await _move(from.lerp(to, (k + 1) / 6.0))
+	await _mouse(MOUSE_BUTTON_LEFT, false, to)
+	var inv: Inventory = auth.storage.get_box(id).inv
+	check(inv.slots[0].is_empty() and inv.slots[3].get("count", 0) == 5, "dragged from slot 1 to slot 4 (%s)" % str(inv.slots.slice(0, 4)))
+	check_eq(ps.inventory.count_of("stone"), 0, "a drag doesn't also take it into the bag")
+	await _mouse(MOUSE_BUTTON_LEFT, true, to)
+	await _mouse(MOUSE_BUTTON_LEFT, false, to)
+	check_eq(ps.inventory.count_of("stone"), 5, "a click takes it")
+	panel.queue_free()
+	tree.root.size = was_size
+	_teardown()
+
+
+func _mouse(button: MouseButton, down: bool, at: Vector2) -> void:
+	var e := InputEventMouseButton.new()
+	e.button_index = button
+	e.pressed = down
+	e.position = at
+	e.global_position = at
+	e.button_mask = MOUSE_BUTTON_MASK_LEFT if down else 0
+	tree.root.push_input(e)
+	await tree.process_frame
+
+
+func _move(at: Vector2) -> void:
+	var e := InputEventMouseMotion.new()
+	e.position = at
+	e.global_position = at
+	e.button_mask = MOUSE_BUTTON_MASK_LEFT
+	e.relative = Vector2(8, 0)
+	tree.root.push_input(e)
+	await tree.process_frame
+
+
 ## F345 (owner): the chest's lid swings open on its hinge when you open it, and shuts when the menu closes.
 ## A box without a lid (the stone chest) still opens fine.
 func test_chest_lid_swings_open_and_shut() -> void:
@@ -177,6 +258,27 @@ func test_chest_lid_swings_open_and_shut() -> void:
 	var sid := auth.storage.create_box("crate_ore", spot + Vector3(2, 0, 0), 0.0)
 	ChestOpen.open(auth.storage.get_box(sid).node)  # (an ore crate has no lid: just a pop, no error)
 	_teardown()
+
+
+## F8 item menu tabs (owner, Nov 24, F842).
+func test_dev_item_menu_tabs() -> void:
+	var untabbed := []
+	for id in Items.ids():
+		var t := DevItems.tabs_of(id)
+		if t.size() < 2 or not t.has("All"):
+			untabbed.append(id)
+	check(untabbed.is_empty(), "every item is in a tab (%s)" % str(untabbed))
+	check(DevItems.all_ids("", "Food").has("root_tuber"), "a food is under Food")
+	check(DevItems.all_ids("", "Drinks").has("water_bucket"), "a drink is under Drinks")
+	check(not DevItems.all_ids("", "Food").has("water_bucket"), "a drink is not under Food")
+	check(DevItems.all_ids("", "Equipment").has("pickaxe_stone"), "a pickaxe is under Equipment")
+	check(DevItems.all_ids("", "Farmable").has("tuber_seed"), "a seed is under Farmable")
+	check(DevItems.all_ids("", "Craftable").has("pickaxe_stone"), "a made thing is under Craftable")
+	check(DevItems.all_ids("tuber", "Food").has("root_tuber"), "search finds it inside its tab")
+	check(not DevItems.all_ids("tuber", "Drinks").has("root_tuber"), "and not inside another tab")
+	check(DevItems.all_ids("tuber").has("root_tuber"), "and in All")
+	for t in DevItems.TABS:
+		check(DevItems.all_ids("", t).size() > 0, "tab %s has items" % t)
 
 
 ## F8 item menu (owner, Nov 19): every item is listed, search works, a click puts it straight into your bag.
