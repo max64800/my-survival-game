@@ -435,7 +435,7 @@ B = {
 	"gloam_scythe": lambda: curved_blade(0.42, 0.09, (0.25, 0.15, 0.3), "gloam", glow=0.15),
 	"sivix_silk": silk, "bat_fang": lambda: fang(0.18), "shell_piece": shell_piece,
 	"plank_root": lambda: planks("wood"), "plank_mushroom": lambda: planks("mushwood"),
-	"copper_ingot": lambda: ingot("copper"), "bronze_ingot": lambda: ingot("bronze"), "silver_ingot": lambda: ingot("silver"),
+	"copper_ingot": lambda: ingot("copper"), "bronze_ingot": lambda: ingot("bronze"), "silver_ingot": lambda: ingot("silver"), "tin_ingot": lambda: ingot("tin"),
 	"clay_brick": lambda: bricks("brick"), "mushroom_brick": lambda: bricks("mushwood"),
 	"cut_stone": lambda: block("stone"), "cut_marble": lambda: block("marble"), "sporestone_block": lambda: block("sporestone"),
 	"amber_block": amber_block, "lantern_lens": lens,

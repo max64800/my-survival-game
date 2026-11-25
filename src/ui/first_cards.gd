@@ -19,7 +19,7 @@ const CARDS := {
 	"pickaxe": ["Pickaxe", "Hold left click on rock and soft walls to dig", "pickaxe_stone"],
 	"clay": ["Clay", "For a smelter, a kiln and bricks", "clay"],
 	"copper_ore": ["Copper ore", "Melt it into copper in a smelter", "copper_ore"],
-	"tin_ore": ["Tin ore", "Copper + tin in the smelter make bronze", "tin_ore"],
+	"tin_ore": ["Tin ore", "Smelt it into Tin Bars; 3 copper + 1 tin at the anvil make bronze", "tin_ore"],
 	"workbench": ["Workbench", "Place it, then E to make more things", "workbench"],
 	"smelter": ["Smelter", "Place it, then put in ore and fuel to melt metal", "smelter"],
 	"campfire": ["Campfire", "Place it, then E to cook", "campfire"],

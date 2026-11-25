@@ -1,16 +1,29 @@
 extends TestCase
-## Bronze (F697 step 4): 1 Copper Ingot + 1 Tin Ore makes a Bronze Ingot; 13 bronze items sit halfway
+## Bronze (F697 step 4, F894): tin ore smelts into Tin Bars; 3 Copper + 1 Tin Bar at the anvil = 4 Bronze Ingots; 13 bronze items sit halfway
 ## between copper and silver (owner, Nov 25).
 
 const IDS := ["helm", "mail", "greaves", "boots", "shield", "crossbow", "spear", "axe", "sword", "mace",
 	"axe_2h", "mace_2h", "pickaxe"]
 
 
-func test_bronze_ingot_is_copper_plus_tin_at_the_smelter() -> void:
+func test_tin_ore_smelts_into_a_tin_bar() -> void:
+	# F894 (owner, Nov 25): tin works like copper: 2 ore = 1 bar at the smelter
+	var r: Dictionary = Recipes.LIST.get("tin_ingot", {})
+	check_eq(r.get("station", ""), "smelter", "tin bars are smelted")
+	check_eq(r.get("inputs", {}), {tin_ore = 2}, "2 tin ore")
+	check_eq(r.get("output", ""), "tin_ingot", "makes a tin bar")
+	check_eq(Items.info("tin_ingot").get("name", ""), "Tin Bar", "called Tin Bar")
+	check(ResourceLoader.exists("res://assets/icons/tin_ingot.png"), "tin bar icon")
+	check(ResourceLoader.exists("res://assets/models/items/tin_ingot.glb"), "tin bar model")
+
+
+func test_bronze_is_mixed_at_the_anvil() -> void:
+	# F894 (owner, Nov 25): copper bars + tin bars are mixed at the anvil: 3 copper + 1 tin = 4 bronze
 	var r: Dictionary = Recipes.LIST.get("bronze_ingot", {})
-	check_eq(r.get("station", ""), "smelter", "made at the smelter")
-	check_eq(r.get("inputs", {}), {copper_ingot = 1, tin_ore = 1}, "1 copper ingot + 1 tin ore")
-	check_eq(r.get("output", ""), "bronze_ingot", "makes a bronze ingot")
+	check_eq(r.get("station", ""), "anvil", "mixed at the anvil")
+	check_eq(r.get("inputs", {}), {copper_ingot = 3, tin_ingot = 1}, "3 copper bars + 1 tin bar")
+	check_eq(r.get("count", 0), 4, "makes 4 bronze ingots")
+	check_eq(r.get("output", ""), "bronze_ingot", "makes bronze ingots")
 	check(Items.exists("bronze_ingot"), "the ingot is an item")
 	check(ResourceLoader.exists("res://assets/icons/bronze_ingot.png"), "ingot icon")
 

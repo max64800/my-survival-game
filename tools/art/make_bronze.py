@@ -2,6 +2,8 @@
 
     python3 tools/art/make_bronze.py textures   -> assets/textures/kit/bronze_<a|b|c|dark>.png (from copper_*)
     python3 tools/art/make_bronze.py icons      -> assets/icons/<id>_bronze.png + bronze_ingot.png (from the copper icons)
+    python3 tools/art/make_bronze.py tin        -> assets/textures/kit/tin_<a|b|c|dark>.png + assets/icons/tin_ingot.png
+                                                   (F894: silver made duller, darker and a little blue-grey)
 
 The Blender builds (items_tools.py, items_gear.py, items_materials.py) then paint "bronze" parts with the new textures.
 Later (plan step 7) bronze gets its own models; then this script is only for the textures.
@@ -91,9 +93,32 @@ def icons():
 		print("wrote", f"{dst}.png")
 
 
+def tin_paint(rgb):
+	"""Silver -> tin: much less shine and colour, a bit darker, a cool blue-grey tint."""
+	grey = rgb.mean(-1, keepdims=True)
+	out = grey + (rgb - grey) * 0.4             # less colour
+	out = 0.5 + (out - 0.5) * 0.75              # flatter: tin is dull, not mirror-bright
+	out = (out * 1.08 + 0.04) * np.array([0.96, 0.99, 1.04])
+	return np.clip(out, 0, 1)
+
+
+def tin():
+	for v in ("a", "b", "c", "dark"):
+		a = np.asarray(Image.open(KIT / f"silver_{v}.png").convert("RGBA")).astype(float) / 255
+		a[..., :3] = tin_paint(a[..., :3])
+		Image.fromarray((a * 255).round().astype(np.uint8)).save(KIT / f"tin_{v}.png")
+		print("wrote", f"tin_{v}.png")
+	a = np.asarray(Image.open(ICONS / "silver_ingot.png").convert("RGBA")).astype(float) / 255
+	a[..., :3] = tin_paint(a[..., :3])
+	Image.fromarray((a * 255).round().astype(np.uint8)).save(ICONS / "tin_ingot.png")
+	print("wrote tin_ingot.png")
+
+
 if __name__ == "__main__":
 	what = sys.argv[1] if len(sys.argv) > 1 else "all"
 	if what in ("textures", "all"):
 		textures()
 	if what in ("icons", "all"):
 		icons()
+	if what in ("tin", "all"):
+		tin()

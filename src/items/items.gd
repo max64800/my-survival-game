@@ -23,7 +23,7 @@ const DATA := {
 	"amberrock": {name = "Amberrock", color = Color(0.85, 0.65, 0.25), short = "Am"},
 	# --- ores and crystals
 	"copper_ore": {name = "Copper Ore", color = Color(0.85, 0.5, 0.25), short = "Cu"},
-	"tin_ore": {name = "Tin Ore", color = Color(0.68, 0.7, 0.72), short = "Sn"},  ## F697: copper ingot + tin = bronze
+	"tin_ore": {name = "Tin Ore", color = Color(0.68, 0.7, 0.72), short = "Sn"},  ## F697: smelts into a Tin Bar; copper + tin bars = bronze
 	"silver_ore": {name = "Silver Ore", color = Color(0.78, 0.8, 0.85), short = "Ag"},
 	"crystal_blue": {name = "Blue Glow Crystal", color = Color(0.4, 0.75, 1.0), short = "Cr", kind = "fuel", fuel = 240.0},
 	"crystal_green": {name = "Green Glow Crystal", color = Color(0.4, 1.0, 0.5), short = "Cg", kind = "fuel", fuel = 240.0},
@@ -79,7 +79,8 @@ const DATA := {
 	"rope": {name = "Rope", color = Color(0.75, 0.65, 0.45), short = "Ro"},
 	"leather": {name = "Leather", color = Color(0.55, 0.35, 0.2), short = "Le"},
 	"copper_ingot": {name = "Copper Ingot", color = Color(0.9, 0.55, 0.3), short = "CI"},
-	"bronze_ingot": {name = "Bronze Ingot", color = Color(0.72, 0.55, 0.28), short = "BI"},  ## smelter: 1 Copper Ingot + 1 Tin Ore (F697)
+	"tin_ingot": {name = "Tin Bar", color = Color(0.6, 0.63, 0.66), short = "TB"},  ## smelter: 2 Tin Ore (F894)
+	"bronze_ingot": {name = "Bronze Ingot", color = Color(0.72, 0.55, 0.28), short = "BI"},  ## anvil: 3 Copper Ingots + 1 Tin Bar = 4 (F894)
 	"gold_coin": {name = "Gold Coin", stack = 100, color = Color(0.95, 0.75, 0.25), short = "Au"},  ## found in old chests; pays for a perk reset
 	"silver_ingot": {name = "Silver Ingot", color = Color(0.85, 0.87, 0.92), short = "SI"},
 	"clay_brick": {name = "Clay Brick", color = Color(0.8, 0.4, 0.25), short = "CB"},

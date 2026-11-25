@@ -38,7 +38,7 @@ const GROUP_OF := {
 	"ancient_brick": "rock", "sporestone": "rock", "amberrock": "rock", "clay_brick": "rock", "mortar": "rock",
 	"cut_stone": "rock", "cut_marble": "rock", "sporestone_block": "rock", "amber_block": "rock", "mushroom_brick": "rock",
 	"copper_ore": "ore", "tin_ore": "ore", "silver_ore": "ore",
-	"copper_ingot": "metal", "bronze_ingot": "metal", "silver_ingot": "metal", "rusty_scrap": "metal",
+	"copper_ingot": "metal", "bronze_ingot": "metal", "tin_ingot": "metal", "silver_ingot": "metal", "rusty_scrap": "metal",
 	"crystal_blue": "crystal", "crystal_green": "crystal", "crystal_violet": "crystal", "crystal_amber": "crystal",
 	"crystal_white": "crystal", "crystal_red": "crystal", "bloomheart_core": "crystal", "lantern_lens": "crystal",
 	"rootwood": "wood", "coal": "wood", "mushroom_wood": "wood", "plank_root": "wood", "plank_mushroom": "wood",

@@ -164,7 +164,7 @@ static func accepts(kind: String, item: String) -> bool:
 		return true
 	if _piece_extras().has(item):
 		return true  # fiber for rugs and banners, crystals for sconces...
-	return Pieces.FAMILIES.has(item) or item in ["stone", "dirt", "moss", "clay", "copper_ore", "tin_ore", "copper_ingot",
+	return Pieces.FAMILIES.has(item) or item in ["stone", "dirt", "moss", "clay", "copper_ore", "tin_ore", "copper_ingot", "tin_ingot", "bronze_ingot",
 		"sporestone", "amberrock", "silver_ore", "mushroom_flesh"]  # what a builder carves out of the Jungle
 
 

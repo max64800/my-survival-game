@@ -65,7 +65,7 @@ const LIST := {
 	# --- smelter (needs wood fuel; times from doc 4.2)
 	"copper_ingot": {station = "smelter", inputs = {copper_ore = 2}, output = "copper_ingot", count = 1, seconds = 20, fuel = 1, unlock = ["copper_ore"]},
 	"copper_from_scrap": {station = "smelter", inputs = {rusty_scrap = 3}, output = "copper_ingot", count = 1, seconds = 20, fuel = 1, unlock = ["rusty_scrap"]},
-	"bronze_ingot": {station = "smelter", inputs = {copper_ingot = 1, tin_ore = 1}, output = "bronze_ingot", count = 1, seconds = 20, fuel = 1, unlock = ["tin_ore"]},  # F697
+	"tin_ingot": {station = "smelter", inputs = {tin_ore = 2}, output = "tin_ingot", count = 1, seconds = 20, fuel = 1, unlock = ["tin_ore"]},  # F894: like copper
 	"silver_ingot": {station = "smelter", inputs = {silver_ore = 2}, output = "silver_ingot", count = 1, seconds = 30, fuel = 1, unlock = ["silver_ore"]},
 	"clay_brick": {station = "smelter", inputs = {clay = 2}, output = "clay_brick", count = 2, seconds = 10, fuel = 1, unlock = ["clay"]},
 	"lantern_lens": {station = "smelter", inputs = {crystal_blue = 3, clay = 1}, output = "lantern_lens", count = 1, seconds = 30, fuel = 1, unlock = ["crystal_blue"]},
@@ -73,6 +73,7 @@ const LIST := {
 	# Copper gear is found, not known (owner, Nov 19): each piece needs its own page. Copper tools come from ruin
 	# pages, copper armour and weapons from named pages in the ruins' main chests (owner, Nov 24, F844: RUIN_COPPER). The Copper
 	# Pickaxe needs Root Tree Heartwood (owner, Nov 19: it came from the Keeper boss before).
+	"bronze_ingot": {station = "anvil", inputs = {copper_ingot = 3, tin_ingot = 1}, output = "bronze_ingot", count = 4, unlock = ["tin_ingot"]},  # F894: bronze is mostly copper
 	"helm_copper": {station = "anvil", inputs = {copper_ingot = 30, leather = 10}, output = "helm_copper", count = 1, unlock = "ruin"},
 	"mail_copper": {station = "anvil", inputs = {copper_ingot = 30, leather = 10}, output = "mail_copper", count = 1, unlock = "ruin"},
 	"greaves_copper": {station = "anvil", inputs = {copper_ingot = 30, leather = 10}, output = "greaves_copper", count = 1, unlock = "ruin"},
