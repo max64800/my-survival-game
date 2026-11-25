@@ -92,6 +92,12 @@ const LIST := {
 	"beam_half": {name = "Short Beam", group = "support", size = Vector3(1, 0.3, 0.3), units = 1, place = "edge", station = ALL},
 	"brace": {name = "Diagonal Brace", group = "support", size = Vector3(2, 2, 0.25), units = 2, place = "edge", shape = "brace",
 		families = ["plank_root", "plank_mushroom", "silver_ingot", "cut_stone", "clay_brick"], station = {"workbench": 2, "anvil": 1, "mason": 2}},  # Stonehold + Hearthbrick braces (owner, Nov 20)
+	# The Head Wheel (owner, Nov 25, F899: the big wheel on top of ruin 12's mine headframe), Shack wood only: a 4 m
+	# wheel on an iron axle along its depth. Its two bearing blocks (z = -2 and +2, 4 m apart) sit on two beams'
+	# tops: aim at a beam's top and it snaps down by `hang_on` (the bearings' height in the piece), so the wheel
+	# hangs between the beams. Model: tools/asset_forge/builds/shack_head_wheel.py.
+	"head_wheel": {name = "Head Wheel", group = "support", size = Vector3(4.0, 4.0, 4.3), units = 12, place = "free", shape = "head_wheel",
+		hang_on = 1.75, hang_apart = 4.0, extra = {copper_ingot = 2}, families = ["plank_root"], station = {"workbench": 2}},
 	"pillar": {name = "Pillar", group = "support", size = Vector3(0.4, 2, 0.4), units = 3, place = "corner", station = ALL},
 	"column": {name = "Carved Column", group = "support", size = Vector3(0.8, 2, 0.8), units = 4, place = "corner", shape = "column",
 		families = ["plank_root"] + STONE_KINDS, station = {"workbench": 2, "mason": 2}},  # Shack columns are wood (owner, Nov 15)
@@ -815,6 +821,17 @@ static func snap(piece: String, p: Vector3, n: Vector3, yaw: float, rot: int, li
 						pos[axis] = anchor.get_center()[axis]
 					else:
 						pos[axis] = anchor.position[axis] if absf(p[axis] - anchor.position[axis]) < absf(p[axis] - anchor.end[axis]) else anchor.end[axis]
+		if info.has("hang_on"):
+			# The Head Wheel: its bearings sit on the beam's top and the wheel hangs below. On a beam, the axle runs
+			# across it: one bearing on the beam's middle line, the wheel on the side you aim at (the other bearing
+			# then lands on a beam `hang_apart` away).
+			pos.y = anchor.end.y - float(info.hang_on)
+			var thin := 2 if anchor.size.z < anchor.size.x else 0
+			if anchor.size[thin] < 0.9:
+				var mid := anchor.get_center()
+				var at := Vector3(snappedf(p.x, FREE_MOVE), pos.y + lift, snappedf(p.z, FREE_MOVE))
+				at[thin] = mid[thin] + (1.0 if p[thin] >= mid[thin] else -1.0) * float(info.hang_apart) * 0.5
+				return {pos = at, rot = 0 if thin == 2 else 1}
 	elif has_anchor and absf(n.y) < 0.5 and (info.get("shape", "") == "ladder" or info.get("on_wall", false)):
 		# A ladder (or a banner, shield, sconce) on the side of a wall: flat against the face we're
 		# looking at, not inside the wall.

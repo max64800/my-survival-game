@@ -288,3 +288,26 @@ func test_dwarf_walks_up_every_tower_flight() -> void:
 			check_near(w.global_position.y, paths[name][1], 0.3, "%s: standing on the floor above" % name)
 		_root.queue_free()
 		await tree.physics_frame
+
+
+## The Head Wheel (owner, Nov 25, F899: ruin 12's mine headframe): a Shack piece with its hand-made model. Aimed at
+## a beam's top, its bearing blocks sit on the beam and the wheel hangs beside it, the axle across the beam, so the
+## other bearing lands on a second beam 4 m away.
+func test_head_wheel_hangs_between_two_beams() -> void:
+	check(Pieces.allowed("head_wheel", "plank_root"), "the Head Wheel is made in Shack wood")
+	check(not Pieces.allowed("head_wheel", "cut_stone") and not Pieces.allowed("head_wheel", "clay_brick"), "Shack only")
+	check(PieceNode.forged_mesh("head_wheel", "plank_root") != null, "it uses its hand-made model")
+	check(Pieces.cost("head_wheel", "plank_root").get("copper_ingot", 0) == 2, "it costs 2 copper bars (the iron axle)")
+	for along_x in [true, false]:
+		var bpos := Vector3(3.0, 10.0, -6.0) if along_x else Vector3(-6.0, 10.0, 3.0)
+		var brot := 0 if along_x else 1
+		var beam := {piece = "beam", pos = bpos, rot = brot}
+		var box := Pieces.box("beam", bpos, brot)
+		var aim := Vector3(3.4, box.end.y, -5.95) if along_x else Vector3(-5.95, box.end.y, 3.4)
+		var s := Pieces.snap("head_wheel", aim, Vector3.UP, 0.0, 0, 0.0, box, beam)
+		var p: Vector3 = s.pos
+		check(absf(p.y + 1.75 - box.end.y) < 0.01, "its bearings sit on the beam's top (bottom %.2f, beam top %.2f)" % [p.y + 1.75, box.end.y])
+		var across := 2 if along_x else 0
+		var mid := box.get_center()
+		check(absf(absf(p[across] - mid[across]) - 2.0) < 0.01, "the wheel hangs 2 m off the beam's middle line (%.2f)" % p[across])
+		check(Pieces.yaw_of(s.rot) == (0.0 if along_x else PI / 2.0), "the axle runs across the beam (rot %d)" % s.rot)

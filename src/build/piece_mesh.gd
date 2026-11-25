@@ -57,6 +57,7 @@ static func _make(piece: String, style: String, detail: bool) -> ArrayMesh:
 		"ridge": _ridge(s, float(info.rise))
 		"roof_outer": _roof_outer(s, float(info.rise))
 		"roof_spire": _roof_spire(s, float(info.rise))
+		"head_wheel": _head_wheel(s, float(info.hang_on))
 		"roof_inner": _roof_inner(s, float(info.rise))
 		"gable": _gable(s, float(info.rise))
 		"arch": _arch(s)
@@ -240,6 +241,22 @@ static func _roof_spire(s: Vector3, rise: float) -> void:
 	_face([a, b, top], Vector3(0, 0.5, 1))
 	_face([b, p, top], Vector3(0.87, 0, -0.5))
 	_face([p, a, top], Vector3(-0.87, 0, -0.5))
+
+
+## The Head Wheel (F899): a 16-sided wheel 4 m across standing in the x-y plane, an 8-sided axle along z, and a
+## bearing block under each end of the axle (their bottoms `seat` up: they sit on two beams 4 m apart).
+static func _head_wheel(s: Vector3, seat: float) -> void:
+	var c := Vector2(0, s.y * 0.5)
+	var rim := []
+	var axle := []
+	for k in 16:
+		rim.append(c + Vector2.from_angle(TAU * k / 16.0) * (s.x * 0.5 - 0.01))
+	for k in 8:
+		axle.append(c + Vector2.from_angle(TAU * (k + 0.5) / 8.0) * 0.1)
+	_prism_z(rim, -0.2, 0.2)
+	_prism_z(axle, -s.z * 0.5 + 0.02, s.z * 0.5 - 0.02)
+	for sz in [-1.0, 1.0]:
+		_box(Vector3(0, (seat + c.y) * 0.5, sz * 2.0), Vector3(0.52, c.y - seat, 0.26))
 
 
 ## Inside corner (a valley): high along the back and the left, low at the front-right corner.

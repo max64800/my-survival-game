@@ -1,0 +1,149 @@
+<title>Head Wheel</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alegreya+Sans+SC:wght@500;800&family=Alegreya+Sans:wght@400;500;700&display=swap">
+<style>
+/* Layout: one big viewer of the wheel on its two beams, then a short "what to look at" list. Dark mine wall, single look. */
+:root {
+	--bg: #1d1b19; --panel: #282521; --line: #3d3832; --fg: #ece5da; --muted: #b3a998;
+	--copper: #c9834a; --wood: #d9a86a;
+	--display: "Alegreya Sans SC", "Trebuchet MS", sans-serif;
+	--body: "Alegreya Sans", "Segoe UI", system-ui, sans-serif;
+	color-scheme: dark;
+}
+body { background: var(--bg); color: var(--fg); font: 17px/1.5 var(--body); }
+.wrap { max-width: 1100px; margin: 0 auto; padding-block: 28px 48px;
+	padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+	display: grid; gap: 22px; }
+h1 { font: 800 clamp(30px, 5vw, 46px)/1.05 var(--display); margin: 0; letter-spacing: 0.01em; text-wrap: balance; }
+h1 span { color: var(--wood); }
+h2 { font: 800 24px/1.2 var(--display); margin: 0; letter-spacing: 0.02em; }
+p { margin: 0; max-width: 68ch; }
+.lead { color: var(--muted); }
+.view { background: var(--panel); border: 1px solid var(--copper); border-radius: 6px; overflow: hidden; min-width: 0; }
+.view canvas { width: 100%; max-width: 100%; aspect-ratio: 16 / 10; display: block; cursor: grab; touch-action: none; }
+.cap { padding: 12px 14px 14px; display: flex; flex-wrap: wrap; gap: 6px 22px; color: var(--muted); font-size: 15px; }
+.cap b { color: var(--fg); font-variant-numeric: tabular-nums; }
+.bar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+button { font: 500 16px var(--body); color: var(--fg); background: var(--panel); border: 1px solid var(--line);
+	border-radius: 5px; padding: 7px 14px; cursor: pointer; }
+button[aria-pressed="true"] { border-color: var(--copper); color: var(--copper); }
+button:focus-visible { outline: 2px solid var(--wood); outline-offset: 2px; }
+.hint { color: var(--muted); font-size: 15px; }
+ul { margin: 0; padding-left: 20px; max-width: 70ch; display: grid; gap: 4px; }
+@media (max-width: 700px) { .view canvas { aspect-ratio: 1 / 1; } }
+</style>
+
+<div class="wrap">
+	<header style="display:grid;gap:10px">
+		<h1>The <span>Head Wheel</span></h1>
+		<p class="lead">F899, ruin 12 "Mine-head Works", step 1. The big wooden wheel that sits on top of the mine's headframe. It is a new Shack piece in the build menu (Supports, workbench level 2, 12 planks + 2 copper bars). Here it rests on two plain grey beams 4 m apart, the way it will sit on the headframe.</p>
+	</header>
+
+	<div class="bar">
+		<button id="spin" type="button" aria-pressed="false">Spin: off</button>
+		<button id="front" type="button">Front</button>
+		<button id="side" type="button">Side</button>
+		<button id="beams" type="button" aria-pressed="true">Beams: on</button>
+		<span class="hint">Drag to turn, scroll or pinch to zoom.</span>
+	</div>
+
+	<section class="view" aria-label="Head Wheel 3D viewer">
+		<canvas id="c0"></canvas>
+		<div class="cap"><span>Across: <b>3.95 m</b></span><span>Axle long: <b>4.29 m</b></span><span>Rim: <b>16 sides</b></span><span>Spokes: <b>8</b></span><span>Model checks: <b>pass</b></span></div>
+	</section>
+
+	<section style="display:grid;gap:12px">
+		<h2>Things to look at</h2>
+		<ul>
+			<li>The rim is 16 chunky wood blocks with a groove for the rope between two cheek rings. Iron plates and pegs hold the cheeks.</li>
+			<li>8 hewn spokes go into a round hub log with two iron hoops.</li>
+			<li>An 8-sided iron axle runs right through. At each end a wooden bearing block with an iron strap sits on a beam.</li>
+			<li>In the game you aim at one beam: the wheel puts one bearing on it and the other 4 m away, on the side you aim at.</li>
+			<li>It only looks like it works: it does not turn and there is no lift (your choice).</li>
+		</ul>
+	</section>
+</div>
+
+<script type="importmap">
+{ "imports": {
+	"three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+	"three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }
+</script>
+<script type="module">
+import * as THREE from "three";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+
+const canvas = document.getElementById("c0");
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x2c2925);
+scene.add(new THREE.HemisphereLight(0xfff4e0, 0x3a3128, 2.0));
+const sun = new THREE.DirectionalLight(0xffe8c8, 2.2);
+sun.position.set(4, 7, 6);
+scene.add(sun);
+const floor = new THREE.Mesh(new THREE.CircleGeometry(4, 48), new THREE.MeshStandardMaterial({ color: 0x3a352f, roughness: 1 }));
+floor.rotation.x = -Math.PI / 2;
+floor.position.y = -0.01;
+scene.add(floor);
+
+// two plain beams 4 m apart (z = -2 and +2), tops at 1.75 m = where the bearing blocks sit
+const beams = new THREE.Group();
+const beamMat = new THREE.MeshStandardMaterial({ color: 0x77706a, roughness: 1 });
+for (const z of [-2, 2]) {
+	const b = new THREE.Mesh(new THREE.BoxGeometry(3.2, 0.3, 0.3), beamMat);
+	b.position.set(0, 1.6, z);
+	beams.add(b);
+	for (const x of [-1.45, 1.45]) {
+		const post = new THREE.Mesh(new THREE.BoxGeometry(0.3, 1.45, 0.3), beamMat);
+		post.position.set(x, 0.725, z);
+		beams.add(post);
+	}
+}
+scene.add(beams);
+
+const camera = new THREE.PerspectiveCamera(35, 1.6, 0.05, 80);
+const controls = new OrbitControls(camera, canvas);
+controls.enableDamping = true;
+controls.autoRotateSpeed = 1.5;
+const target = new THREE.Vector3(0, 2, 0);
+function look(x, y, z) { controls.target.copy(target); camera.position.set(x, y, z); controls.update(); }
+const front = () => look(3.6, 3.2, 9.5);
+front();
+
+// the model is sent as text (base64) because the page host only serves plain file types
+fetch("head_wheel.txt").then((r) => r.text()).then((t) => Uint8Array.from(atob(t.trim()), (ch) => ch.charCodeAt(0)).buffer)
+	.then((buf) => new GLTFLoader().parse(buf, "", (g) => scene.add(g.scene), (e) => console.error(e)));
+
+let spin = false;
+document.getElementById("spin").addEventListener("click", (e) => {
+	spin = !spin;
+	e.currentTarget.setAttribute("aria-pressed", String(spin));
+	e.currentTarget.textContent = spin ? "Spin: on" : "Spin: off";
+	controls.autoRotate = spin;
+});
+document.getElementById("front").addEventListener("click", front);
+document.getElementById("side").addEventListener("click", () => look(9.5, 3.0, 0.01));
+document.getElementById("beams").addEventListener("click", (e) => {
+	beams.visible = !beams.visible;
+	e.currentTarget.setAttribute("aria-pressed", String(beams.visible));
+	e.currentTarget.textContent = beams.visible ? "Beams: on" : "Beams: off";
+});
+
+function loop() {
+	const w = canvas.clientWidth, h = canvas.clientHeight;
+	if (canvas.width !== Math.round(w * renderer.getPixelRatio())) {
+		renderer.setSize(w, h, false);
+		camera.aspect = w / h;
+		camera.updateProjectionMatrix();
+	}
+	controls.update();
+	renderer.render(scene, camera);
+	requestAnimationFrame(loop);
+}
+loop();
+</script>
