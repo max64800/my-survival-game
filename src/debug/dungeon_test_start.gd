@@ -12,6 +12,10 @@ const WEAR := {pickaxe = "pickaxe_copper", weapon = "sword_copper", shield = "sh
 const HOTBAR := [["pickaxe_copper", 1], ["sword_copper", 1], ["mace_copper", 1], ["spear_copper", 1], ["crossbow_copper", 1],
 	["axe_2h_copper", 1], ["mace_2h_copper", 1], ["bandage", 20], ["crystal_torch", 10]]
 const BAG := [["bolt_metal", 60], ["axe_copper", 1], ["spore_bomb", 10], ["blasting_pod", 10]]
+## Food and drink for a long dungeon run (owner, Nov 25: "give me food and 15 levels anytime I start dev dungeon").
+const FOOD := [["dish_hearth_stew", 10], ["dish_miners_pie", 10], ["dish_beetle_roast", 10], ["drink_moss_ale", 10],
+	["drink_bellcap_juice", 10]]
+const LEVEL := 15  ## the dwarf starts at level 15 (owner, Nov 25), plus the 15 test perk points below
 
 var _main: Node
 
@@ -35,6 +39,7 @@ func _run() -> void:
 	var auth: GameAuthority = _main.authority
 	var ps := auth.get_player(auth.local_peer_id())
 	if ps:
+		ps.progress.level = maxi(ps.progress.level, LEVEL)
 		ps.progress.bonus_points = 15  # perk points to try perks in the dungeon (owner, Nov 20)
 		var inv: Inventory = ps.inventory
 		for slot in WEAR:
@@ -42,7 +47,7 @@ func _run() -> void:
 		for i in Inventory.HOTBAR_SIZE:  # the starting tools are replaced by the copper ones (owner, Nov 20: silver made the dungeon far too easy)
 			inv.slots[i] = {id = HOTBAR[i][0], count = HOTBAR[i][1]} if i < HOTBAR.size() else {}
 		inv.hand_slots_out()  # the worn pickaxe, sword and shield sit in the hotbar/bag with the worn mark (F825)
-		for it in BAG:
+		for it in BAG + FOOD:
 			inv.add(it[0], it[1])
 		inv.changed.emit()
 		ps.fuel = GameAuthority.MAX_FUEL
