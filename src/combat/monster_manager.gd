@@ -1481,7 +1481,7 @@ static func death_sound(kind: String) -> String:
 		return DEATH_SOUNDS[kind]
 	var data: Dictionary = Monsters.LIST.get(kind, {})
 	if data.get("ghost", false):
-		return "ghost_death"
+		return "ghost_boss_death" if data.get("boss", false) else "ghost_death"
 	if data.get("rises", false):
 		return "boss_death" if data.get("boss", false) else "bones_death"
 	return "death"

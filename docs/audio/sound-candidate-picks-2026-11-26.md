@@ -29,9 +29,12 @@ Owner listened on the review pages and picked; all CC0 from Freesound (credits i
 | hit_axe_2h | 547042 Hit Impact Sword 3 | LOVE |
 | hit_warhammer | 879268 Heavy Slam Impact | MAYBE |
 | swing_heavy | 475135, 585257 swoosh-1.mp3 | MAYBE |
-| level_up | none yet | all NO in both rounds: arcade jingles "too arcady"; anvil, bell, horn, singing bowl also NO |
+| beetle_move | 761559 crab walking | round 8, MAYBE |
+| ghost_boss_death | 185366 Monster.wav | round 8, LOVE (the saved MAYBE) |
+| swing_light | 789840 Whoosh Short | round 8, MAYBE (sword, axe, mace, pickaxe swings) |
+| level_up | none yet | all NO in rounds 6, 7 and 8 (round 8: harp, choir, kalimba, drum, chant also NO): arcade jingles "too arcady"; anvil, bell, horn, singing bowl also NO |
 
-Saved for later: 320521 "Unsheathed blade" (owner liked it, no use yet); 185366 Monster.wav (maybe a boss ghost death).
+Saved for later: 320521 "Unsheathed blade" (owner liked it, no use yet).
 
 Skeleton names on the sound pages only: small = Bone Rot (tunnel_rat), medium = Hollow Miner (lost_miner), boss = Pit Boss / Prop Warden. They share sounds, pitched by size.
 Stone dungeons: Mossgate Hold, Tomb of Hald Ironbrow, Quiet Barrows. Wooden mines: Lampwick Drift, Old Pell's Diggings, Mossprop Workings.

@@ -60,7 +60,7 @@ func test_every_creature_dies_with_its_own_kind_of_sound() -> void:
 	check_eq(MonsterManager.death_sound("rock_beetle"), "beetle_death", "a beetle's shell cracks and it hisses out")
 	check_eq(MonsterManager.death_sound("cave_spider"), "spider_death", "a spider hisses and curls up")
 	check_eq(MonsterManager.death_sound("lost_miner"), "bones_death", "a skeleton miner falls into a heap of bones")
-	check_eq(MonsterManager.death_sound("hald_ironbrow"), "ghost_death", "a ghost blows away as mist")
+	check_eq(MonsterManager.death_sound("hald_ironbrow"), "ghost_boss_death", "a ghost boss wails as it blows away (round 8)")
 	for kind: String in Monsters.LIST:
 		check(MonsterManager.death_sound(kind) != "death", "%s has its own death sound" % kind)
 
@@ -82,3 +82,7 @@ func test_round_6_and_7_sounds() -> void:
 	check_eq(MonsterManager.death_sound("prop_warden"), "boss_death", "a boss skeleton's own last roar")
 	check_eq(Monster.move_sound("cave_spider")[0], "spider_move", "a spider skitters")
 	check(Monster.move_sound("cave_bat").is_empty(), "bats only flap")
+	check_eq(Monster.move_sound("rock_beetle")[0], "beetle_move", "a beetle clicks along (round 8)")
+	check_eq(MonsterManager.death_sound("ghost_lord"), "ghost_boss_death", "a ghost boss's own last wail (round 8)")
+	check_eq(MonsterManager.death_sound("ghost_a"), "ghost_death", "small ghosts keep theirs")
+	check(Sfx._variants("swing_light").size() >= 1, "one-handed swings swish")

@@ -247,3 +247,6 @@ The new `refill_0..1` (lantern) replace the older refill rows above (heavy_swall
 | Slash1.ogg | Wenpire | https://freesound.org/s/574821/ | CC0 | hit_axe_0 |
 | FX - Swoosh - Low Pitch | bolkmar | https://freesound.org/s/475135/ | CC0 | swing_heavy_0 |
 | swoosh-1.mp3 | lesaucisson | https://freesound.org/s/585257/ | CC0 | swing_heavy_1 |
+| Monster.wav | anwul | https://freesound.org/s/185366/ | CC0 | ghost_boss_death_0 (round 8) |
+| crab walking | stuniverso | https://freesound.org/s/761559/ | CC0 | beetle_move_0 (round 8) |
+| Whoosh Short | FartCTO | https://freesound.org/s/789840/ | CC0 | swing_light_0 (round 8) |

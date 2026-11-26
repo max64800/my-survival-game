@@ -169,6 +169,9 @@ func attack(duration: float, heavy: bool, combo_step: int = -1, move: String = "
 		elif weapon not in ["spear", "shield"] or (weapon == "spear" and combo_step == DwarfFight.SPEAR_SPIN_STEP):
 			# (during the strike itself, not the wind-up: owner, Nov 18, "juicy swipes"; the spear only in its spin)
 			var spin := weapon == "spear"
+			if weapon != "fists":
+				get_tree().create_timer(duration * 0.12).timeout.connect(func() -> void:  # F707: a quick swish (owner's pick, Nov 26)
+					Sfx.play("swing_light", _hand.global_position, -6.0 if heavy else -9.0, randf_range(0.92, 1.08)))
 			get_tree().create_timer(duration * 0.12).timeout.connect(func() -> void:
 				WeaponTrail.follow(_hand, duration * 0.4, Color(1.0, 0.95, 0.85, 0.7 if (heavy or spin) else 0.5), -1.0, -1.0,
 					Vector3.FORWARD if spin else Vector3.UP))  # (the spear points along its holder's -Z)

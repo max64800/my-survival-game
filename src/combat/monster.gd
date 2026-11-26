@@ -1662,6 +1662,8 @@ static func move_sound(k: String) -> Array:
 		return ["spider_move", 1.8]
 	if k == "rock_snail":
 		return ["snail_move", 1.3]
+	if k in ["rock_beetle", "great_rock_beetle"]:
+		return ["beetle_move", 1.9]
 	if Monsters.LIST.get(k, {}).get("rises", false):
 		return ["bones_move", 1.9]
 	return []
