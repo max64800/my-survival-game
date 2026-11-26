@@ -359,6 +359,9 @@ func test_doors_open_and_ladders_climb() -> void:
 	check(not auth.builder.nodes[500].is_open, "and the door swings shut on screen")
 	auth.builder.load_snapshot({pieces = [[503, "door", "plank_root", pos + Vector3(0, 0, 8), 0, true, true]]})
 	check_eq(auth.builder.structure.pieces[503].open, 1, "an old save's open door (true) still opens")
+	auth.builder._clock += Builder.DOOR_SHUT_TIME + 1.0
+	auth.builder._process(0.0)
+	check_eq(auth.builder.structure.pieces[503].open, 0, "a door saved open shuts by itself after loading too (F869)")
 	# F810: a double gate (the right leaf is the left one turned round): both leaves swing to the same side, and the
 	# turned-round leaf's look is mirrored so both rings face the gateway's front.
 	var g := pos + Vector3(0, 0, -10)

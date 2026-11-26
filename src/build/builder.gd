@@ -1699,6 +1699,7 @@ func load_snapshot(s: Dictionary) -> void:
 		_ev_add_piece(p[0], p[1], p[2], p[3], p[4], p[5])
 		if p.size() > 6 and p[6]:
 			_ev_door(p[0], int(p[6]))  # old saves stored true (= 1)
+			_door_shut_at[p[0]] = _clock + DOOR_SHUT_TIME  # F869: left open when saved, it still shuts by itself
 	_loading = false
 	_next_uid = s.get("next", _next_uid)
 	for st in s.get("sites", []):
