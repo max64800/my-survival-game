@@ -59,6 +59,9 @@ func _init() -> void:
 	holder.add_child(rig)
 	rig.build(Color(0.6, 0.45, 0.3))
 	for a in OS.get_cmdline_user_args():
+		if a == "pic3d=0":  # (F914 test: the hand-built copper set instead of the picture-made helmet + chest)
+			DwarfRig.armor_pic3d_test = false
+	for a in OS.get_cmdline_user_args():
 		if a.begins_with("wear="):
 			rig.set_wear(Array(a.substr(5).split(",")))
 	var sk := rig.skeleton
@@ -67,6 +70,10 @@ func _init() -> void:
 	var clips := []
 	for c in CLIPS:
 		clips.append([c[0], c[1], c[2], TOOL_FOR.get(c[0], "pickaxe_copper"), SHIELD_FOR.get(c[0], ""), true])
+	for a in OS.get_cmdline_user_args():  # clips=Standing,Walk: just those (a smaller file)
+		if a.begins_with("clips="):
+			var keep := a.substr(6).split(",")
+			clips = clips.filter(func(c): return c[0] in keep)
 	if hands:
 		clips.clear()
 		var only := ""  # hand_tool=<item>: just that tool (the page loads one file per tool: all of them is ~60 MB)
