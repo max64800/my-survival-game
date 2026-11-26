@@ -14344,3 +14344,16 @@ Owner's pick: "Quick + full".
 - The page's "Copy my picks" text still said "ROUND 7" (copied from the Round 7 page). Claude only changed the title. Next time, also change the copy text.
 - Level up failed a third time: harp, choir, kalimba, drum and chant were all NO.
 - Godot isn't on the Mac, so `tests/test_sfx.gd` could not run. Run it on the PC.
+
+
+## 2026-11-26: Sound round 9 (level up as a dwarf voice)
+
+**What we did**
+- Level up failed three rounds, so Claude asked the owner what they imagine (multiple choice). The owner picked "dwarf voice".
+- 8 voice tries. The owner said no to all of them for level up, but loved "Yeaah-hah-hah" for beating a boss. It now plays with the boss-defeated music (`_ev_stinger`, everyone hears it).
+
+**Mistakes and hurdles**
+- The first conversion cut the cheer at 2.5 s and lost its last "hah". Remade it at full length (3.4 s).
+- Two tries were dropped before the page (a crazy laugh, a sarcastic "yeah right").
+- Level up is still open after 4 rounds (about 26 tries).
+- Godot isn't on the Mac, so the tests could not run. Run `tests/test_sfx.gd` on the PC.
