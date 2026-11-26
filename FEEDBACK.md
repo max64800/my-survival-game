@@ -189,6 +189,7 @@ Fixed items get ~~crossed out~~, never deleted, so we can see the whole history.
   Owner on round 3: "still a lot of work. The legs are looking decent ... it looks like it's glued together. The helmet is too round." + T-pose walk.
   ⏳ Nov 26 (copper round 4 chat): the page now walks with the game's own walk (recorded). Every chest band is its own stiff plate with a thick
   edge, laid over a smooth body (not his lumps), each overlapping the one below with its bottom edge lifted (real shadow), dark cloth in the
+  neck/cheek guard. Redder, brighter copper, bigger dents. Taller greaves, bigger knee cop. Page v6, same link. Next: your look + play test.
   gaps; 3 skirt rows; 4 stepped shoulder bands. Pointed helmet: band over the top, riveted brow band, nose plate, one eye slit, bell-shaped
   Owner on round 4 (page): "looks like Play-Doh. We definitely need some texture ... so many dents and so many cracks", plate edges have "so
   many different bends", "the helmet is not symmetrical", "when he's walking, this black thing [belt] moves, but the lower portion [skirt] does
