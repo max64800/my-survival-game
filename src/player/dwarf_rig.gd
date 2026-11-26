@@ -1266,6 +1266,10 @@ const ARMOR_FILES := {
 	"hide": "res://assets/characters/dwarf/armor_hide.glb", "leather": "res://assets/characters/dwarf/armor_hide.glb",
 	"copper": "res://assets/characters/dwarf/armor_copper.glb",  # (F914: the Hide set's shapes with copper plates)
 }
+## F914 TEST (Nov 26): the copper helmet and chest plate made from ChatGPT pictures by Hunyuan3D, then fitted in Blender
+## (tools/asset_forge/builds/armor_picture3d.py). The gauntlets and boots stay hand-built. False = all hand-built again.
+static var armor_pic3d_test := true
+const ARMOR_PIC3D := "res://assets/characters/dwarf/armor_copper_picture3d.glb"
 var _bind_poses := []  ## every bone as the body was built (set by _wear_body)
 var _model_to_skel := Transform3D()
 var _body_head: MeshInstance3D
@@ -1288,7 +1292,14 @@ func _wear_armor(id: String) -> Node3D:
 	if parts.size() < 3:
 		return null
 	if not _bind_poses.is_empty() and ARMOR_FILES.has(parts[2]) and ResourceLoader.exists(ARMOR_FILES[parts[2]]):
-		var made := _wear_built_armor(parts[1], ARMOR_FILES[parts[2]])
+		var made: Node3D = null
+		if armor_pic3d_test and parts[2] == "copper" and parts[1] in ["head", "chest"] and ResourceLoader.exists(ARMOR_PIC3D):
+			made = _wear_built_armor(parts[1], ARMOR_PIC3D)
+			if made and parts[1] == "chest":  # (the hand-built gauntlets go with it)
+				for pat in ["armor_chest_gauntlet*"]:
+					_add_built_meshes(made, ARMOR_FILES["copper"], pat)
+		if not made:
+			made = _wear_built_armor(parts[1], ARMOR_FILES[parts[2]])
 		if made:
 			return made
 	if not ARMOR.has(parts[2]):
@@ -1352,6 +1363,17 @@ func _wear_built_armor(slot: String, path: String) -> Node3D:
 		holder.tree_exiting.connect(mi.queue_free)
 	src.free()
 	return holder
+
+
+## Adds the meshes of another set file matching pattern to a worn armor holder (freed with it).
+func _add_built_meshes(holder: Node3D, path: String, pattern: String) -> void:
+	var src: Node = (load(path) as PackedScene).instantiate()
+	for mi: MeshInstance3D in src.find_children(pattern, "MeshInstance3D", true, false):
+		_bind_to_skeleton(mi)
+		if String(mi.name).contains("gauntlet"):
+			holder.set_meta("gauntlets", true)
+		holder.tree_exiting.connect(mi.queue_free)
+	src.free()
 
 
 func _helmet_shape(att: Node3D, tier: String, col: Color, surf: String) -> void:

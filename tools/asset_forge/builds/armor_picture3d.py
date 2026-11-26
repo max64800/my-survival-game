@@ -354,6 +354,14 @@ else:
 				f = f * f * (3 - 2 * f)
 				dy[i] = max(dy[i], push[ids[j]] * f)
 		co[:, 1] += dy  # (no skin check after: the dent may touch his shirt, the beard hides it, like dwarf_armor.py)
+		# ...but never into his shirt (the shirt showed white through the plate at his throat): back out to 4 mm
+		back_out = 0
+		for i in np.nonzero(dy)[0]:
+			hit = BVH.find_nearest(Vector(co[i]))
+			if hit[0] is not None and (Vector(co[i]) - hit[0]).dot(hit[1]) < 0.004:
+				co[i] = np.array(hit[0] + hit[1] * 0.004)
+				back_out += 1
+		log("pressed points kept out of his shirt", back_out)
 	log("points pressed back under the beard", len(push))
 
 	# ---------------------------------------------------------------- bones: the nearest body point's (posed)
@@ -440,6 +448,72 @@ if REVIEW:
 	log("REVIEW", shots)
 	pose_arms(0)
 
+# ---------------------------------------------------------------- game copy (game=1): fewer faces, colours + bumps baked
+# into pictures (like dwarf_armor.py: the dense model's paint and shape copied onto a light model's picture map)
+GAME = OPT.get("game") == "1"
+GFACES = {"chest": 5000, "helm": 4000}
+GSIZE = {"chest": 2048, "helm": 1024}
+if GAME:
+	sys.path.insert(0, str(ROOT / "tools" / "asset_forge"))
+	import creature_sculpt as cs  # noqa: E402
+	for o in (A,):  # (the bake looks at both at rest: no skeleton bending needed)
+		for m in list(o.modifiers):
+			o.modifiers.remove(m)
+	bpy.ops.object.select_all(action="DESELECT")
+	A.select_set(True)
+	bpy.context.view_layer.objects.active = A
+	bpy.ops.object.duplicate()
+	low = bpy.context.view_layer.objects.active
+	d = low.modifiers.new("fewer", "DECIMATE")
+	d.ratio = GFACES[PIECE] / len(low.data.polygons)
+	cs._apply_all(low)
+	import bmesh
+	bm = bmesh.new()
+	bm.from_mesh(low.data)
+	bmesh.ops.remove_doubles(bm, verts=bm.verts, dist=0.0003)
+	bmesh.ops.dissolve_degenerate(bm, edges=bm.edges, dist=0.0003)
+	bm.to_mesh(low.data)
+	bm.free()
+	for p in low.data.polygons:
+		p.use_smooth = True
+	cs.uv_only(low)
+	# the dense model glows its painted colour for the colour bake
+	em = bpy.data.materials.new("bake_src")
+	em.use_nodes = True
+	ent = em.node_tree
+	ent.nodes.remove(ent.nodes["Principled BSDF"])
+	emi = ent.nodes.new("ShaderNodeEmission")
+	vc = ent.nodes.new("ShaderNodeVertexColor")
+	vc.layer_name = "Col"
+	ent.links.new(vc.outputs["Color"], emi.inputs["Color"])
+	ent.links.new(emi.outputs["Emission"], ent.nodes["Material Output"].inputs["Surface"])
+	A.data.materials.clear()
+	A.data.materials.append(em)
+	# the pictures' copper is pale and pink next to the hand-built pieces: deeper and warmer (same for helmet + chest)
+	ca = A.data.color_attributes["Col"]
+	rgba = np.empty(len(ca.data) * 4)
+	ca.data.foreach_get("color", rgba)
+	rgba = rgba.reshape(-1, 4)
+	rgba[:, :3] = np.clip(rgba[:, :3] ** 1.25 * np.array(OPT.get("warm", (1.0, 0.78, 0.62))), 0, 1)
+	ca.data.foreach_set("color", rgba.ravel())
+	gm = cs.bake(A, low, GSIZE[PIECE], f"armor_picture3d_{PIECE}_baked", ext=0.008)
+	b = next(n for n in gm.node_tree.nodes if n.type == "BSDF_PRINCIPLED")
+	b.inputs["Metallic"].default_value = 0.6  # (copper shines; the bake's material is matt otherwise)
+	b.inputs["Roughness"].default_value = 0.45
+	gm.node_tree.nodes.active = next(n for n in gm.node_tree.nodes if n.type == "TEX_IMAGE" and n.image.name.endswith("_col"))
+	name = A.name
+	bpy.data.objects.remove(A, do_unlink=True)
+	A = low
+	A.name = name
+	A.parent = ARM
+	A.matrix_parent_inverse = ARM.matrix_world.inverted()
+	A.modifiers.new("skeleton", "ARMATURE").object = ARM
+	log("game copy", len(A.data.polygons), "faces, pictures", GSIZE[PIECE])
+	if HAIR:  # (the game paints the hat-hair head with the normal head's pictures: a stand-in material, as dwarf_armor.py)
+		HAIR.data.materials.clear()
+		hm = bpy.data.materials.new("body_head_paint")
+		HAIR.data.materials.append(hm)
+
 # ---------------------------------------------------------------- export: skeleton + armour only
 for o in list(BODYM.values()):
 	bpy.data.objects.remove(o, do_unlink=True)
@@ -451,5 +525,8 @@ if HAIR:
 if not A.data.uv_layers:
 	A.data.uv_layers.new(name="UVMap")
 bpy.ops.export_scene.gltf(filepath=OUT, export_format="GLB", use_selection=True, export_yup=True, export_skins=True,
-	export_animations=False, export_apply=False)
+	export_animations=False, export_apply=False, **({"export_image_format": "JPEG", "export_image_quality": 88} if GAME else {}))
+if GAME:
+	import glb_jpeg_fix  # noqa: E402  (Godot shows Blender's JPEG pictures white without it: F164)
+	glb_jpeg_fix.fix(OUT)
 log("DONE", OUT, len(A.data.polygons), "faces")
