@@ -163,6 +163,7 @@ func attack(duration: float, heavy: bool, combo_step: int = -1, move: String = "
 		if weapon in DwarfFist.TWO_HANDED:  # (great weapons, F389: the strike starts after the slow wind-up and its
 			# hold, DwarfGreatSwing: from 0.31 to the hit at 0.40 and a little past; only the head end of the long handle)
 			get_tree().create_timer(duration * 0.30).timeout.connect(func() -> void:
+				Sfx.play("swing_heavy", _hand.global_position, -4.0 if heavy else -7.0)  # F707: the big slow whoosh (owner's pick, Nov 26)
 				var tip := WeaponTrail._tool_length(_hand)
 				WeaponTrail.follow(_hand, duration * 0.16, Color(1.0, 0.95, 0.85, 0.75 if heavy else 0.55), tip * 0.55, tip))
 		elif weapon not in ["spear", "shield"] or (weapon == "spear" and combo_step == DwarfFight.SPEAR_SPIN_STEP):

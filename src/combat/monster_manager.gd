@@ -1483,16 +1483,31 @@ static func death_sound(kind: String) -> String:
 	if data.get("ghost", false):
 		return "ghost_death"
 	if data.get("rises", false):
-		return "bones_death"
+		return "boss_death" if data.get("boss", false) else "bones_death"
 	return "death"
+
+
+## F707 (owner's picks, sound rounds 6+7, Nov 26): each creature's own cry when hit, on top of the weapon's hit sound.
+const HURT_SOUNDS := {"cave_spider": "spider_hurt", "rock_snail": "snail_hurt", "rock_beetle": "beetle_hurt",
+	"great_rock_beetle": "beetle_hurt", "cave_bat": "bat_hurt"}
+static func hurt_sound(kind: String) -> String:
+	if HURT_SOUNDS.has(kind):
+		return HURT_SOUNDS[kind]
+	return "bones_hurt" if Monsters.LIST.get(kind, {}).get("rises", false) else ""
 
 
 ## F854 (owner, Nov 25: "the mace makes a sword sound"): blunt weapons land with a dull knock and crunch.
 func hit_sound(peer: int, heavy: bool) -> String:
 	var ps: GameAuthority.PlayerState = auth.get_player(peer) if auth and peer != 0 else null
-	if ps and Combat.WEAPONS.get(Combat.weapon_of(ps.selected_item()), {}).get("type", "") == "blunt":
+	var w := Combat.weapon_of(ps.selected_item()) if ps else ""
+	# F707 (owner's picks, Nov 26): each weapon lands with its own sound.
+	if WEAPON_HITS.has(w):
+		return WEAPON_HITS[w]
+	if Combat.WEAPONS.get(w, {}).get("type", "") == "blunt":
 		return "hit_blunt"
 	return "hit_heavy" if heavy else "hit"
+const WEAPON_HITS := {"axe": "hit_axe", "axe_2h": "hit_axe_2h", "mace": "hit_mace", "mace_2h": "hit_warhammer",
+	"spear": "hit_spear"}
 
 
 @rpc("authority", "call_local", "reliable")
@@ -1776,6 +1791,32 @@ func _ev_ghost_fade(uid: int, to: Vector3) -> void:
 		Ghost.show_fade(m, to)
 
 
+## F792 (owner's picks, Nov 26): a creature that spots you gives a warning cry (skeletons pitched by size).
+static func notice_sound(kind: String) -> String:
+	var data: Dictionary = Monsters.LIST.get(kind, {})
+	if kind == "cave_spider":
+		return "spider_notice"
+	if kind in ["rock_beetle", "great_rock_beetle"]:
+		return "beetle_notice"
+	if data.get("ghost", false):
+		return "ghost_notice"
+	if data.get("rises", false):
+		return "boss_notice" if data.get("boss", false) else "bones_notice"
+	return ""  # (snail: owner said skip; bats have none)
+
+
+func monster_notice(m: Monster) -> void:
+	if notice_sound(m.kind) != "":
+		_ev_notice.rpc(m.uid)
+
+
+@rpc("authority", "call_local", "reliable")
+func _ev_notice(uid: int) -> void:
+	var m: Monster = monsters.get(uid)
+	if m:
+		Sfx.play(notice_sound(m.kind), m.global_position, 0.0, m._voice())
+
+
 ## Host: a pile of bones gets up (F462). Everyone sees it rise.
 func monster_rise(m: Monster) -> void:
 	_ev_rise.rpc(m.uid)
@@ -1821,6 +1862,9 @@ func _ev_hit(uid: int, dmg: int, from := Vector3.ZERO, peer := 0, eff := 0, crit
 				Sfx.play("ghost_hit", m.global_position, 0.0 if heavy else -3.0, 0.85 if heavy else 1.0)  # (F874: mist and cloth, no ring)
 			else:
 				Sfx.play(hit_sound(peer, heavy), m.global_position)
+				var cry := hurt_sound(m.kind)
+				if cry != "" and not killed:  # (a killed creature gives its death cry instead)
+					Sfx.play(cry, m.global_position, -2.0, m._voice())
 		var feel := hitter_feel(peer, auth.local_peer_id(), heavy, killed)
 		m.hit_flash()
 		m.hit_stop(feel.get("stop", HIT_STOP_HEAVY if heavy else HIT_STOP))  # (the killer sees it freeze longer too)
