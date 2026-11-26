@@ -14331,3 +14331,16 @@ Owner's pick: "Quick + full".
 - First conversion trimmed quiet sounds too hard (a hit came out 0.06 s long). Fixed by making each sound loud first, then trimming the silence.
 - The level-up sound is still not found: arcade jingles were "too arcady", and anvils, bells, horns and singing bowls were all NO.
 - Godot isn't installed on the Mac, so the tests (`tests/test_sfx.gd`, updated + a new check) could not run here: run them on the PC.
+
+
+## 2026-11-26: Sound round 8 (the gaps)
+
+**What we did**
+- The owner asked "did we do all the sounds?": no. The gaps were level up, beetle walking, ghost boss death, a one-handed swing sound, and the way-finding sounds (F794, not started).
+- Round 8 page with 22 tries. Put in: beetle walking (crab walking), ghost boss death (the Monster.wav the owner had saved), and a quick swish for every one-handed swing (sword, axe, mace, pickaxe; not fists).
+
+**Mistakes and hurdles**
+- Two ghost tries were spoken words, one of them a nasty phrase. Claude removed them before the owner saw the page. The search should skip voice clips.
+- The page's "Copy my picks" text still said "ROUND 7" (copied from the Round 7 page). Claude only changed the title. Next time, also change the copy text.
+- Level up failed a third time: harp, choir, kalimba, drum and chant were all NO.
+- Godot isn't on the Mac, so `tests/test_sfx.gd` could not run. Run it on the PC.
