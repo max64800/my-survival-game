@@ -2,7 +2,7 @@
 import os, re, subprocess
 SFX = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../../../assets/sfx")
 # slot: [(file, max seconds)]
-PICKS = {"level_up": [("r10/level_up/878615", 3.0)], "dig_rock": [("r10/level_up/760567", 1.0)]}
+PICKS = {"warn_spider": [("r11/warn_spider/760564", 1.2)], "warn_bones": [("r11/warn_bones/579802", 1.2), ("r11/warn_bones/676987", 1.0)], "warn_ghost": [("r11/warn_ghost/856169", 1.5)], "warn_ghost_sting": [("r11/warn_ghost/869997", 1.5)], "jump": [("r11/jump/363922", 0.6), ("r11/jump/678839", 0.6)], "land": [("r11/land/346695", 0.8)], "ladder": [("r11/ladder/502504", 0.9), ("r11/ladder/502505", 0.9), ("r11/ladder/502511", 0.9)], "crossbow_shot": [("r11/crossbow_shot/163453", 1.0)], "crossbow_reload": [("r11/crossbow_reload/815493", 1.0)], "key_unlock": [("r11/key_unlock/448416", 1.3)]}
 def run(*a): return subprocess.run(a, capture_output=True, text=True)
 for slot, files in PICKS.items():
     for old in [f for f in os.listdir(SFX) if re.fullmatch(slot + r"_\d+\.ogg(\.import)?", f)]:

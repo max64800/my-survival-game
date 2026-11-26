@@ -60,8 +60,8 @@ static var LIST := {
 	"cave_spider": {name = "Cave Spider", turns_in_place = true, turn_speed = 4.0, ragdoll = {hop = 0.5, spin = 2.0}, statue_hits = 2, size = 1.0, hp = 30, armor = 0, stun = 13, slash = 1.0, blunt = 1.0, pierce = 1.0,
 		fire = 0.0, frost = 0.0, poison = 0.0, walk = 2.2, run = 5.5, pack = [3, 5], xp = 6, leader = "Spider Broodmother", leader_chance = 0.15,
 		color = Color(0.25, 0.22, 0.2), shape = "cave_spider", climbs = "all", wall_runner = true, ambush = true, hit_and_run = true, retreat = 4.0, recover = 1.2,
-		attacks = [{name = "Bite", warn_sound = "beetle_hiss", tell = 0.5, damage = 7, type = "pierce", reach = 1.5, parry = "any", buildup = {poison = 34}},
-			{name = "Pounce", warn_sound = "beetle_hiss", tell = 0.8, damage = 11, type = "pierce", reach = 5.0, parry = "any", lunge = true, pounce = true, buildup = {poison = 34}}],
+		attacks = [{name = "Bite", warn_sound = "warn_spider", tell = 0.5, damage = 7, type = "pierce", reach = 1.5, parry = "any", buildup = {poison = 34}},
+			{name = "Pounce", warn_sound = "warn_spider", tell = 0.8, damage = 11, type = "pierce", reach = 5.0, parry = "any", lunge = true, pounce = true, buildup = {poison = 34}}],
 		drops = [["bug_meat", 1, 1.0], ["bug_meat", 1, 0.4], ["spider_silk", 1, 0.7], ["spider_silk", 1, 0.35], ["venom_sac", 1, 0.3]]},
 	# ---- The skeleton miners of Lampwick Drift and Old Pell's Diggings (dungeons 2 and 3; owner OK'd the models Nov 20).
 	# They move by a skeleton (CreatureRig), not by named parts. rises: they lie scattered on the floor and get up when
@@ -76,7 +76,7 @@ static var LIST := {
 		fire = 0.0, frost = 0.0, poison = 1.0, walk = 2.0, run = 5.0, pack = [3, 5], xp = 5,
 		color = Color(0.62, 0.56, 0.45), shape = "tunnel_rat", recover = 0.8,
 		# F606: only the overhand chop (readable wind-up); the stab had no warn_sound and was too fast.
-		attacks = [{name = "Shovel Chop", anim = "1H_Melee_Attack_Chop", warn_sound = "beetle_hiss", tell = 0.55, damage = 6, type = "slash", reach = 1.5, parry = "any"}],
+		attacks = [{name = "Shovel Chop", anim = "1H_Melee_Attack_Chop", warn_sound = "warn_bones", tell = 0.55, damage = 6, type = "slash", reach = 1.5, parry = "any"}],
 		drops = []},
 	# F466/F467: the Lost Miner is slow and tough, and its pick is ice cold (chill buildup: 3 hits freeze you).
 	"lost_miner": {name = "Hollow Miner", dungeon_only = true, rises = true, rise_near = 11.0, sleeps = true, no_variant = true, ragdoll = false, statue_hits = 2,
@@ -87,7 +87,7 @@ static var LIST := {
 		# F593: picks shortened so running away gets you out. F605: only the Leaping Chop now (owner Nov 22:
 		# "should only do lunge"); Frost Pick and Pick Jab removed. At ≤2 m the miner circles and waits for space.
 		# Its leap rushes at 2.6 m/s (was 3.4): the dwarf walks 3 m/s now (was 4), and walking off must still get you out.
-		attacks = [{name = "Leaping Chop", anim = "1H_Melee_Attack_Chop", warn_sound = "beetle_hiss", tell = 0.9, damage = 14, type = "pierce", reach = 3.0, parry = "any", lunge = true, small_lunge = true, lunge_speed = 2.6, rest = 4.0, quiet_after = 3.5, buildup = {chill = 34}}],
+		attacks = [{name = "Leaping Chop", anim = "1H_Melee_Attack_Chop", warn_sound = "warn_bones", tell = 0.9, damage = 14, type = "pierce", reach = 3.0, parry = "any", lunge = true, small_lunge = true, lunge_speed = 2.6, rest = 4.0, quiet_after = 3.5, buildup = {chill = 34}}],
 		drops = []},
 	# The ghosts of the medium dungeons #5-#8 (Claude, Nov 22, 2026; owner: the dwarf's skeleton and his mace moves,
 	# "three different attacks, and the boss can do all four"). A ghost is a dwarf wearing a ghost body (Ghost, GhostRig):
@@ -98,14 +98,14 @@ static var LIST := {
 		size = 1.0, height = 1.5, hp = 150, armor = 0, stun = 60, slash = 0.8, blunt = 0.9, pierce = 0.6,
 		fire = 1.25, frost = 0.25, poison = 0.0, walk = 1.2, run = 3.0, pack = [1, 2], xp = 18,
 		color = Color(0.5, 0.95, 0.8), shape = "ghost", recover = 1.2,
-		attacks = [{name = "Shade Swing", anim = "mace_1", warn_sound = "beetle_hiss", tell = 0.85, damage = 16, type = "blunt", reach = 2.2, parry = "any", rest = 2.5}],
+		attacks = [{name = "Shade Swing", anim = "mace_1", warn_sound = "warn_ghost", tell = 0.85, damage = 16, type = "blunt", reach = 2.2, parry = "any", rest = 2.5}],
 		drops = []},
 	"ghost_b": {name = "Wrathful Shade", dungeon_only = true, sleeps = true, no_variant = true, ragdoll = false, ghost = true, rise_near = 7.0,
 		size = 1.0, height = 1.6, hp = 140, armor = 0, stun = 55, slash = 0.8, blunt = 0.9, pierce = 0.6,
 		fire = 1.25, frost = 0.25, poison = 0.0, walk = 1.4, run = 3.4, pack = [1, 2], xp = 20,
 		color = Color(0.55, 0.75, 1.0), shape = "ghost", recover = 1.4,
 		# the angry one: it rocks back, mace high, and swoops in with a slanting blow (a short lunge; owner, Nov 22: mace move 2 alone was "just spinning")
-		attacks = [{name = "Swooping Blow", anim = "SliceDiag", warn_sound = "beetle_hiss", tell = 0.85, damage = 18, type = "blunt", reach = 3.0, parry = "any", lunge = true, small_lunge = true, lunge_speed = 3.6, rest = 3.5}],
+		attacks = [{name = "Swooping Blow", anim = "SliceDiag", warn_sound = "warn_ghost_sting", tell = 0.85, damage = 18, type = "blunt", reach = 3.0, parry = "any", lunge = true, small_lunge = true, lunge_speed = 3.6, rest = 3.5}],
 		drops = []},
 	"ghost_c": {name = "Bearded Shade", dungeon_only = true, sleeps = true, no_variant = true, ragdoll = false, ghost = true, rise_near = 7.0,
 		size = 1.05, height = 1.55, hp = 170, armor = 0, stun = 70, slash = 0.8, blunt = 0.9, pierce = 0.6,
@@ -144,7 +144,7 @@ static var LIST := {
 		size = 0.9, height = 1.4, hp = 70, armor = 0, stun = 40, slash = 0.8, blunt = 0.9, pierce = 0.6,
 		fire = 1.25, frost = 0.25, poison = 0.0, walk = 1.1, run = 2.6, pack = [1, 1], xp = 8,
 		color = Color(0.55, 0.85, 0.95), shape = "ghost", recover = 1.6,
-		attacks = [{name = "Shade Swing", anim = "mace_1", warn_sound = "beetle_hiss", tell = 1.0, damage = 9, type = "blunt", reach = 2.1, parry = "any", rest = 3.5}],
+		attacks = [{name = "Shade Swing", anim = "mace_1", warn_sound = "warn_ghost", tell = 1.0, damage = 9, type = "blunt", reach = 2.1, parry = "any", rest = 3.5}],
 		drops = []},
 	# The end boss: Hald Ironbrow himself (owner: "final boss is a ghost, obviously"): the ghosts' lord body and moves
 	# (all four mace moves in one combo, mist every quarter of his health), rising from his tomb. F849 (owner, Nov 25:
@@ -194,7 +194,7 @@ static var LIST := {
 			follow = {tell = 0.9, damage = 12, whirl_speed = 1.5, warn_sound = null, knock = 2.5, follow = {tell = 0.9, damage = 12, knock = 2.5,
 				follow = {tell = 0.9, damage = 12, knock = 2.5, follow = {tell = 0.9, damage = 20, knockdown = true, knock = 3.5}}}}},
 			# F679 (owner, Nov 22): other attacks besides spin; a heavy overhead chop for close-range pressure.
-			{name = "Pick Crack", anim = "2H_Melee_Attack_Chop", warn_sound = "beetle_hiss", tell = 0.9, damage = 18, type = "blunt", reach = 2.2, parry = "any", knock = 2.5, rest = 5.0}],
+			{name = "Pick Crack", anim = "2H_Melee_Attack_Chop", warn_sound = "warn_bones", tell = 0.9, damage = 18, type = "blunt", reach = 2.2, parry = "any", knock = 2.5, rest = 5.0}],
 		drops = []},
 	# Mossprop Workings' boss (owner, Nov 21): a mossy skeleton miner with a felling axe and a plank shield on his left
 	# arm (his own model, F468): hits from the front do a fifth (MonsterManager._shield_blocks) unless heavy or he is stunned.

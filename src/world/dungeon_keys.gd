@@ -159,8 +159,11 @@ func request_unlock(peer_id: int, dungeon_id: String) -> String:
 @rpc("authority", "call_local", "reliable")
 func _ev_door(dungeon_id: String, opened: Array) -> void:
 	var all: Dictionary = auth.world_state.get("dungeon_doors", {}).duplicate()
+	var grew := opened.size() > Array(all.get(dungeon_id, [])).size()  # (a key taken back re-locks: no unlock sound then)
 	all[dungeon_id] = opened
 	auth.world_state.dungeon_doors = all
+	if grew and doors.has(dungeon_id):
+		Sfx.play("key_unlock", doors[dungeon_id])  # (F707 round 11: an old iron bolt sliding open)
 	door_changed.emit(dungeon_id, is_open(dungeon_id))
 
 

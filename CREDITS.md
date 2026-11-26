@@ -252,3 +252,17 @@ The new `refill_0..1` (lantern) replace the older refill rows above (heavy_swall
 | Whoosh Short | FartCTO | https://freesound.org/s/789840/ | CC0 | swing_light_0 (round 8) |
 | Yeaah-hah-hah.wav | HenKonen | https://freesound.org/s/682138/ | CC0 | boss_cheer_0 (round 9: plays with the boss-defeated music) |
 | Treasure Chest Reveal | Qvantor | https://freesound.org/s/878615/ | CC0 | level_up_0 (round 10) |
+| Insect | NoisyRedFox | https://freesound.org/s/760564/ | CC0 | warn_spider_0 (round 11) |
+| Bones Breaking | hudbud321 | https://freesound.org/s/579802/ | CC0 | warn_bones_0 (round 11) |
+| Stretch - Medium | NearTheAtmoshphere | https://freesound.org/s/676987/ | CC0 | warn_bones_1 (cut to 1 s) (round 11) |
+| Spectral Ghost Whisper Breeze Whoosh | brktkrgll | https://freesound.org/s/856169/ | CC0 | warn_ghost_0 (round 11) |
+| Cryptic Whoosh Sting | ChuckChuckGoof | https://freesound.org/s/869997/ | CC0 | warn_ghost_sting_0 (Wrathful Shade's swoop) (round 11) |
+| land.wav | kfatehi | https://freesound.org/s/363922/ | CC0 | jump_0 (round 11) |
+| jump.wav | cartchaos | https://freesound.org/s/678839/ | CC0 | jump_1 (round 11) |
+| Body fall_01.wav | deleted_user_2104797 | https://freesound.org/s/346695/ | CC0 | land_0 (round 11) |
+| Wood Creak Single V2 | Rudmer_Rotteveel | https://freesound.org/s/502504/ | CC0 | ladder_0 (round 11) |
+| Wood Creak Single V1 | Rudmer_Rotteveel | https://freesound.org/s/502505/ | CC0 | ladder_1 (round 11) |
+| Wood Creak Single V3 | Rudmer_Rotteveel | https://freesound.org/s/502511/ | CC0 | ladder_2 (round 11) |
+| Crossbow Shot | LeMudCrab | https://freesound.org/s/163453/ | CC0 | crossbow_shot_0 (round 11) |
+| Mechanical switch (latch) 02 | xkeril | https://freesound.org/s/815493/ | CC0 | crossbow_reload_0 (round 11) |
+| Bolt Lock 5 | LordForklift | https://freesound.org/s/448416/ | CC0 | key_unlock_0 (round 11) |

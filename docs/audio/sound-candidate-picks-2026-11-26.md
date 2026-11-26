@@ -35,6 +35,18 @@ Owner listened on the review pages and picked; all CC0 from Freesound (credits i
 | boss_cheer | 682138 Yeaah-hah-hah.wav | round 9 LOVE: "this can be when you defeat the boss" (plays with the boss-defeated music) |
 | level_up | 878615 Treasure Chest Reveal | round 10 LOVE (after rounds 6-9 were all NO) |
 | dig_rock | 760567 Pickaxe3 | round 10 LOVE: "the new pickaxe against the stone" (replaces Pickaxe2) |: arcade jingles "too arcady"; anvil, bell, horn, singing bowl also NO |
+| warn_spider | 760564 Insect | round 11 LOVE (spider bite/pounce warning; was the beetle hiss) |
+| warn_bones | 579802 Bones Breaking, 676987 Stretch - Medium | round 11 LOVE (676987 "too long": cut to 1 s). Bone Rot, Hollow Miner, Pit Boss's Pick Crack |
+| warn_ghost | 856169 Spectral Ghost Whisper Breeze Whoosh | round 11 LOVE (Drifting Shade, Tomb Shade) |
+| warn_ghost_sting | 869997 Cryptic Whoosh Sting | round 11 LOVE "can be for a different attack": Wrathful Shade's Swooping Blow |
+| jump | 363922 land.wav, 678839 jump.wav | round 11 LOVE |
+| land | 346695 Body fall_01 | round 11 LOVE (646663 MAYBE, not used) |
+| ladder | 502504/502505/502511 Wood Creak Single V2/V1/V3 | round 11 LOVE (owner on V2: "door opening", idea for later) |
+| crossbow_shot | 163453 Crossbow Shot | round 11 LOVE |
+| crossbow_reload | 815493 Mechanical switch (latch) 02 | round 11 LOVE (replaces the clink) |
+| key_unlock | 448416 Bolt Lock 5 | round 11 LOVE |
+| warn_boss, dodge, step_wood | none | round 11 all NO: keep today's sounds |
+| break_wood | none | round 11: owner "current one is good" (keeps dig_break) |
 
 Saved for later: 320521 "Unsheathed blade" (owner liked it, no use yet).
 

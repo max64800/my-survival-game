@@ -391,6 +391,8 @@ func _physics_process(delta: float) -> void:
 		velocity.z = dv.z
 	# Jumping, made forgiving: bumpy cave floors can make "am I standing?" flicker,
 	# so a jump still works a moment after leaving the ground or just before landing.
+	if on_floor and _since_floor > 0.45:
+		Sfx.play("land", global_position, -8.0)  # (F707 round 11: boots hit the floor after a jump or a real fall, not a small step down)
 	_since_floor = 0.0 if on_floor else _since_floor + delta
 	if (playing and Input.is_action_just_pressed("jump")) or bot_jump:
 		_jump_wanted = JUMP_BUFFER
@@ -403,6 +405,7 @@ func _physics_process(delta: float) -> void:
 		_jump_elapsed = 0.0
 		_jump_air_expected = _jump_hang_guess(velocity.y, 0.0)  # (F807: our best guess, refreshed every tick below)
 		_jumps += 1
+		Sfx.play("jump", global_position, -8.0)
 		_jump_wanted = 0.0
 		_since_floor = COYOTE_TIME + 1.0  # no double jump
 	elif not on_floor:
@@ -417,6 +420,10 @@ func _physics_process(delta: float) -> void:
 	if ladder and playing and (Input.is_action_pressed("move_forward") or Input.is_action_pressed("jump")) \
 			and (body == null or body.drain_stamina(LADDER_STAMINA, delta)):
 		velocity.y = LADDER_SPEED
+		_ladder_t -= delta
+		if _ladder_t <= 0.0:
+			_ladder_t = 0.55
+			Sfx.play("ladder", global_position, -10.0)  # a rung creaks every step up (F707 round 11)
 	elif ladder and not is_on_floor():
 		velocity.y = maxf(velocity.y, -1.5)  # hold on: slide down slowly
 	var shoved := _shove.length() > 0.05  # knocked aside by a charge (F111): fades out quickly
@@ -873,6 +880,7 @@ var _step_dy := 0.0
 
 
 var _step_t := 0.0
+var _ladder_t := 0.0
 var _steps_heard := 0
 
 
