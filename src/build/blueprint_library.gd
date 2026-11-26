@@ -11,7 +11,7 @@ const IDS := ["delvers_hut", "miners_homestead", "stone_hall", "forge_workshop",
 	"stone_outpost", "wooden_watchtower", "wooden_outpost", "hearthbrick_brewhall", "wooden_brewhall", "lantern_spire", "wooden_spire",
 	"hearthbrick_manor", "wooden_manor", "stonehold_twin_gate", "wooden_twin_gate", "stonehold_cliff_watch", "wooden_cliff_watch",
 	"stonehold_prow_hall", "wooden_prow_hall", "hearthbrick_smeltery", "wooden_smeltery",
-	"minehead_works", "cliff_galleries"]
+	"minehead_works", "cliff_galleries", "sinkhole_ring"]
 ## Known from the very start (F161): you place them and bring the materials. The rest are learned from
 ## Old Blueprints found in ruins (F98).
 const STARTER := ["delvers_hut"]
@@ -22,7 +22,7 @@ const STARTER := ["delvers_hut"]
 const REBUILD_ONLY := ["wooden_watchtower", "wooden_outpost", "hearthbrick_brewhall", "wooden_brewhall", "lantern_spire", "wooden_spire",
 	"hearthbrick_manor", "wooden_manor", "stonehold_twin_gate", "wooden_twin_gate", "stonehold_cliff_watch", "wooden_cliff_watch",
 	"stonehold_prow_hall", "wooden_prow_hall", "hearthbrick_smeltery", "wooden_smeltery",
-	"minehead_works", "cliff_galleries"]
+	"minehead_works", "cliff_galleries", "sinkhole_ring"]
 const NAMES := {
 	"delvers_hut": "Delver's Hut",
 	"miners_homestead": "Miner's Homestead",
@@ -50,6 +50,7 @@ const NAMES := {
 	"brickcrown_keep": "Brickcrown Keep",
 	"minehead_works": "Mine-head Works",
 	"cliff_galleries": "Cliff Galleries",
+	"sinkhole_ring": "Sinkhole Ring",
 }
 
 const WOOD := "plank_root"
@@ -121,6 +122,7 @@ static func make(id: String) -> Blueprint:
 		"brickcrown_keep": lib._brickcrown()  # (owner, Nov 25: ruin 11, F895; its 3D page first, not learnable yet)
 		"minehead_works": lib._minehead()  # (owner, Nov 25: ruin 12, F899; learned by rebuilding its ruin)
 		"cliff_galleries": lib._cliff_galleries()  # (owner, Nov 26: ruin 13, F913; learned by rebuilding its ruin)
+		"sinkhole_ring": lib._sinkhole_ring()  # (owner, Nov 26: ruin 14, F915; learned by rebuilding its ruin)
 		"hearthbrick_smeltery": lib._smeltery()  # (owner, Nov 24: ruin 10, F845; learned by rebuilding its ruin)
 		"wooden_smeltery":  # (its trims, brackets and roof windows are Hearthbrick only: they stay brick)
 			lib._smeltery()
@@ -3965,6 +3967,396 @@ func _cg_shed() -> void:
 		_wall_z("half_wall", gx, 0, 3.0, B)
 		_add("gable_26", B, Vector3(gx, 4.0, 0), 1)
 	_add("door", B, Vector3(-16, 1.0, 3), 0)
+
+## Ruin 14, the Sinkhole Ring (owner, Nov 26, F915; plan docs/design/ruin14/SINKHOLE-RING-PLAN.md): a deep hole in
+## the cave floor (9 m), a great 12-sided stone tower (ring R = 2) built up from its bottom; a square stone keep on its
+## roof terrace, a wider wooden Crown storey jutting out on brackets, a small wooden lookout on the Crown's deck. A stone
+## gatehouse on the rim with a stone bridge to the terrace; wooden stairs pinned to the hole's walls; the Ledge House on
+## a rock ledge half way down; a long wooden bridge from the Crown to the Winch House on a high shelf behind the hole.
+## Every building is Stonehold stone below (flat roofs) and Shack wood above (sloped roofs).
+## Local metres: the cave floor (the rim) y 0, the hole's floor -9, the tower's middle (1, -8.46): its front flat side
+## is the line z = -1, so the bridge and everything else stay on the usual grid (cells on even lines, walls on odd).
+const SR_SHIFT := Vector3(-1, 9, 6)
+const SR_RING := Vector3(1, 0, -8.4641016)   # (-1 - 2 * _EDGE)
+const SR_DOORSTEP := -16.9282032              # the foundation outside the tower's back door, flush with its back side
+
+
+static func sink_rock(x: float, y: float, z: float) -> bool:
+	return y < _sink_ground(x - SR_SHIFT.x, z - SR_SHIFT.z) + SR_SHIFT.y
+
+
+## How high the ground reaches at (x, z) (local): the rim 0 round the hole, the hole's floor -9, the ledge -4.5 down its
+## right wall and back wall, the high shelf 4.5 behind it, then the cave wall.
+static func _sink_ground(x: float, z: float) -> float:
+	if z < -27.2:
+		return 99.0                                                         # the cave wall behind the shelf
+	if z < -21.2:
+		return 4.5                                                          # the high shelf
+	if x < -12.2 or x > 15.2 or z > 3.0:
+		return 0.0                                                          # the rim
+	if x > 11.0 or (x > 9.0 and z < -13.0) or (x > 3.0 and z < -17.0):
+		return -4.5                                                         # the ledge
+	return -9.0
+
+
+func _sinkhole_ring() -> void:
+	_start(Vector3(32, 24, 44))
+	_sr_tower()
+	_sr_keep_and_crown()
+	_sr_gatehouse()
+	_sr_ledge_house()
+	_sr_pit_stairs()
+	_sr_high_bridge_and_winch_house()
+	_brackets_off_windows()
+	for p in _bp.pieces:
+		p.pos += SR_SHIFT
+	_air_only_round_pieces(func(lx: float, y: float, lz: float) -> bool: return sink_rock(lx, y, lz))
+
+
+## A gable roof over x0..x1, `rows` rows from the front (z_front) back, ridge along x, gables at both ends. `steep`:
+## roof_45 (2 m a row), else roof_26 (1 m a row).
+func _sr_roof(x0: int, x1: int, z_front: int, rows: int, top: float, steep: bool) -> void:
+	var W := WOOD
+	var rise := 2.0 if steep else 1.0
+	var rid := "roof_45" if steep else "roof_26"
+	var gid := "gable_45" if steep else "gable_26"
+	for i in rows:
+		var zf := z_front - 1 - 2 * i
+		var zb := z_front - 1 - 2 * (2 * rows - 1 - i)
+		for x in range(x0 + 1, x1, 2):
+			_add(rid, W, Vector3(x, top + rise * i, zf), 0)
+			_add(rid, W, Vector3(x, top + rise * i, zb), 2)
+		for gx in [x0, x1]:
+			for zz in [[zf, 1], [zb, 3]]:
+				for k in i:
+					_wall_z("wall", gx, zz[0], top + rise * k, W)
+				_add(gid, W, Vector3(gx, top + rise * i, zz[0]), zz[1])
+
+
+## The Great Tower's round base: ring R = 2 (15 m across) from the hole's floor (-9) up to the terrace (1.0), four
+## storeys, the Well Hall at the bottom with its round door on the back side, a stair in a different big square each
+## storey; the flat roof terrace with battlements (open where the Gate Bridge meets it on the front side).
+func _sr_tower() -> void:
+	var S := STONE
+	var R := 2
+	var trim := 0.15 + Pieces.LIST["cornice"].size.z * 0.5
+	_ring_off = SR_RING
+	_big_ring_layer(R, "foundation", "foundation_triangle", -9.0)
+	var kst := [[2, 0], [4, 0], [1, 0], [3, 0]]          # each storey's stairs: [big square, small square]
+	var wins := [[2, 10], [1, 5, 9], [3, 7, 11], [0, 2, 4, 8, 10]]
+	var y := -8.0
+	for s in 4:
+		var wj: Array = wins[s]
+		var low := s == 0
+		_big_ring_edges(R, y, func(j, m): return "doorway" if (low and j == 6 and m == 1) else (
+			"window_wall" if j in wj else "wall"))
+		_big_ring_corners(R, y, "pillar")
+		_big_ring_stairs(R, kst[s][0], kst[s][1], y)
+		var f := y + 2.0
+		_big_ring_layer(R, "floor", "floor_triangle", f, [[kst[s][0], R - 1, kst[s][1]]])
+		_big_ring_rails(R, kst[s][0], kst[s][1], f + 0.25)
+		var top := s == 3
+		_big_ring_edges(R, f - 0.05, func(j, _m): return "" if (top and j == 0) else "cornice", S, trim)
+		y = f + 0.25
+	_add("door", S, _dir(6) * (R * _EDGE) + _dir(9) + Vector3(0, -8.0, 0) + _ring_off, _rot(6))
+	_ring_off = Vector3.ZERO
+	_add("foundation", S, Vector3(0, -9.0, SR_DOORSTEP), 0)                # the doorstep on the hole's floor
+	_ring_off = SR_RING
+	_big_ring_edges(R, y, func(j, m): return "" if (j == 0 and m == 0) else "battlement")
+	_big_ring_corners(R, y, "battlement_corner")
+	_ring_off = Vector3.ZERO
+	# --- the Gate Bridge: stone, from the gatehouse's back door (z 5) straight onto the terrace, its end flush with
+	# the ring's front side (z -1)
+	for z in [0, 2]:
+		_add("floor", S, Vector3(0, 0.75, z), 0)
+		for sx in [-1, 1]:
+			_wall_z("railing", sx, z, 1.0, S)
+	_add("foundation", S, Vector3(0, 0.0, 4), 0)
+
+
+## The Keep (stone, x -3..3, z -11..-5, two storeys on the terrace), the Crown (wood, x -5..5, z -13..-5: jutting 2 m
+## left, right and back on stone brackets, its front flush so nothing hangs over the keep's door), its railed deck, and
+## the Lookout on the deck (wood, x -3..1, z -11..-7) under a steep pyramid roof: the highest point. The best chest.
+func _sr_keep_and_crown() -> void:
+	var S := STONE
+	var W := WOOD
+	var kx := [-2, 0, 2]
+	var kz := [-10, -8, -6]
+	var lv := [1.0, 3.25]
+	var front := [{-2: "window_wall", 0: "doorway", 2: "window_wall"}, {-2: "window_wall", 0: "window_wide", 2: "window_wall"}]
+	var back := [{0: "window_wall"}, {-2: "window_wall", 2: "window_wall"}]
+	var left := [{-8: "window_wall"}, {-6: "window_wall"}]
+	var right := [{-8: "window_wall"}, {-10: "window_wall"}]
+	for i in 2:
+		var y: float = lv[i]
+		for x in kx:
+			_wall_x(front[i].get(x, "wall"), x, -5, y, S)
+			_wall_x(back[i].get(x, "wall"), x, -11, y, S)
+		for z in kz:
+			_wall_z(left[i].get(z, "wall"), -3, z, y, S)
+			_wall_z(right[i].get(z, "wall"), 3, z, y, S)
+	_add("door", S, Vector3(0, 1.0, -5), 0)
+	_add("floor", S, Vector3(2, 1.0, -8), 0)                                  # storey 1's stairs (toward -z)
+	_add("stairs", S, Vector3(2, 1.25, -8), 0)
+	for x in kx:
+		for z in kz:
+			if Vector2(x, z) != Vector2(2, -8):
+				_add("floor", S, Vector3(x, 3.0, z), 0)
+		_on_wall_z("cornice", S, x, -5, 2.95, 1)
+	for z in kz:
+		_on_wall_x("cornice", S, -3, z, 2.95, -1)
+		_on_wall_x("cornice", S, 3, z, 2.95, 1)
+	_wall_x("railing", 2, -7, 3.25, S)
+	_wall_z("railing", 1, -8, 3.25, S)
+	_add("floor", S, Vector3(-2, 3.25, -8), 0)                                # storey 2's stairs (toward +z)
+	_add("stairs", S, Vector3(-2, 3.5, -8), 2)
+	# --- the Crown's floor (5.25): the keep's cells stone, the jutting ones wood over stone brackets
+	var cx := range(-4, 5, 2)
+	var cz := range(-12, -5, 2)
+	for x in cx:
+		for z in cz:
+			if Vector2(x, z) == Vector2(-2, -8):
+				continue
+			_add("floor", S if (x in kx and z in kz) else W, Vector3(x, 5.25, z), 0)
+	for z in kz:
+		_on_wall_x("corbel", S, -3, z, 4.25, -1)
+		_on_wall_x("corbel", S, 3, z, 4.25, 1)
+	for x in kx:
+		_on_wall_z("corbel", S, x, -11, 4.25, -1)
+	var w := 5.5
+	_wall_x("railing", -2, -9, w, W)
+	_wall_z("railing", -3, -8, w, W)
+	_wall_z("railing", -1, -8, w, W)
+	var cfront := {-4: "window_wall", -2: "window_wall", 0: "window_wide", 2: "window_wall", 4: "window_wall"}
+	var cback := {-2: "doorway", 2: "window_wall"}
+	for x in cx:
+		_wall_x(cfront[x], x, -5, w, W)
+		_wall_x(cback.get(x, "wall"), x, -13, w, W)
+	for z in cz:
+		_wall_z({-10: "window_wall", -6: "window_wall"}.get(z, "wall"), -5, z, w, W)
+		_wall_z({-12: "window_wall", -6: "window_wall"}.get(z, "wall"), 5, z, w, W)
+	_add("door", W, Vector3(-2, w, -13), 0)                                   # onto the High Bridge
+	_add("floor", W, Vector3(4, w, -8), 0)                                    # its stairs (toward -z) onto the deck
+	_add("stairs", W, Vector3(4, w + 0.25, -8), 0)
+	# --- the deck (7.75) and the Lookout
+	var d := w + 2.0
+	for x in cx:
+		for z in cz:
+			if Vector2(x, z) != Vector2(4, -8):
+				_add("floor", W, Vector3(x, d, z), 0)
+	var r := d + 0.25
+	for x in cx:
+		_wall_x("railing", x, -5, r, W)
+		_wall_x("railing", x, -13, r, W)
+	for z in cz:
+		_wall_z("railing", -5, z, r, W)
+		_wall_z("railing", 5, z, r, W)
+	_wall_x("railing", 4, -7, r, W)
+	_wall_z("railing", 3, -8, r, W)
+	_wall_x("window_wall", -2, -7, r, W)
+	_wall_x("doorway", 0, -7, r, W)
+	_wall_x("window_wall", -2, -11, r, W)
+	_wall_x("wall", 0, -11, r, W)
+	_wall_z("window_wall", -3, -10, r, W)
+	_wall_z("wall", -3, -8, r, W)
+	_wall_z("wall", 1, -10, r, W)
+	_wall_z("window_wall", 1, -8, r, W)
+	_add("door", W, Vector3(0, r, -7), 0)
+	var top := r + 2.0
+	_add("roof_45_outer", W, Vector3(0, top, -8), 0)                          # (each corner's high point in the middle)
+	_add("roof_45_outer", W, Vector3(0, top, -10), 1)
+	_add("roof_45_outer", W, Vector3(-2, top, -10), 2)
+	_add("roof_45_outer", W, Vector3(-2, top, -8), 3)
+
+
+## The Gatehouse on the rim (stone, x -5..5, z 5..13, two storeys, a flat roof with battlements): the grand steps up to
+## its round main door with a lantern each side, a back door onto the Gate Bridge, a side door with steps down to the
+## rim (toward the pit stairs). A little wooden watch hut on the roof's back-left corner (on purpose: not a mirror).
+func _sr_gatehouse() -> void:
+	var S := STONE
+	var W := WOOD
+	var gx := range(-4, 5, 2)
+	var gz := range(6, 13, 2)
+	for x in gx:
+		for z in gz:
+			_add("foundation", S, Vector3(x, 0, z), 0)
+	for x in [-2, 0, 2]:
+		_add("foundation_steps", S, Vector3(x, 0, 14), 0)
+	_add("foundation_steps", S, Vector3(6, 0, 8), _rot(3))
+	var lv := [1.0, 3.25]
+	var front := [{-4: "window_wall", 0: "doorway", 4: "window_wall"}, {-4: "window_wall", -2: "window_wall", 0: "window_wide", 2: "window_wall", 4: "window_wall"}]
+	var back := [{-4: "window_wall", 0: "doorway", 4: "window_wall"}, {-4: "window_wall", 0: "window_wall", 4: "window_wall"}]
+	var left := [{8: "window_wall", 12: "window_wall"}, {8: "window_wall", 10: "window_wall"}]
+	var right := [{8: "doorway", 12: "window_wall"}, {10: "window_wall", 12: "window_wall"}]
+	for i in 2:
+		var y: float = lv[i]
+		for x in gx:
+			_wall_x(front[i].get(x, "wall"), x, 13, y, S)
+			_wall_x(back[i].get(x, "wall"), x, 5, y, S)
+		for z in gz:
+			_wall_z(left[i].get(z, "wall"), -5, z, y, S)
+			_wall_z(right[i].get(z, "wall"), 5, z, y, S)
+	_add("door", S, Vector3(0, 1.0, 13), 0)
+	_add("door", S, Vector3(0, 1.0, 5), 0)
+	_add("door", S, Vector3(5, 1.0, 8), 1)
+	for s in [-1, 1]:
+		_on_wall_z("wall_sconce", COPPER, 2 * s, 13, 2.2, 1)
+	_add("floor", S, Vector3(-2, 1.0, 8), 0)                                  # storey 1's stairs (toward -z)
+	_add("stairs", S, Vector3(-2, 1.25, 8), 0)
+	for x in gx:
+		for z in gz:
+			if Vector2(x, z) != Vector2(-2, 8):
+				_add("floor", S, Vector3(x, 3.0, z), 0)
+	_wall_x("railing", -2, 9, 3.25, S)
+	_wall_z("railing", -3, 8, 3.25, S)
+	_wall_z("railing", -1, 8, 3.25, S)
+	_add("floor", S, Vector3(2, 3.25, 8), 0)                                  # storey 2's stairs (toward -z) onto the roof
+	_add("stairs", S, Vector3(2, 3.5, 8), 0)
+	for x in gx:
+		for z in gz:
+			if Vector2(x, z) != Vector2(2, 8):
+				_add("floor", S, Vector3(x, 5.25, z), 0)
+		_on_wall_z("cornice", S, x, 13, 5.0, 1)
+	for z in gz:
+		_on_wall_x("cornice", S, -5, z, 5.0, -1)
+		_on_wall_x("cornice", S, 5, z, 5.0, 1)
+	var t := 5.5
+	_wall_x("railing", 2, 9, t, S)
+	_wall_z("railing", 1, 8, t, S)
+	_wall_z("railing", 3, 8, t, S)
+	for x in gx:
+		_wall_x("battlement", x, 13, t, S)
+		if x >= 0:
+			_wall_x("battlement", x, 5, t, S)
+	for z in gz:
+		_wall_z("battlement", 5, z, t, S)
+		if z >= 10:
+			_wall_z("battlement", -5, z, t, S)
+	# --- the watch hut (wood, x -5..-1, z 5..9), a door toward the roof's stairs, a small gable roof
+	for z in [6, 8]:
+		_wall_z("window_wall" if z == 6 else "wall", -5, z, t, W)
+		_wall_z("doorway" if z == 8 else "wall", -1, z, t, W)
+	for x in [-4, -2]:
+		_wall_x("wall", x, 5, t, W)
+		_wall_x("window_wall" if x == -4 else "wall", x, 9, t, W)
+	_add("door", W, Vector3(-1, t, 8), 1)
+	_sr_roof(-5, -1, 9, 1, t + 2.0, true)
+
+
+## The Ledge House on the ledge (top -4.5): a stone storey (x 9..15, z -21..-13, its back on the hole's back wall), a
+## wooden storey on it, a little balcony on brackets at its front right corner (not over a door), a steep gable roof
+## that peeks out over the rim. A front door from the ledge, a side door out onto the back ledge (the back-wall stairs).
+func _sr_ledge_house() -> void:
+	var S := STONE
+	var W := WOOD
+	var lx := [10, 12, 14]
+	var lz := range(-20, -13, 2)
+	for x in lx:
+		for z in lz:
+			_add("foundation", S, Vector3(x, -4.5, z), 0)
+	_add("foundation", S, Vector3(12, -4.5, -12), 0)                          # the front door's step
+	_add("foundation", S, Vector3(8, -4.5, -20), 0)                           # the side door's step
+	var y := -3.5
+	for x in lx:
+		_wall_x({10: "window_wall", 12: "doorway"}.get(x, "wall"), x, -13, y, S)
+		_wall_x("wall", x, -21, y, S)
+	for z in lz:
+		_wall_z({-20: "doorway", -16: "window_wall"}.get(z, "wall"), 9, z, y, S)
+		_wall_z("wall", 15, z, y, S)
+	_add("door", S, Vector3(12, y, -13), 0)
+	_add("door", S, Vector3(9, y, -20), 1)
+	_add("floor", S, Vector3(14, y, -18), 0)                                  # its stairs (toward -z)
+	_add("stairs", S, Vector3(14, y + 0.25, -18), 0)
+	var f := -1.5
+	for x in lx:
+		for z in lz:
+			if Vector2(x, z) != Vector2(14, -18):
+				_add("floor", S, Vector3(x, f, z), 0)
+		if x != 14:                                                           # (the balcony there)
+			_on_wall_z("cornice", S, x, -13, f - 0.05, 1)
+	var w := f + 0.25
+	_wall_x("railing", 14, -17, w, W)
+	_wall_z("railing", 13, -18, w, W)
+	for x in lx:
+		_wall_x({10: "window_wall", 12: "window_wall", 14: "doorway"}[x], x, -13, w, W)
+		_wall_x("wall", x, -21, w, W)
+	for z in lz:
+		_wall_z({-18: "window_wall", -14: "window_wall"}.get(z, "wall"), 9, z, w, W)
+		_wall_z("wall", 15, z, w, W)
+	_add("door", W, Vector3(14, w, -13), 0)                                   # onto the balcony
+	_add("floor", W, Vector3(14, f, -12), 0)
+	_on_wall_z("corbel", S, 14, -13, f - 1.0, 1)
+	_wall_x("railing", 14, -11, w, W)
+	_wall_z("railing", 13, -12, w, W)
+	_wall_z("railing", 15, -12, w, W)
+	_sr_roof(9, 15, -13, 2, w + 2.0, true)
+
+
+## The wooden stairs pinned to the hole's walls: down the right wall from the rim (z 4) to the ledge, and down the back
+## wall from the back ledge (x 4) to the hole's floor; each two flights straight on, closed on the open side, landings
+## and feet on stone steps.
+func _sr_pit_stairs() -> void:
+	var S := STONE
+	var W := WOOD
+	_add("foundation", S, Vector3(14, 0.0, 4), 0)                             # the top, on the rim
+	for z in [-2, 0, 2]:
+		_add("foundation", S, Vector3(14, -4.5, z), 0)
+	_stacked_stairs(Vector3(14, -3.5, 0), 2, W)                                # climbs toward the rim (+z)
+	_add("foundation", S, Vector3(4, -4.5, -20), 0)                           # the top, on the back ledge
+	for x in [-2, 0, 2]:
+		_add("foundation", S, Vector3(x, -9.0, -20), 0)
+	_stacked_stairs(Vector3(0, -8.0, -20), 3, W)                               # climbs toward the ledge (+x)
+
+
+## The High Bridge (wood, x -3..-1) from the Crown's back door over the hole to the high shelf, and the Winch House on
+## the shelf (stone storey x -7..3, z -27..-23, its back on the cave wall; a wooden storey jutting 2 m left and right
+## on brackets; a gentle gable roof, so the tower's lookout stays the highest point).
+func _sr_high_bridge_and_winch_house() -> void:
+	var S := STONE
+	var W := WOOD
+	for z in [-14, -16, -18, -20]:
+		_add("floor", W, Vector3(-2, 5.25, z), 0)
+		for sx in [-3, -1]:
+			_wall_z("railing", sx, z, 5.5, W)
+	_add("foundation", S, Vector3(-2, 4.5, -22), 0)
+	var hx := range(-6, 3, 2)
+	var hz := [-26, -24]
+	for x in hx:
+		for z in hz:
+			_add("foundation", S, Vector3(x, 4.5, z), 0)
+	var y := 5.5
+	for x in hx:
+		_wall_x({-6: "window_wall", -2: "doorway", 2: "window_wall"}.get(x, "wall"), x, -23, y, S)
+		_wall_x("wall", x, -27, y, S)
+	for z in hz:
+		_wall_z("window_wall" if z == -24 else "wall", -7, z, y, S)
+		_wall_z("wall", 3, z, y, S)
+	_add("door", S, Vector3(-2, y, -23), 0)
+	_add("floor", S, Vector3(0, y, -26), 0)                                   # its stairs (toward -x)
+	_add("stairs", S, Vector3(0, y + 0.25, -26), 1)
+	var f := 7.5
+	for x in hx:
+		for z in hz:
+			if Vector2(x, z) != Vector2(0, -26):
+				_add("floor", S, Vector3(x, f, z), 0)
+		_on_wall_z("cornice", S, x, -23, f - 0.05, 1)
+	for z in hz:
+		_add("floor", W, Vector3(-8, f, z), 0)
+		_add("floor", W, Vector3(4, f, z), 0)
+		_on_wall_x("corbel", S, -7, z, f - 1.0, -1)
+		_on_wall_x("corbel", S, 3, z, f - 1.0, 1)
+	var w := f + 0.25
+	_wall_z("railing", 1, -26, w, W)
+	_wall_x("railing", 0, -25, w, W)
+	var wx := range(-8, 5, 2)
+	for x in wx:
+		_wall_x({-8: "window_wall", -4: "window_wall", 0: "window_wall", 4: "window_wall"}.get(x, "wall"), x, -23, w, W)
+		_wall_x("wall", x, -27, w, W)
+	for z in hz:
+		_wall_z("window_wall" if z == -24 else "wall", -9, z, w, W)
+		_wall_z("window_wall" if z == -24 else "wall", 5, z, w, W)
+	_sr_roof(-9, 5, -23, 1, w + 2.0, false)
+
 
 
 ## How far the glass reaches from a window piece's middle, along its wall (the rest is the frame's brick or wood).
