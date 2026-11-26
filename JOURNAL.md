@@ -14200,3 +14200,68 @@ trench either. This had come back from F904 and F908.
 - The full test run took 2 hours (1102 tests, 27 failed), and I had cut its output to the last 25 lines, so I could
   only see a few of the failures (Jolt body limit, test-world saving: parts I didn't touch). Instead of a second
   2-hour run, I re-ran every dungeon and ghost test file: all pass. Next time: keep only the FAIL lines, not the tail.
+
+
+## Nov 26 — F913 step 5: ruin 13, the Cliff Galleries, is in the game
+
+**What we did:** The owner had OK'd the Cliff Galleries' ruin page (dwarf homes up a tall cave wall, stone below,
+brick above). This chat put the ruin into real worlds, the same way as the Mine-head Works (ruin 12).
+- **`src/world/ruin_cliff_galleries.gd`** (new): finds its cavern (the tallest Mossy caverns first, then the widest,
+  about 320 m from the start, never another grand ruin's), and tries spots slid back to a cave wall plus a grid. Each
+  spot is scored by 64 "is this rock?" samples: the cliff behind it (up to 22 m), the shelf under the tower (10.75 m
+  up), the ledge under the Ledge House (4.5 m up), the crack's walls, the floor under the hall. Missing rock and rock
+  in the way of the buildings both cost points. Then the world keeps the whole spot clear (the placement rule) and
+  takes out any stone column in it.
+- **Rock fill:** a natural cave almost never has a flat shelf exactly 10.75 m up. So when it builds, it first fills
+  only the empty bits under the shelf and the ledge with balls of rock (saved like digging, the same trick as
+  Brickcrown's rock lump). In real worlds the spot picker chooses places that already have most of that rock
+  (41 to 58 of 64 samples on the three test seeds). Then it digs the blueprint's air (the niches in the cliff),
+  the crack under the bridge (ramping up in front so you can walk out), and the yard in front.
+- **`tools/ruins/make_cliff_galleries_ruin.py`** (new): the page's exact dice (same random seed, same order), then
+  "made sound": no doors, nothing floating, rubble only on floors or ground. The gallery's middle lies as tipped
+  rubble on the hall's roof, the bridge's far floor sags, the lookout's roof corners lean. Chests: the best (copper)
+  in the tower's lookout, stone chest + strongbox in the Stone Hall, small chest + pigeonholes in the Ledge House,
+  quiver rack in the tower, coal scuttle in the shed. Torches and rock beetles. 643 pieces, 0 rule problems.
+- **Wired in** (one or two lines each): recipes.gd, ruin_tests.gd (a Ruins test world), main.gd, cave_maker.gd,
+  loot_props.gd, test_ruin_loot.gd.
+- **`tests/test_ruin_cliff_galleries.gd`** (new, 7 tests): plan whole, stands up, matches the blueprint, ruin rules,
+  cave shape (and the fill never sticks out past the shelf or ledge), keep-clear on seeds 42, 7 and 1234, and a full
+  rebuild that teaches the blueprint. All pass. A muted test game built it with no script errors.
+
+**Mistakes and hurdles:**
+- **Spot search too slow on seed 7** (8.7 s, the limit is 8). Fix: the grid round the cavern's middle went from
+  9×9 to 7×7 spots (the "slid back to the wall" spots are the good ones anyway).
+- **The rebuild test got stuck: "someone is in the way".** On seed 42 the natural floor in front was 2.5 m higher
+  than the ruin's floor (the yard is dug out), so none of the chest spots counted as level ground. The chest used its
+  backup spot, 2 m from the grand stair, and the test dwarf standing next to it blocked the stair's rebuild.
+  Fix: the backup spot is now 4 m out from the stair's foot.
+- **The full test run found two more:** (1) the cliff stairs had no wall on the cliff side (the stair rule 1.13 wants
+  walls on both sides, so no dark slit opens between the steps and lumpy rock): three brick wall pieces added, plan
+  rebuilt (645 pieces, 0 problems). (2) The Ruins test world check wanted flat ground all round the ruin's middle,
+  but the three wall-built ruins (Brickcrown, Mine-head, Cliff Galleries) have their cliff right behind it: the check
+  now looks only in front for them, with a 0.5 m dip allowed (their floor covers it).
+- **Grep tripped over a `[`** in a pattern (a shell slip, re-run with a plain pattern).
+- **Note for the owner:** the committed Mine-head code already leans on another chat's not-yet-committed Brickcrown
+  work (ground_y, brickcrown_spot), so the GitHub copy only builds once that chat commits too.
+
+**Left:** the owner's play test (the rock under the shelf and ledge should look like cave rock; the tower needs a
+short build across the fallen gallery to reach the lookout chest).
+
+
+## Nov 26 — Quick test runs (the suite took over 2 hours)
+
+**What we did:** The owner asked why the tests run 30+ minutes. The full run today took **2 h 9 min** for 1,111 checks.
+Most of that is checks that grow a whole test world (cave layouts, keep-clear, start rooms) or rebuild a whole ruin
+piece by piece (each ruin's file is 2–3 minutes; there are 16 ruin test files now). They all run one after another.
+Owner's pick: "Quick + full".
+- `tests/run_tests.gd` now writes how long each check took to `user://test_times.json` (on that computer only).
+- A plain run skips every check that took 10 s or more last time, and says how many it skipped. `full=1` runs all.
+  `only=` / `fn=` always run what they pick. No test file changed.
+- CLAUDE.md and CLAUDE-REFERENCE.md: chats run the plain (quick) run at the end, `full=1` only after ruin, cave or
+  world-making work. The PC's times file was filled from the Nov 19 run and today's slow list (72 slow checks known).
+
+**Mistakes and hurdles:**
+- One edit (saving the times at the end) silently didn't land because of a `\n` mismatch in the patch script; caught
+  when the times file didn't appear, then fixed by hand.
+- The 20 s "slow" lines only add up to 27 of the 129 minutes, so most time is in checks under 20 s. The next plain
+  run times every check, so the quick runs get quicker by themselves.
