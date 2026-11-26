@@ -26,3 +26,15 @@ func test_every_weapon_kind_is_on_the_hotbar() -> void:
 	for it in Start.BAG:
 		bolts = bolts or String(it[0]).begins_with("bolt_")
 	check(bolts, "bolts for the crossbow (in the bag)")
+
+
+## Owner, Nov 26: the dev dungeon starts with the owner's saved perk build; every point fits and every perk can be bought.
+func test_the_saved_perk_build_fits() -> void:
+	var p := Progression.new()
+	p.level = Start.LEVEL
+	p.bonus_points = 15
+	for id in Start.PERK_BUILD:
+		check(Progression.PERKS.has(id), "%s is a real perk" % id)
+		for r in Start.PERK_BUILD[id]:
+			check(p.buy_perk(id), "%s rank %d can be bought (%s)" % [id, r + 1, p.why_not(id)])
+	check_eq(p.points_free(), 0, "all the points are used, none missing")

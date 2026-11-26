@@ -344,7 +344,7 @@ func test_the_tomb_is_dark() -> void:
 	check_eq(String(d.map.get("mood", "")), "tomb", "the tomb mood")
 	check(float(Ambience.MOODS.tomb.ambient_energy) < float(Ambience.MOODS.mossy.ambient_energy) * 0.5, "much less soft light")
 	for map in DungeonMap.MAPS:
-		if map.id != "hald":
+		if not map.id in ["hald", "barrows"]:  # (the Quiet Barrows is a dark tomb too: F906)
 			check(not map.has("mood") and not map.has("torch_energy"), "%s keeps its light" % map.id)
 
 

@@ -210,9 +210,9 @@ def wall_piece(x, y, z, rot, top_row, lvl):
 		piece("wall", x, y, z, rot)
 
 
-# The spear walls: both sides of the Spear Gate (x 18-22, z 32-42); the z 39 pair stabs a moment after the z 35 pair.
-SPEARS = {("spear_gate", "w", 18, 35.0): 0.0, ("spear_gate", "e", 22, 35.0): 0.0,
-	("spear_gate", "w", 18, 39.0): 0.25, ("spear_gate", "e", 22, 39.0): 0.25}
+# The spear wall: one, in the middle of the Spear Gate's west wall (x 18-22, z 32-42). Owner, Nov 25 (1st play, F909):
+# four was too many, "has to be 1".
+SPEARS = {("spear_gate", "w", 18, 37.0): 0.0}
 torch_every = {}
 for g, side, line, along, rot, key in rock_edges:
 	x, z = wall_pos(rot, line, along)
@@ -364,7 +364,7 @@ prop("cave/boulder_round.glb", 41.0, D3, 22.4, 30.0, scale=2.4, role="secret", l
 prop("dungeon/trap_chest_spikes_stone.glb", 41.0, D3, 21.0, 180.0, role="trap", label="Spike holes round the chest")
 chest("chest_small", 41.0, 20.6, 180.0, "The mourners' hoard (always): shoot it first", True, "buried", y=D3 + 0.24)
 
-# 16 Ash Bridge: two swinging boulders over the slabs, the chasm 10 m down onto spikes, Wrathful Shades on the far end.
+# 16 Ash Bridge: two swinging boulders over the slabs, a 3 m trench of spikes either side (F908), Wrathful Shades on the far end.
 for x in (25.0, 29.0):
 	prop("dungeon/trap_swing_boulder.glb", x, D3, 28.0, 90.0, role="trap", label="Swinging boulder (shoot the chain)" if x == 25.0 else "")
 for x in range(int(CHASM[1]), int(CHASM[3]), 2):

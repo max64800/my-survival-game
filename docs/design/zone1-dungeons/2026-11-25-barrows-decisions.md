@@ -40,7 +40,7 @@ Level 2 (floor -8):
 
 Level 3 (floor -16), the oldest:
 - **15 hall_of_bones** [34,22,46,34] spiders + Drifting Shades, dart wall · mourning_niche (18) behind a boulder on its north wall
-- bridge_door [32,26,34,30] · **16 ash_bridge** [18,24,32,32] slabs z26-30, chasm [22,24,30,32] 10 m down (deadly), swinging boulders, Wrathful Shades on the far (west) end
+- bridge_door [32,26,34,30] · **16 ash_bridge** [18,24,32,32] slabs z26-30, chasm [22,24,30,32] a 3 m spike trench either side of the slabs (deadly; owner F908: "has to have spikes" you can see), swinging boulders, Wrathful Shades on the far (west) end
 - **17 spear_gate** [18,32,22,42] spear walls · kings_door [18,42,22,44] (round door)
 - **19 kings_barrow** [14,44,28,56] h6: the Barrow Keeper + 2 shades · grave_gate [28,48,30,52] locked (Barrow Key)
 - **21 kings_grave** [30,48,38,56] recipe stand + big chest

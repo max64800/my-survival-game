@@ -1488,3 +1488,22 @@ func test_hollow_miner_no_push() -> void:
 	check(not Monsters.info("tunnel_rat").get("no_push", false), "Bone Rot (small skeleton) does not have no_push")
 	for boss in ["foreman", "prop_warden"]:  # F675, F728: no boss runs on into you and shoves you along
 		check(Monsters.info(boss).get("no_push", false), "%s stops before running into the player" % boss)
+
+
+## Owner, Nov 26 ("last swing doesn't work, I killed the spider and I'm not healing"): a kill with Last Swing 3 heals 9.
+func test_last_swing_heals_on_a_kill() -> void:
+	await _setup()
+	ps.progress.perks = {warriors_grip = 1, light_feet = 1, last_swing = 3}
+	ps.inventory.add_worn("sword_stone")
+	auth.request_select_slot(1, first_item_slot(ps))
+	ps.vitals.health = 50.0
+	var m := _spawn("cave_spider", Vector3(1.2, 0, 0))
+	m.state = Monster.State.CHASE
+	for i in 6:
+		if auth.monsters.monsters.is_empty():
+			break
+		auth.monsters.request_attack(1, PackedInt32Array([m.uid]), false, i % 2, false)
+	check(auth.monsters.monsters.is_empty(), "the spider died")
+	print("health after the kill: %.1f" % ps.vitals.health)
+	check(ps.vitals.health >= 58.9, "Last Swing 3 healed 9 (%.1f)" % ps.vitals.health)
+	_teardown()

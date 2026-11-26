@@ -16,6 +16,10 @@ const BAG := [["bolt_metal", 60], ["axe_copper", 1], ["spore_bomb", 10], ["blast
 const FOOD := [["dish_hearth_stew", 10], ["dish_miners_pie", 10], ["dish_beetle_roast", 10], ["drink_moss_ale", 10],
 	["drink_bellcap_juice", 10]]
 const LEVEL := 15  ## the dwarf starts at level 15 (owner, Nov 25), plus the 15 test perk points below
+## The owner's perk build, already bought at every dev dungeon start (owner, Nov 26). Order matters: each perk's
+## needed one comes first.
+const PERK_BUILD := {thick_skin = 3, big_lungs = 3, stubborn_heart = 3, grave_walker = 2, unbreakable = 1,
+	warriors_grip = 3, light_feet = 3, last_swing = 3, battle_breath = 2, quick_reload = 3, steady_aim = 3}
 
 var _main: Node
 
@@ -41,6 +45,10 @@ func _run() -> void:
 	if ps:
 		ps.progress.level = maxi(ps.progress.level, LEVEL)
 		ps.progress.bonus_points = 15  # perk points to try perks in the dungeon (owner, Nov 20)
+		for id in PERK_BUILD:  # the owner's saved build, bought in tree order (uses all 29 points)
+			for r in PERK_BUILD[id]:
+				ps.progress.buy_perk(id)
+		ps.vitals.health = ps.vitals.max_health()  # (Thick Skin raised the max: start full)
 		var inv: Inventory = ps.inventory
 		for slot in WEAR:
 			inv.slots[Inventory.equip_index(slot)] = {id = WEAR[slot], count = 1}

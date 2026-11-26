@@ -161,7 +161,7 @@ static var LIST := {
 	# The Quiet Barrows (F906, owner Nov 25: "ghosts and spiders, the boss a rune ghost"). The Barrow Warden: a big
 	# Bearded Shade who leads the Keepers' Barrow (not a boss: two keepers rise with him).
 	"barrow_warden": {name = "The Barrow Warden", dungeon_only = true, sleeps = true, no_variant = true, ragdoll = false, ghost = true, rise_near = 8.0,
-		size = 1.25, height = 1.9, hp = 240, armor = 15, stun = 160, slash = 0.8, blunt = 0.9, pierce = 0.6,
+		size = 1.1, height = 1.75, hp = 240, armor = 15, stun = 160, slash = 0.8, blunt = 0.9, pierce = 0.6,
 		fire = 1.25, frost = 0.25, poison = 0.0, walk = 1.2, run = 3.2, pack = [1, 1], xp = 40,
 		color = Color(0.62, 0.9, 0.8), shape = "ghost", recover = 1.7,
 		attacks = [{name = "Warden's Chop", anim = "Chop", warn_sound = "beetle_rumble", tell = 1.0, damage = 18, type = "blunt", reach = 2.4, parry = "any", rest = 3.5},

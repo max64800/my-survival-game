@@ -942,10 +942,17 @@ func _drop_ahead(dir: Vector3) -> bool:
 	# along the seam between its two stone slabs and found nothing, and this ray started 0.6 m up, already under the
 	# slab that rises ahead: it saw only the floor far below (a "pit"), so it stood at the foot of the stair forever.
 	# Now it starts as high as a stair rises over that distance (45 degrees), so it lands on the steps.
+	# Owner, Nov 25 (Quiet Barrows, F907: "they can't climb the stairs"): one ray fell through the seam where two floor
+	# slabs meet in a doorway, so the Barrow Warden saw a pit there and waited for good. A pit only if three rays a
+	# hand apart (across its way) all find nothing.
 	var up := 0.6 + (float(data.get("size", 1.0)) * 0.5 + 0.6)
-	var q := PhysicsRayQueryParameters3D.create(ahead + Vector3.UP * up, ahead + Vector3.DOWN * (MAX_DROP + 0.1))
-	q.collision_mask = World.TERRAIN_LAYER
-	return space.intersect_ray(q).is_empty()
+	var side := Vector3(-dir.z, 0.0, dir.x).normalized() * 0.15
+	for off in [Vector3.ZERO, side, -side]:
+		var q := PhysicsRayQueryParameters3D.create(ahead + off + Vector3.UP * up, ahead + off + Vector3.DOWN * (MAX_DROP + 0.1))
+		q.collision_mask = World.TERRAIN_LAYER
+		if not space.intersect_ray(q).is_empty():
+			return false
+	return true
 
 
 ## Elemental buildup from a bolt (resistance shrinks it).

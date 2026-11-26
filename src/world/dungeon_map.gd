@@ -306,7 +306,7 @@ const BARROWS := {
 		["mourning_niche", 40, 20, 42, 22, OLDEST, 3],     # 18 behind the boulder (a chest)
 		["bridge_door", 32, 26, 34, 30, OLDEST, 3.5],
 		["ash_bridge", 18, 24, 32, 32, OLDEST, 6],         # 16 slabs over the chasm, swinging boulders, Wrathful Shades
-		["chasm", 22, 24, 30, 32, OLDEST - 10.0, 10],      #    10 m down onto spikes (falling in kills)
+		["chasm", 22, 24, 30, 32, OLDEST - 3.0, 3],        #    a 3 m trench of spikes you can see (falling in kills; owner, F908)
 		["spear_gate", 18, 32, 22, 42, OLDEST, 4],         # 17 spear walls
 		["kings_door", 18, 42, 22, 44, OLDEST, 3.5],
 		["kings_barrow", 14, 44, 28, 56, OLDEST, 6],       # 19 the Barrow Keeper (the Barrow Key)

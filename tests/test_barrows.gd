@@ -220,8 +220,7 @@ func _ghost_follows(kind: String, from: Vector3, room: String, to: Vector3) -> v
 	r.root.free()
 
 
-## TODO F907 (still fails: rename back to test_ when fixed)
-func todo_a_ghost_follows_you_up_the_spiral_stair() -> void:
+func test_a_ghost_follows_you_up_the_spiral_stair() -> void:
 	await _ghost_follows("ghost_c", Vector3(58.0, DungeonMap.OLDER, 34.0), "second_ring", Vector3(40.0, 0.3, 36.0))
 
 
@@ -229,6 +228,18 @@ func test_a_ghost_follows_you_up_the_deep_stair() -> void:
 	await _ghost_follows("ghost_a", Vector3(40.0, DungeonMap.OLDEST, 28.0), "hall_of_bones", Vector3(60.0, DungeonMap.OLDER + 0.3, 30.0))
 
 
-## TODO F907 (still fails: rename back to test_ when fixed)
-func todo_the_warden_follows_you_up_the_spiral_stair() -> void:
+func test_the_warden_follows_you_up_the_spiral_stair() -> void:
 	await _ghost_follows("barrow_warden", Vector3(58.0, DungeonMap.OLDER, 34.0), "second_ring", Vector3(40.0, 0.3, 36.0))
+
+
+## Owner, Nov 25 (1st play): one spear wall in the Spear Gate, not four (F909); the strips beside the Ash Bridge are
+## a shallow trench of spikes you can see from the bridge (F908).
+func test_one_spear_wall_and_a_spike_trench_you_can_see() -> void:
+	var plan := DungeonBuild.load_plan("barrows")
+	check_eq(plan.props.filter(func(p): return String(p.model) == "dungeon/trap_spear_wall.glb").size(), 1, "one spear wall")
+	var d := _barrows(_test_world())
+	var chasm: Array = d.map.spaces.filter(func(s): return s[0] == "chasm")[0]
+	var depth := DungeonMap.OLDEST - float(chasm[5])
+	check(depth >= 2.5 and depth <= 4.0, "a shallow trench (%.1f m)" % depth)
+	var spikes: Array = plan.props.filter(func(p): return String(p.model) == "dungeon/trap_spikes.glb" and absf(float(p.pos[1]) - float(chasm[5])) < 0.1)
+	check(spikes.size() >= 12, "spikes all along it (%d)" % spikes.size())
