@@ -28,7 +28,9 @@ FACES = int(OPT.get("faces", 200000))
 GAP = 0.012
 BODY = ROOT / "assets" / "characters" / "dwarf" / "dwarf_body.glb"
 # where each piece sits on him (Blender: x = his left, -y = front, z up): top and bottom height of the armour
-FIT = {"chest": dict(top=0.965, bottom=0.31, src=["body_shirt", "body_torso", "body_shorts"], belly=(0.45, 0.72))}[PIECE]
+FIT = {"chest": dict(top=0.965, bottom=0.31, src=["body_shirt", "body_torso", "body_shorts"], belly=(0.45, 0.72)),
+	# helm: eye = slit height in the picture (0 top .. 1 bottom), eye_z = his eyes, wall = helmet side past his head
+	"helm": dict(eye=0.54, eye_z=1.083, brow_z=1.15, wall=0.068, back=0.0, src=[])}[PIECE]
 
 
 def log(*a):
@@ -143,139 +145,259 @@ if SHEET:
 	ca = A.data.color_attributes.new("Col", "FLOAT_COLOR", "POINT")
 	ca.data.foreach_set("color", np.hstack([rgb, np.ones((len(rgb), 1))]).ravel())  # (Blender's pixels are linear)
 	log("painted from the pictures in", SHEET)
-z0, z1 = co[:, 2].min(), co[:, 2].max()
-sz = (FIT["top"] - FIT["bottom"]) / (z1 - z0)
-co[:, 2] = (co[:, 2] - z0) * sz + FIT["bottom"]
-co[:, 0] *= sz
-co[:, 1] *= sz  # (first the same scale every way; then width and depth fitted to his belly)
-bcol = np.vstack([POSED[n][0] for n in ("body_shirt",)])
-sx, sy, oy = 1.0, 1.0, 0.0
-best = []
-for z in np.linspace(*FIT["belly"], 8):
-	b = bcol[(np.abs(bcol[:, 2] - z) < 0.01) & (np.abs(bcol[:, 0]) < 0.3)]
-	a = co[(np.abs(co[:, 2] - z) < 0.01)]
-	ac = a[np.abs(a[:, 0]) < 0.08]
-	bc = b[np.abs(b[:, 0]) < 0.08]
-	if len(b) < 5 or len(a) < 5 or len(ac) < 3 or len(bc) < 3:
-		continue
-	best.append(((np.abs(b[:, 0]).max() + GAP * 1.5) / np.abs(a[:, 0]).max(),
-		(bc[:, 1].max() - bc[:, 1].min() + 3 * GAP) / (ac[:, 1].max() - ac[:, 1].min()),
-		(bc[:, 1].max() + bc[:, 1].min()) / 2, (ac[:, 1].max() + ac[:, 1].min()) / 2))
-best = np.array(best)
-sx, sy = best[:, 0].max(), best[:, 1].max()
-i = int(np.argmax(best[:, 1]))
-oy = best[i, 2] - best[i, 3] * sy
-co[:, 0] *= sx
-co[:, 1] = co[:, 1] * sy + oy
-log("fit scale", round(sz, 3), "width x", round(sx, 3), "depth x", round(sy, 3), "shift y", round(oy, 3))
-
-# ---------------------------------------------------------------- nothing inside him: push points out to GAP
-bodyv, bodyf, off = [], [], 0
-for n in FIT["src"] + ["body_pants"]:
-	v, f = POSED[n]
-	bodyv.append(v)
-	bodyf += [tuple(i + off for i in p) for p in f]
-	off += len(v)
-bodyv = np.vstack(bodyv)
-BVH = BVHTree.FromPolygons([Vector(p) for p in bodyv], bodyf)
-moved = 0
-for k in range(3):
-	for i, p in enumerate(co):
-		hit = BVH.find_nearest(Vector(p))
-		if hit[0] is None:
+def drop_crumbs(o, keep=0.02):
+	"""The generator leaves tiny loose bits floating round the piece: keep only parts with >= keep of the points."""
+	import bmesh
+	bm = bmesh.new()
+	bm.from_mesh(o.data)
+	bm.verts.ensure_lookup_table()
+	seen, kill = set(), []
+	for v in bm.verts:
+		if v.index in seen:
 			continue
-		q, nrm = hit[0], hit[1]
-		dv = Vector(p) - q
-		s = dv.dot(nrm)
-		if s < GAP:
-			co[i] = np.array(q + nrm * GAP)
-			moved += 1
-log("points pushed out of his body", moved)
-
-# ---------------------------------------------------------------- the beard hangs OVER the armour: press the front back
-# under it (each point inside a braid goes behind the braid + 1 cm, its neighbours follow softly so there's no dent)
-hv, hf = POSED["body_head"]
-HB = BVHTree.FromPolygons([Vector(p) for p in hv], hf)
-FWD, BACK = Vector((0, -1, 0)), Vector((0, 1, 0))
-
-
-def beard_back(p):
-	"""The beard's back surface in front of/around point p (a ray from in front of him going back), or None."""
-	o = Vector((p[0], -1.0, p[2]))
-	enter = HB.ray_cast(o, BACK, 2.0)
-	if enter[0] is None or enter[0].y > p[1] + 0.10:
-		return None  # (no beard here, or far behind: the plate is a thick shell, its front face is up to ~4 cm out)
-	leave = HB.ray_cast(enter[0] + BACK * 1e-4, BACK, 0.03)
-	return enter[0].y + 0.03 if leave[0] is None else leave[0].y  # (where it joins his chin there's no back: 3 cm in)
+		part, todo = [], [v]
+		seen.add(v.index)
+		while todo:
+			x = todo.pop()
+			part.append(x)
+			for e in x.link_edges:
+				y = e.other_vert(x)
+				if y.index not in seen:
+					seen.add(y.index)
+					todo.append(y)
+		if len(part) < keep * len(bm.verts):
+			kill += part
+	bmesh.ops.delete(bm, geom=kill, context="VERTS")
+	bm.to_mesh(o.data)
+	bm.free()
+	log("loose crumbs dropped", len(kill), "points")
 
 
-push = {}
-for i, p in enumerate(co):
-	if p[2] > 0.96 or p[1] > 0.0:
-		continue
-	by = beard_back(p)
-	if by is not None and p[1] < by + 0.008:
-		push[i] = min(by + 0.008 - p[1], 0.16)
-if push:
-	ids = list(push)
-	pk = kdtree.KDTree(len(ids))
-	for j, i in enumerate(ids):
-		pk.insert(Vector(co[i]), j)
-	pk.balance()
-	R = 0.03
-	dy = np.zeros(len(co))
-	for i, p in enumerate(co):
-		if p[2] > 0.99 or p[1] > 0.05:
+HAIR = None  # the hat-hair head the game shows under a helmet (taken from the hand-built copper set)
+
+
+def fit_helm():
+	"""Helmet: one hard piece on the Head bone, sized round his hat-hair head, eye slits at his eyes."""
+	global co, HAIR
+	drop_crumbs(A)
+	co, _ = verts(A)
+	before = set(bpy.context.scene.objects)
+	bpy.ops.import_scene.gltf(filepath=str(ROOT / "assets" / "characters" / "dwarf" / "armor_copper.glb"))
+	for o in set(bpy.context.scene.objects) - before:
+		if o.type == "MESH" and o.name.startswith("armor_head_hair") and HAIR is None:
+			HAIR = o
+	hco, _ = verts(HAIR)
+	for o in set(bpy.context.scene.objects) - before - {HAIR}:
+		bpy.data.objects.remove(o, do_unlink=True)
+	HAIR.parent = None
+	HAIR.matrix_world = Matrix()
+	HAIR.data.vertices.foreach_set("co", hco.ravel())
+	HAIR.data.update()
+	HAIR.name = "armor_head_hair"
+	for m in list(HAIR.modifiers):
+		HAIR.modifiers.remove(m)
+	z0, z1 = co[:, 2].min(), co[:, 2].max()
+	eye = FIT["eye"]  # (slit height in the picture, from the top)
+	# width at the slits vs his head there + wall
+	ze = z1 - eye * (z1 - z0)
+	sl = co[np.abs(co[:, 2] - ze) < 0.02 * (z1 - z0)]
+	hs = hco[(np.abs(hco[:, 2] - FIT["eye_z"]) < 0.03) & (hco[:, 1] < 0.12)]
+	s = (np.abs(hs[:, 0]).max() + FIT["wall"]) / np.abs(sl[:, 0] - (sl[:, 0].max() + sl[:, 0].min()) / 2).max()
+	cx = (co[:, 0].max() + co[:, 0].min()) / 2
+	co[:, 0] = (co[:, 0] - cx) * s
+	co[:, 1] *= s
+	co[:, 2] = (co[:, 2] - ze) * s + FIT["eye_z"]
+	sl = co[np.abs(co[:, 2] - FIT["brow_z"]) < 0.02]
+	hb = hco[np.abs(hco[:, 2] - FIT["brow_z"]) < 0.02]
+	dy = (hb[:, 1].max() + hb[:, 1].min()) / 2 - (sl[:, 1].max() + sl[:, 1].min()) / 2 + FIT["back"]
+	co[:, 1] += dy
+	log("helm scale", round(s, 3), "shift y", round(dy, 3), "top", round(co[:, 2].max(), 3), "bottom", round(co[:, 2].min(), 3))
+	# nothing of the head (face, hat hair) closer than GAP to the helmet's inside
+	hv, hf = verts(HAIR)[0], [tuple(p.vertices) for p in HAIR.data.polygons]
+	# (round 3: the beard hangs out over the rim like on the chest, so the fit ignores it: no face below his nose
+	# in front, no braid below the rim's back)
+	hf = [f for f in hf if not (hv[list(f), 2].mean() < FIT["eye_z"] - 0.06 and hv[list(f), 1].mean() < 0.02)
+		and hv[list(f), 2].mean() > co[:, 2].min() + 0.03]
+	bvh = BVHTree.FromPolygons([Vector(p) for p in hv], hf)
+	# (rounds 2-4: tests against his hair mesh made lumps and spikes, the hair locks' surfaces fool any inside test, as
+	# in dwarf_armor.py. Now: his skull as one egg (dwarf_armor.SKULL_C/R), the hat hair lies within 1.8 cm of it; the
+	# helmet stays CLEAR + GAP outside, pressed out from the egg's middle, inside and outside face of the wall together)
+	SC, SR = np.array((0.0, 0.026, 1.075)), np.array((0.119, 0.11, 0.117))
+	CLEAR = 0.018 + GAP
+	R = 0.04
+	total = 0
+	for k in range(4):
+		v = co - SC
+		r = np.linalg.norm(v, axis=1)
+		dn = v / np.maximum(r, 1e-9)[:, None]
+		rs = 1.0 / np.sqrt(((dn / SR) ** 2).sum(1))  # (the egg's radius in this direction)
+		face = (co[:, 2] < SC[2] - 0.01) & (co[:, 1] < SC[1] - 0.04)  # (below his brows in front: the face is open)
+		need = np.where(face, 0.0, rs + CLEAR - r)
+		ids = np.nonzero(need > 0.0005)[0]
+		if not len(ids):
+			break
+		total += len(ids)
+		pk = kdtree.KDTree(len(ids))
+		for j, i in enumerate(ids):
+			pk.insert(Vector(co[i]), j)
+		pk.balance()
+		amt = np.zeros(len(co))
+		for i, p in enumerate(co):
+			for _, j, d in pk.find_range(Vector(p), R):
+				f = 1 - d / R
+				amt[i] = max(amt[i], need[ids[j]] * f * f * (3 - 2 * f))
+		co += dn * amt[:, None]
+		log("press-out pass", k, "spots", len(ids), "max cm", round(float(amt.max()) * 100, 1))
+	log("points pressed out round his head", total)
+	A.vertex_groups.new(name="Head").add(list(range(len(co))), 1.0, "REPLACE")
+	A.data.vertices.foreach_set("co", co.ravel())
+	A.data.update()
+	pose_arms(0)
+	for o in (A, HAIR):
+		o.parent = ARM
+		o.parent_type = "OBJECT"
+		o.matrix_parent_inverse = ARM.matrix_world.inverted()
+		o.modifiers.new("skeleton", "ARMATURE").object = ARM
+	A.name = "armor_head_plate"
+	log("helmet on the Head bone, with the hat-hair head")
+
+
+if PIECE == "helm":
+	fit_helm()
+else:
+	z0, z1 = co[:, 2].min(), co[:, 2].max()
+	sz = (FIT["top"] - FIT["bottom"]) / (z1 - z0)
+	co[:, 2] = (co[:, 2] - z0) * sz + FIT["bottom"]
+	co[:, 0] *= sz
+	co[:, 1] *= sz  # (first the same scale every way; then width and depth fitted to his belly)
+	bcol = np.vstack([POSED[n][0] for n in ("body_shirt",)])
+	sx, sy, oy = 1.0, 1.0, 0.0
+	best = []
+	for z in np.linspace(*FIT["belly"], 8):
+		b = bcol[(np.abs(bcol[:, 2] - z) < 0.01) & (np.abs(bcol[:, 0]) < 0.3)]
+		a = co[(np.abs(co[:, 2] - z) < 0.01)]
+		ac = a[np.abs(a[:, 0]) < 0.08]
+		bc = b[np.abs(b[:, 0]) < 0.08]
+		if len(b) < 5 or len(a) < 5 or len(ac) < 3 or len(bc) < 3:
 			continue
-		for _, j, d in pk.find_range(Vector(p), R):
-			f = 1 - (d / R)
-			f = f * f * (3 - 2 * f)
-			dy[i] = max(dy[i], push[ids[j]] * f)
-	co[:, 1] += dy  # (no skin check after: the dent may touch his shirt, the beard hides it, like dwarf_armor.py)
-log("points pressed back under the beard", len(push))
+		best.append(((np.abs(b[:, 0]).max() + GAP * 1.5) / np.abs(a[:, 0]).max(),
+			(bc[:, 1].max() - bc[:, 1].min() + 3 * GAP) / (ac[:, 1].max() - ac[:, 1].min()),
+			(bc[:, 1].max() + bc[:, 1].min()) / 2, (ac[:, 1].max() + ac[:, 1].min()) / 2))
+	best = np.array(best)
+	sx, sy = best[:, 0].max(), best[:, 1].max()
+	i = int(np.argmax(best[:, 1]))
+	oy = best[i, 2] - best[i, 3] * sy
+	co[:, 0] *= sx
+	co[:, 1] = co[:, 1] * sy + oy
+	log("fit scale", round(sz, 3), "width x", round(sx, 3), "depth x", round(sy, 3), "shift y", round(oy, 3))
 
-# ---------------------------------------------------------------- bones: the nearest body point's (posed)
-pts, ws = [], []
-for n in FIT["src"]:
-	o = BODYM[n]
-	gn = {vg.index: vg.name for vg in o.vertex_groups}
-	for v, p in zip(o.data.vertices, POSED[n][0]):
-		pts.append(p)
-		ws.append({gn[g.group]: g.weight for g in v.groups if g.weight > 0.0})
-kd = kdtree.KDTree(len(pts))
-for i, p in enumerate(pts):
-	kd.insert(Vector(p), i)
-kd.balance()
-W = ARM.matrix_world
-SKIN = {pb.name: W @ pb.matrix @ ARM.data.bones[pb.name].matrix_local.inverted() @ W.inverted() for pb in ARM.pose.bones}
-groups = {}
-rest = np.empty_like(co)
-for i, p in enumerate(co):
-	near = kd.find_n(Vector(p), 6)
-	acc = {}
-	for _, j, dist in near:
-		for b, w in ws[j].items():
-			acc[b] = acc.get(b, 0.0) + w / (dist + 0.004)
-	top = sorted(acc.items(), key=lambda kv: -kv[1])[:4]
-	tot = sum(w for _, w in top) or 1.0
-	M = Matrix(((0, 0, 0, 0),) * 4)
-	for b, w in top:
-		if b not in groups:
-			groups[b] = A.vertex_groups.new(name=b)
-		groups[b].add([i], w / tot, "REPLACE")
-		M = M + SKIN[b] * (w / tot)
-	rest[i] = np.array(M.inverted() @ Vector(p))
-# back to his arms-out pose (the game binds the armour there)
-A.data.vertices.foreach_set("co", rest.ravel())
-A.data.update()
-pose_arms(0)
-A.parent = ARM
-A.parent_type = "OBJECT"
-A.matrix_parent_inverse = ARM.matrix_world.inverted()
-A.modifiers.new("skeleton", "ARMATURE").object = ARM
-log("bones copied, bent back to arms out")
+	# ---------------------------------------------------------------- nothing inside him: push points out to GAP
+	bodyv, bodyf, off = [], [], 0
+	for n in FIT["src"] + ["body_pants"]:
+		v, f = POSED[n]
+		bodyv.append(v)
+		bodyf += [tuple(i + off for i in p) for p in f]
+		off += len(v)
+	bodyv = np.vstack(bodyv)
+	BVH = BVHTree.FromPolygons([Vector(p) for p in bodyv], bodyf)
+	moved = 0
+	for k in range(3):
+		for i, p in enumerate(co):
+			hit = BVH.find_nearest(Vector(p))
+			if hit[0] is None:
+				continue
+			q, nrm = hit[0], hit[1]
+			dv = Vector(p) - q
+			s = dv.dot(nrm)
+			if s < GAP:
+				co[i] = np.array(q + nrm * GAP)
+				moved += 1
+	log("points pushed out of his body", moved)
 
-mat = bpy.data.materials.new(f"armor_{PIECE}_plate")
+	# ---------------------------------------------------------------- the beard hangs OVER the armour: press the front back
+	# under it (each point inside a braid goes behind the braid + 1 cm, its neighbours follow softly so there's no dent)
+	hv, hf = POSED["body_head"]
+	HB = BVHTree.FromPolygons([Vector(p) for p in hv], hf)
+	FWD, BACK = Vector((0, -1, 0)), Vector((0, 1, 0))
+
+
+	def beard_back(p):
+		"""The beard's back surface in front of/around point p (a ray from in front of him going back), or None."""
+		o = Vector((p[0], -1.0, p[2]))
+		enter = HB.ray_cast(o, BACK, 2.0)
+		if enter[0] is None or enter[0].y > p[1] + 0.10:
+			return None  # (no beard here, or far behind: the plate is a thick shell, its front face is up to ~4 cm out)
+		leave = HB.ray_cast(enter[0] + BACK * 1e-4, BACK, 0.03)
+		return enter[0].y + 0.03 if leave[0] is None else leave[0].y  # (where it joins his chin there's no back: 3 cm in)
+
+
+	push = {}
+	for i, p in enumerate(co):
+		if p[2] > 0.96 or p[1] > 0.0:
+			continue
+		by = beard_back(p)
+		if by is not None and p[1] < by + 0.008:
+			push[i] = min(by + 0.008 - p[1], 0.16)
+	if push:
+		ids = list(push)
+		pk = kdtree.KDTree(len(ids))
+		for j, i in enumerate(ids):
+			pk.insert(Vector(co[i]), j)
+		pk.balance()
+		R = 0.03
+		dy = np.zeros(len(co))
+		for i, p in enumerate(co):
+			if p[2] > 0.99 or p[1] > 0.05:
+				continue
+			for _, j, d in pk.find_range(Vector(p), R):
+				f = 1 - (d / R)
+				f = f * f * (3 - 2 * f)
+				dy[i] = max(dy[i], push[ids[j]] * f)
+		co[:, 1] += dy  # (no skin check after: the dent may touch his shirt, the beard hides it, like dwarf_armor.py)
+	log("points pressed back under the beard", len(push))
+
+	# ---------------------------------------------------------------- bones: the nearest body point's (posed)
+	pts, ws = [], []
+	for n in FIT["src"]:
+		o = BODYM[n]
+		gn = {vg.index: vg.name for vg in o.vertex_groups}
+		for v, p in zip(o.data.vertices, POSED[n][0]):
+			pts.append(p)
+			ws.append({gn[g.group]: g.weight for g in v.groups if g.weight > 0.0})
+	kd = kdtree.KDTree(len(pts))
+	for i, p in enumerate(pts):
+		kd.insert(Vector(p), i)
+	kd.balance()
+	W = ARM.matrix_world
+	SKIN = {pb.name: W @ pb.matrix @ ARM.data.bones[pb.name].matrix_local.inverted() @ W.inverted() for pb in ARM.pose.bones}
+	groups = {}
+	rest = np.empty_like(co)
+	for i, p in enumerate(co):
+		near = kd.find_n(Vector(p), 6)
+		acc = {}
+		for _, j, dist in near:
+			for b, w in ws[j].items():
+				acc[b] = acc.get(b, 0.0) + w / (dist + 0.004)
+		top = sorted(acc.items(), key=lambda kv: -kv[1])[:4]
+		tot = sum(w for _, w in top) or 1.0
+		M = Matrix(((0, 0, 0, 0),) * 4)
+		for b, w in top:
+			if b not in groups:
+				groups[b] = A.vertex_groups.new(name=b)
+			groups[b].add([i], w / tot, "REPLACE")
+			M = M + SKIN[b] * (w / tot)
+		rest[i] = np.array(M.inverted() @ Vector(p))
+	# back to his arms-out pose (the game binds the armour there)
+	A.data.vertices.foreach_set("co", rest.ravel())
+	A.data.update()
+	pose_arms(0)
+	A.parent = ARM
+	A.parent_type = "OBJECT"
+	A.matrix_parent_inverse = ARM.matrix_world.inverted()
+	A.modifiers.new("skeleton", "ARMATURE").object = ARM
+	log("bones copied, bent back to arms out")
+
+mat = bpy.data.materials.new(A.name)
 mat.use_nodes = True
 bsdf = mat.node_tree.nodes["Principled BSDF"]
 bsdf.inputs["Base Color"].default_value = (0.62, 0.3, 0.16, 1)
@@ -294,6 +416,8 @@ for p in A.data.polygons:
 REVIEW = OPT.get("review")
 if REVIEW:
 	pose_arms(65)
+	if HAIR:  # (the game hides his own head under a helmet and shows the hat-hair one)
+		BODYM["body_head"].hide_render = True
 	sc = bpy.context.scene
 	sc.render.engine = "BLENDER_WORKBENCH"
 	sc.display.shading.light = "STUDIO"
@@ -304,10 +428,11 @@ if REVIEW:
 	sc.collection.objects.link(cam)
 	sc.camera = cam
 	shots = []
-	for tag, loc in (("front", (0, -4, 0.62)), ("side", (-4, 0, 0.62)), ("back", (0, 4, 0.62)), ("q34", (2.8, -2.8, 0.9))):
+	cz, osc = (1.0, 0.75) if HAIR else (0.62, 1.34)
+	for tag, loc in (("front", (0, -4, cz)), ("side", (-4, 0, cz)), ("back", (0, 4, cz)), ("q34", (2.8, -2.8, cz + 0.28))):
 		cam.location = Vector(loc)
-		cam.data.ortho_scale = 1.34
-		cam.rotation_euler = (Vector((0, 0, 0.62)) - cam.location).to_track_quat("-Z", "Y").to_euler()
+		cam.data.ortho_scale = osc
+		cam.rotation_euler = (Vector((0, 0, cz)) - cam.location).to_track_quat("-Z", "Y").to_euler()
 		path = str(Path(REVIEW).with_name(Path(REVIEW).stem + f"_{tag}.png"))
 		sc.render.filepath = path
 		bpy.ops.render.render(write_still=True)
@@ -321,6 +446,8 @@ for o in list(BODYM.values()):
 bpy.ops.object.select_all(action="DESELECT")
 ARM.select_set(True)
 A.select_set(True)
+if HAIR:
+	HAIR.select_set(True)
 if not A.data.uv_layers:
 	A.data.uv_layers.new(name="UVMap")
 bpy.ops.export_scene.gltf(filepath=OUT, export_format="GLB", use_selection=True, export_yup=True, export_skins=True,
