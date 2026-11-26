@@ -1,0 +1,379 @@
+<title>Cliff Galleries Shape Model</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alegreya+Sans+SC:wght@700&family=Alegreya+Sans:wght@400;700&display=swap">
+<style>
+/* Layout: one cave stage with the shape model, a side panel naming every part. Single dark look. */
+:root {
+	--rock: #17130f; --panel: #221b16; --ink: #ecdcc6; --dim: #b9a58c; --ember: #e8a24a; --line: #3d3128;
+	--display: "Alegreya Sans SC", Georgia, serif; --body: "Alegreya Sans", "Segoe UI", sans-serif;
+	color-scheme: dark;
+}
+html, body { height: 100%; margin: 0; }
+body { background: var(--rock); color: var(--ink); font: 16px/1.5 var(--body); }
+.wrap { display: flex; gap: 16px; height: 100%; padding-block: 16px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); box-sizing: border-box; }
+.stage { position: relative; flex: 1 1 auto; min-width: 0; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; background: #0d0a08; }
+canvas { display: block; width: 100%; height: 100%; }
+.bar { position: absolute; left: 12px; top: 12px; right: 12px; display: flex; flex-wrap: wrap; gap: 8px; }
+button { font: 700 15px var(--body); color: var(--ink); background: var(--panel); border: 1px solid var(--line); border-radius: 5px; padding: 6px 12px; cursor: pointer; }
+button[aria-pressed="true"] { background: var(--ember); color: #1c140d; border-color: var(--ember); }
+button:focus-visible { outline: 2px solid var(--ember); outline-offset: 2px; }
+.hint { position: absolute; right: 12px; bottom: 10px; color: var(--dim); font-size: 13px; }
+.tag { font: 700 13px var(--body); color: #1c140d; background: rgba(232,162,74,.92); padding: 1px 7px; border-radius: 4px; white-space: nowrap; pointer-events: none; }
+aside { flex: 0 0 360px; overflow-y: auto; background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 18px 20px; box-sizing: border-box; }
+h1 { font: 700 30px/1.1 var(--display); margin: 0 0 8px; text-wrap: balance; }
+h2 { font: 700 15px var(--display); letter-spacing: .08em; color: var(--ember); margin: 20px 0 6px; }
+p { margin: 0 0 10px; color: var(--dim); }
+ul { list-style: none; margin: 0; padding: 0; }
+li { padding: 7px 0; border-bottom: 1px dashed var(--line); color: var(--dim); }
+li b { color: var(--ink); }
+.key { display: flex; gap: 14px; flex-wrap: wrap; margin: 4px 0 10px; }
+.key span { display: inline-flex; align-items: center; gap: 6px; color: var(--ink); font-size: 14px; }
+.key i { width: 14px; height: 14px; border-radius: 3px; display: inline-block; }
+.ask { background: #2c231c; border-left: 3px solid var(--ember); padding: 10px 12px; border-radius: 4px; }
+.ask p { color: var(--ink); }
+@media (max-width: 800px) { .wrap { flex-direction: column; height: auto; } .stage { height: 70vh; flex: none; } aside { flex: none; } }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+<div class="wrap">
+	<div class="stage" id="stage">
+		<div class="bar" role="group" aria-label="Camera and view">
+			<button id="c_front" aria-pressed="true">Front</button>
+			<button id="c_left" aria-pressed="false">Left</button>
+			<button id="c_right" aria-pressed="false">Right</button>
+			<button id="c_above" aria-pressed="false">From above</button>
+			<button id="c_gallery" aria-pressed="false">Along the gallery</button>
+			<button id="way" aria-pressed="false">Show the way up</button>
+			<button id="rockoff" aria-pressed="false">Rock wall off</button>
+			<button id="names" aria-pressed="true">Names on</button>
+		</div>
+		<div class="hint">Drag to turn &middot; scroll to zoom &middot; right-drag to move</div>
+	</div>
+	<aside>
+		<h1>Ruin 13: the Cliff Galleries</h1>
+		<p>A very simple shape model, not real pieces yet. It's the plan, shown in plain blocks.</p>
+		<div class="key">
+			<span><i style="background:#8b867c"></i>Stonehold stone</span>
+			<span><i style="background:#7a5434"></i>Shack wood</span>
+			<span><i style="background:#4f3a28"></i>Wood shingle roofs</span>
+			<span><i style="background:#e8a24a"></i>The way up</span>
+		</div>
+		<h2>The idea</h2>
+		<p>Dwarves once lived up a tall rock wall in the cave. Their stone hall is dug into the foot of the cliff. Higher up, houses sit on natural rock ledges, and wooden rooms and walkways hang out from the cliff on brackets (wooden supports, wide at the top).</p>
+		<p>Like the Mine-head, every building is <b>stone below, wood above</b>. Stone parts have flat roofs, wood parts sloped ones.</p>
+		<p>You climb it like a mountain. Press <b>Show the way up</b> to see the path from the door to the top.</p>
+		<h2>The parts</h2>
+		<ul>
+			<li><b>Stone terrace + grand stair.</b> A wide stair up to the big round main door, with lanterns each side.</li>
+			<li><b>Stone Hall (stone, then wood).</b> A tall stone hall, its back dug into the cliff. On top, a wooden storey sticks out 1 m on the left and right on brackets (not over the door). Behind it, a flat stone roof terrace against the rock.</li>
+			<li><b>The crack + bridge.</b> A deep crack in the cave floor. A wooden bridge crosses it, from the hall's wooden storey to the ledge house.</li>
+			<li><b>Ledge House (stone, then wood).</b> On a rock ledge 6 m up. A stone room, then a wooden storey on brackets, sloped roof.</li>
+			<li><b>Cliff stairs.</b> Wooden stairs pinned to the cliff face, climbing left from the ledge house.</li>
+			<li><b>Hanging Gallery.</b> A long wooden walkway along the cliff, 13 m up, held by brackets in the rock and posts on the hall's roof.</li>
+			<li><b>Watch Tower (stone, then wood).</b> The tallest part, on a tall rock shelf. It changes shape 3 times: a two-storey stone base, a wider wooden storey on brackets, an 8-sided lookout, then a steep roof. The best chest waits in the lookout.</li>
+			<li><b>Hoist + store shed.</b> A wooden arm sticks out of the tower with a rope down to a small stone-and-wood shed at the bottom. The dwarves pulled goods up with it.</li>
+		</ul>
+		<h2>Built into the cave</h2>
+		<p>Every building's back is in the rock. Three ground levels (cave floor, a ledge, a high shelf), a bridge over a crack, and stairs and a walkway along the cliff.</p>
+		<h2>Mine-head lessons kept</h2>
+		<p>Every door has steps up to it or a floor level with it. No ramp leads to a window. No ladders this time: stairs all the way.</p>
+		<h2>Heights</h2>
+		<p>Shed 3.5 m, Stone Hall 10 m, Ledge House 13 m, Watch Tower 26 m. The cave needs about 29 m here.</p>
+		<h2>When it's a ruin</h2>
+		<p>The gallery's middle has fallen onto the hall's roof, the bridge sags, the tower's roof leans, and the roofs have holes. Rebuild it to learn the blueprint.</p>
+		<h2>Your call</h2>
+		<div class="ask">
+			<p>Is this the cliff ruin you pictured? Tell me what to add, take away or move. Once you OK the shapes, I build it from our real pieces.</p>
+		</div>
+	</aside>
+</div>
+</div>
+<script type="importmap">
+{ "imports": {
+	"three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+	"three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }
+</script>
+<script type="module">
+import * as THREE from "three";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import { CSS2DRenderer, CSS2DObject } from "three/addons/renderers/CSS2DRenderer.js";
+
+const stage = document.getElementById("stage");
+const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+stage.prepend(renderer.domElement);
+const labels = new CSS2DRenderer();
+labels.domElement.style.cssText = "position:absolute;inset:0;pointer-events:none";
+stage.appendChild(labels.domElement);
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x0d0a08);
+scene.fog = new THREE.Fog(0x0d0a08, 100, 200);
+const camera = new THREE.PerspectiveCamera(40, 1, 0.5, 400);
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+scene.add(new THREE.HemisphereLight(0xffe2bf, 0x2a1e16, 0.9));
+const sun = new THREE.DirectionalLight(0xffc98a, 2.2);   // a lantern glow from front-left
+sun.position.set(-30, 50, 40);
+sun.castShadow = true;
+sun.shadow.mapSize.set(2048, 2048);
+Object.assign(sun.shadow.camera, { left: -50, right: 50, top: 50, bottom: -50, near: 1, far: 170 });
+scene.add(sun);
+
+// Colours: stone, darker stone, light stone trim, wood, lighter beams, shingles, the wheel, dark openings, rock, ground
+const M = {};
+for (const [k, c] of Object.entries({ stone: 0x8b867c, stone2: 0x76716a, trim: 0xb9b1a2, wood: 0x7a5434, beam: 0x8f6a44,
+	roof: 0x4f3a28, wheel: 0xc9a25a, iron: 0x3b3835, dark: 0x1a1210, rock: 0x66564a, floor: 0x3a3027, rope: 0xcdb98e }))
+	M[k] = new THREE.MeshStandardMaterial({ color: c, roughness: 0.9 });
+const ground = new THREE.MeshStandardMaterial({ color: 0x3a3027, roughness: 1, transparent: true, opacity: 1 });
+const rockM = M.rock;
+
+function add(geo, mat, x, y, z, ry = 0) {
+	const m = new THREE.Mesh(geo, typeof mat === "string" ? M[mat] : mat);
+	m.position.set(x, y, z);
+	m.rotation.y = ry;
+	m.castShadow = m.receiveShadow = true;
+	scene.add(m);
+	return m;
+}
+// a box by its corners: x0..x1, y0..y1, z0..z1
+const box = (x0, x1, y0, y1, z0, z1, mat) => add(new THREE.BoxGeometry(x1 - x0, y1 - y0, z1 - z0), mat, (x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2);
+// a beam from one point to another (braces, rope, struts)
+function beam(a, b, t = 0.25, mat = "beam") {
+	const A = new THREE.Vector3(...a), B = new THREE.Vector3(...b), L = A.distanceTo(B);
+	const m = add(new THREE.BoxGeometry(t, L, t), mat, 0, 0, 0);
+	m.position.copy(A).add(B).multiplyScalar(0.5);
+	m.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), B.clone().sub(A).normalize());
+	return m;
+}
+const post = (x, z, y0, y1, t = 0.4, mat = "wood") => box(x - t / 2, x + t / 2, y0, y1, z - t / 2, z + t / 2, mat);
+// railing along a line
+function rail(x0, z0, x1, z1, y, mat = "beam") {
+	const L = Math.hypot(x1 - x0, z1 - z0), ry = -Math.atan2(z1 - z0, x1 - x0);
+	add(new THREE.BoxGeometry(L, 0.12, 0.12), mat, (x0 + x1) / 2, y + 1, (z0 + z1) / 2, ry);
+	const n = Math.max(1, Math.round(L / 1.5));
+	for (let i = 0; i <= n; i++) { const f = i / n; add(new THREE.BoxGeometry(0.12, 1, 0.12), mat, x0 + (x1 - x0) * f, y + 0.5, z0 + (z1 - z0) * f); }
+}
+// a bracket under an overhang: a wedge, wide at the top
+function corbel(x, y, z, mat = "beam") { add(new THREE.CylinderGeometry(0.35, 0.12, 1.0, 4), mat, x, y - 0.5, z, Math.PI / 4); }
+// windows: dark slots on a face. face "z" = a wall facing +z at z=at; "x" = facing +-x at x=at
+function windows(face, at, u0, u1, y, w = 0.8, h = 1.3, step = 2) {
+	for (let u = u0; u <= u1 + 0.01; u += step) {
+		if (face === "z") box(u - w / 2, u + w / 2, y, y + h, at - 0.06, at + 0.06, "dark");
+		else box(at - 0.06, at + 0.06, y, y + h, u - w / 2, u + w / 2, "dark");
+	}
+}
+// a round-topped door on a face looking +z
+function roundDoor(x, z, y, w, h) {
+	box(x - w / 2, x + w / 2, y, y + h - w / 2, z - 0.06, z + 0.06, "dark");
+	add(new THREE.CylinderGeometry(w / 2, w / 2, 0.12, 16, 1, false, 0, Math.PI), "dark", x, y + h - w / 2, z).rotation.set(Math.PI / 2, Math.PI / 2, 0);
+}
+// a round-topped door on a face looking +-x
+function roundDoorX(x, z, y, w, h) {
+	box(x - 0.06, x + 0.06, y, y + h - w / 2, z - w / 2, z + w / 2, "dark");
+	add(new THREE.CylinderGeometry(w / 2, w / 2, 0.12, 16), "dark", x, y + h - w / 2, z).rotation.z = Math.PI / 2;
+}
+// a gable roof with its ridge along x, over z0..z1, eaves at y, 45 degrees
+function roofX(x0, x1, z0, z1, y, mat = "roof") {
+	const half = (z1 - z0) / 2 + 0.4, sh = new THREE.Shape();
+	sh.moveTo(-half, 0); sh.lineTo(half, 0); sh.lineTo(0, half * 0.75); sh.closePath();
+	add(new THREE.ExtrudeGeometry(sh, { depth: x1 - x0 + 0.8, bevelEnabled: false }), mat, x0 - 0.4, y, (z0 + z1) / 2, Math.PI / 2);
+}
+// two rails (iron strips on sleepers) along x at height y, centred on z
+function track(x0, x1, z, y) {
+	for (const dz of [-0.45, 0.45]) box(x0, x1, y + 0.12, y + 0.2, z + dz - 0.05, z + dz + 0.05, "iron");
+	for (let x = x0 + 0.3; x < x1; x += 0.8) box(x - 0.12, x + 0.12, y, y + 0.12, z - 0.7, z + 0.7, "beam");
+}
+// an ore cart: a wooden tub on 4 iron wheels
+function cart(x, y, z, tilt = 0) {
+	const g = new THREE.Group();
+	const tub = new THREE.Mesh(new THREE.BoxGeometry(1.3, 0.75, 0.95), M.wood); tub.position.y = 0.6; g.add(tub);
+	for (const dx of [-0.4, 0.4]) for (const dz of [-0.45, 0.45]) {
+		const w = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 0.1, 10), M.iron);
+		w.rotation.x = Math.PI / 2; w.position.set(dx, 0.2, dz); g.add(w);
+	}
+	g.traverse(o => { o.castShadow = o.receiveShadow = true; });
+	g.position.set(x, y, z); g.rotation.z = tilt; scene.add(g);
+}
+const tags = [];
+function tag(text, x, y, z, under = false) {
+	const d = document.createElement("div");
+	d.className = "tag";
+	d.textContent = text;
+	const o = new CSS2DObject(d);
+	o.position.set(x, y, z);
+	o.userData.under = under;
+	scene.add(o);
+	tags.push(o);
+}
+
+
+// ---- the cave: floor (y 0), a crack (x 8..12, down to -5), ledge R (top 6), shelf L (top 12.75), the cliff (face z -10) ----
+M.glow = new THREE.MeshStandardMaterial({ color: 0xffc070, emissive: 0xffa040, emissiveIntensity: 1.4 });
+const gbox = (x0, x1, y0, y1, z0, z1) => box(x0, x1, y0, y1, z0, z1, ground);
+gbox(-60, 8, -10, 0, -10, 50); gbox(12, 60, -10, 0, -10, 50);      // the floor, both sides of the crack
+gbox(8, 12, -10, -5, -10, 50);                                     // the bottom of the crack
+const ROCK = [];
+const rbox = (x0, x1, y0, y1, z0, z1, list = true) => { const m = box(x0, x1, y0, y1, z0, z1, rockM); if (list) ROCK.push(m); return m; };
+rbox(-60, 60, -10, 34, -30, -10);                                  // the cliff
+rbox(-22, -8, 0, 12.75, -10, -2, false);                           // shelf L: a tall rock buttress (the tower stands on it)
+rbox(12, 26, 0, 6, -10, -2, false);                                // ledge R (the ledge house stands on it)
+box(8.6, 11.4, -5, 11, -10.08, -9.92, "dark");                     // the crack runs on up the cliff as a dark cleft
+for (const [x0, x1, y0, y1, d] of [[-40, -34, 0, 5, 2], [-31, -26, 0, 3, 1.4], [28, 33, 0, 4, 2], [36, 41, 0, 2.5, 1.2],
+	[15, 21, 16, 19, 1.0], [-6, 0, 22, 25, 1.2], [3, 9, 27, 30, 1.0], [-30, -24, 18, 22, 1.3]])
+	rbox(x0, x1, y0, y1, -10 - 0.2, -10 + d);                      // lumps on the cliff face, away from the buildings
+rbox(-8, -6.5, 0, 12.75, -10, -6, false);                          // the shelf's rough right edge, beside the hall
+
+// ---- the stone terrace + grand stair up to the main door (y 0..1.5) ----
+box(-8, 8, 0, 1.5, -10, 3, "stone2");
+box(-8.1, 8.1, 1.35, 1.6, -10, 3.1, "trim");
+for (let i = 0; i < 6; i++) box(-2, 2, 0, 0.25 * (i + 1), 3 + (5 - i) * 0.5, 3.5 + (5 - i) * 0.5, "trim");
+rail(-8, 3, -2, 3, 1.6, "trim"); rail(2, 3, 8, 3, 1.6, "trim"); rail(8, 3, 8, -2.6, 1.6, "trim");
+for (const x of [-2.6, 2.6]) { post(x, -2.4, 1.5, 3.6, 0.22, "iron"); box(x - 0.22, x + 0.22, 3.6, 4.1, -2.62, -2.18, "glow"); }
+tag("Grand stair", 0, 3, 7);
+
+// ---- the Stone Hall: tall stone hall (back in the rock), flat roof terrace behind, a wooden storey on the front ----
+box(-6, 6, 1.5, 6, -14, -3, "stone");
+box(-6.2, 6.2, 3.65, 3.85, -10, -2.8, "trim");                     // band at the floor line
+box(-6.3, 6.3, 5.8, 6.1, -10, -2.7, "trim");                       // cornice under the flat roof
+roundDoor(0, -2.94, 1.5, 2.2, 3.4);
+windows("z", -2.94, -4, -4, 2.2, 0.9, 2.8); windows("z", -2.94, 4, 4, 2.2, 0.9, 2.8);
+windows("x", -6.06, -8, -4, 2.2, 0.9, 2.8, 4);
+rail(-6, -10, -6, -7, 6.1, "trim"); rail(6, -10, 6, -7, 6.1, "trim");   // the flat stone roof terrace against the cliff
+box(-7, 7, 6.1, 8.25, -7, -3, "wood");                             // the wooden storey juts out 1 m left and right
+for (const x of [-7, -3.5, 0, 3.5, 7]) post(x, -2.95, 6.1, 8.25, 0.3, "beam");
+box(-7.2, 7.2, 8.15, 8.4, -7.1, -2.9, "beam");
+for (const z of [-6.2, -3.8]) { corbel(-6.5, 6.1, z); corbel(6.5, 6.1, z); }
+windows("z", -2.9, -5.2, 5.2, 6.6, 0.8, 1.1, 2.6);
+roofX(-7, 7, -7, -3, 8.4);
+roundDoorX(7.06, -5, 6.1, 1.4, 2.0);                               // out onto the bridge
+tag("Stone Hall (stone + wood)", -3, 11.5, -2);
+
+// ---- the bridge over the crack (deck y 6) ----
+box(7, 13, 5.85, 6.1, -6, -4, "wood");
+rail(7.6, -6, 13, -6, 6.1); rail(7.6, -4, 13, -4, 6.1);
+for (const z of [-6, -4]) { post(10, z, -5, 5.85); beam([10, 2.2, z], [8, 5.85, z], 0.16); beam([10, 2.2, z], [12, 5.85, z], 0.16); }
+box(9.85, 10.15, 1, 1.3, -6.2, -3.8, "beam"); beam([10, -5, -6], [10, 1, -4], 0.16);
+tag("Crack + bridge", 10, 8.6, -1.5);
+
+// ---- the Ledge House on ledge R (top 6): stone storey, wooden storey on brackets, sloped roof ----
+box(13, 23, 6, 8.25, -14, -4, "stone");
+roundDoorX(12.94, -5, 6, 1.4, 2.0);                                // level with the bridge
+windows("z", -3.94, 16, 20, 6.5, 0.8, 1.0, 4);
+box(12.8, 23.2, 8.15, 8.4, -10, -3.8, "trim");
+box(13, 23, 8.4, 10.5, -10, -3, "wood");
+for (const x of [13, 18, 23]) post(x, -2.95, 8.4, 10.5, 0.3, "beam");
+for (const x of [14, 18, 22]) corbel(x, 8.4, -3.5);                // on plain wall, between the windows below
+windows("z", -2.94, 15.5, 20.5, 8.9, 0.8, 1.0, 2.5);
+roofX(13, 23, -10, -3, 10.5);
+roundDoorX(12.94, -9, 8.4, 1.4, 2.0);                              // out onto the cliff stairs
+tag("Ledge House (stone + wood)", 18, 15.5, -3);
+
+// ---- the cliff stairs: a landing at 8.25, two flights straight on, going left, pinned to the cliff (z -10..-8) ----
+box(10, 13, 8.15, 8.4, -10, -8, "wood");
+corbel(11.5, 8.15, -9.4);
+function flight(xa, xb, ya, yb) {                                  // from xa (low) to xb (high), going toward -x
+	for (let i = 0; i < 8; i++) {
+		const xr = xa - i * (xa - xb) / 8, xl = xr - (xa - xb) / 8, yt = ya + (i + 1) * (yb - ya) / 8;
+		box(xl, xr, yt - 0.12, yt, -10, -8, "beam");
+	}
+	beam([xa, ya - 0.1, -8.05], [xb, yb - 0.1, -8.05], 0.2, "wood");              // the open stringer underneath
+	beam([xa, ya + 1, -8.05], [xb, yb + 1, -8.05], 0.12);                        // the railing
+	beam([(xa + xb) / 2, (ya + yb) / 2 - 2, -10], [(xa + xb) / 2, (ya + yb) / 2 - 0.2, -8.2], 0.16);   // a strut into the rock
+}
+flight(10, 6, 8.4, 10.5); flight(6, 2, 10.5, 12.75);
+tag("Cliff stairs", 7, 13.5, -7);
+
+// ---- the Hanging Gallery: a walkway along the cliff at 12.75, brackets in the rock, posts on the hall's flat roof ----
+box(-10, 2, 12.5, 12.75, -10, -8, "wood");
+rail(-6.5, -8, 2, -8, 12.75);
+for (const x of [-5, -1]) post(x, -8.3, 6.1, 12.5, 0.32, "beam");
+for (const x of [-7, -3, 1]) corbel(x, 12.5, -9.5);
+tag("Hanging Gallery", -2, 15.5, -8);
+
+// ---- the Watch Tower on shelf L (top 12.75): stone, a wider wooden storey on brackets, an 8-sided lookout, steep roof ----
+const TX = -14.5, TZ = -6.5;
+box(-18, -10, 12.75, 17.25, -12, -3, "stone");
+box(-18.2, -9.8, 14.9, 15.1, -10, -2.8, "trim");
+box(-18.3, -9.7, 17.1, 17.4, -10, -2.7, "trim");
+roundDoorX(-9.94, -6.5, 12.75, 1.4, 2.0);                          // the gallery's end comes round to this door
+windows("z", -2.94, -14, -14, 15.4, 0.8, 1.2);
+box(-19, -10, 17.4, 19.5, -10, -2, "wood");                        // juts out 1 m at the front and the left
+for (const [x, z] of [[-19, -2], [-10, -2], [-19, -10]]) post(x, z, 17.4, 19.5, 0.32, "beam");
+for (const x of [-17, -11.5]) corbel(x, 17.4, -2.5);
+for (const z of [-8, -5]) corbel(-18.5, 17.4, z);
+windows("z", -1.94, -17.2, -11.7, 17.9, 0.8, 1.0, 2.75);
+box(-19.2, -9.8, 19.4, 19.6, -10, -1.8, "beam");
+rail(-19, -2, -10, -2, 19.6); rail(-19, -10, -19, -2, 19.6); rail(-10, -10, -10, -2, 19.6);   // the deck round the lookout
+add(new THREE.CylinderGeometry(3.0, 3.0, 2.25, 8), "wood", TX, 19.6 + 1.125, TZ).rotation.y = Math.PI / 8;
+for (let j = 0; j < 8; j++) {                                      // a window slot on each of the 8 sides
+	const a = j * Math.PI / 4, r = 3.0 * Math.cos(Math.PI / 8) + 0.03;
+	add(new THREE.BoxGeometry(0.7, 1.0, 0.06), "dark", TX + Math.sin(a) * r, 20.4, TZ + Math.cos(a) * r, a);
+}
+add(new THREE.CylinderGeometry(3.25, 3.25, 0.25, 8), "beam", TX, 21.9, TZ).rotation.y = Math.PI / 8;
+add(new THREE.CylinderGeometry(0.12, 3.9, 4.4, 8), "roof", TX, 24.2, TZ).rotation.y = Math.PI / 8;   // the steep roof
+add(new THREE.SphereGeometry(0.3, 8, 6), "iron", TX, 26.5, TZ);
+tag("Watch Tower (stone + wood)", -6, 22.5, -3);
+tag("Lookout + best chest", TX, 28, TZ);
+// the hoist: an arm out of the wooden storey, a rope down to the yard, a crate on it
+beam([-12.5, 18.4, -2], [-12.5, 19.3, 3], 0.3);
+beam([-12.5, 17.6, -2], [-12.5, 19.1, 1.5], 0.18);
+beam([-12.5, 19.2, 2.9], [-12.5, 1.0, 2.9], 0.07, "rope");
+box(-13.1, -11.9, 0, 1.0, 2.4, 3.4, "wood");
+tag("Hoist", -12.5, 20.8, 4);
+
+// ---- the store shed at the foot of shelf L: stone, wood, a lean-to roof against the rock ----
+box(-22, -16, 0, 0.5, -2, 3, "stone2");
+box(-22, -16, 0.5, 1.5, -2, 3, "stone"); box(-22, -16, 1.5, 3.2, -2, 3, "wood");
+{ const r = box(-22.4, -15.6, 3.3, 3.5, -2.2, 3.6, "roof"); r.rotation.x = 0.28; r.position.y = 3.6; }
+roundDoor(-19, 3.06, 0.5, 1.4, 2.3);
+box(-19.8, -18.2, 0, 0.25, 3.5, 4.0, "trim"); box(-19.8, -18.2, 0.25, 0.5, 3.0, 3.5, "trim");   // 2 steps up to the door
+tag("Store shed", -19, 5.6, 3);
+
+// ---- the way up: a glowing line from the grand stair to the lookout ----
+const WAY = [[0, 0, 8], [0, 1.5, 3], [0, 1.5, -2], [0, 1.5, -5], [-4, 1.5, -5], [-4, 6.1, -5], [7, 6.1, -5], [13, 6.1, -5],
+	[16, 6, -6], [16, 8.4, -6], [16, 8.4, -9], [12.6, 8.4, -9], [10, 8.4, -9], [6, 10.5, -9], [2, 12.75, -9], [-9, 12.75, -9],
+	[-9, 12.75, -6.5], [-10, 12.75, -6.5], [-14, 12.75, -6.5], [-14, 19.5, -6.5], [TX, 19.6, TZ]];
+const wayM = new THREE.MeshBasicMaterial({ color: 0xe8a24a, depthTest: false, transparent: true, opacity: 0.9 });
+const wayParts = [];
+for (let i = 1; i < WAY.length; i++) {
+	const a = [WAY[i - 1][0], WAY[i - 1][1] + 0.35, WAY[i - 1][2]], b = [WAY[i][0], WAY[i][1] + 0.35, WAY[i][2]];
+	const m = beam(a, b, 0.2, wayM); m.castShadow = false; m.renderOrder = 5; wayParts.push(m);
+}
+const lamp = new THREE.PointLight(0xffb060, 30, 14, 1.5);         // a lamp in the lookout
+lamp.position.set(TX, 20.8, TZ);
+scene.add(lamp);
+
+// ---- camera spots and buttons ----
+const CAMS = { front: [[-2, 20, 64], [-2, 11, -6]], left: [[-62, 26, 36], [-6, 11, -6]], right: [[60, 26, 38], [2, 11, -6]],
+	above: [[-2, 88, 26], [-2, 0, -5]], gallery: [[26, 22, 14], [-6, 13, -8]] };
+let wayOn = false, namesOn = true, rockOff = false;
+function look(k) {
+	camera.position.set(...CAMS[k][0]); controls.target.set(...CAMS[k][1]); controls.update();
+	for (const c in CAMS) document.getElementById("c_" + c).setAttribute("aria-pressed", c === k);
+}
+for (const c in CAMS) document.getElementById("c_" + c).onclick = () => look(c);
+function refresh() {
+	tags.forEach(t => (t.visible = namesOn));
+	ROCK.forEach(m => (m.visible = !rockOff));
+	wayParts.forEach(m => (m.visible = wayOn));
+}
+const wb = document.getElementById("way");
+wb.onclick = () => { wayOn = !wayOn; wb.setAttribute("aria-pressed", wayOn); refresh(); };
+const nb = document.getElementById("names");
+nb.onclick = () => { namesOn = !namesOn; nb.setAttribute("aria-pressed", namesOn); nb.textContent = namesOn ? "Names on" : "Names off"; refresh(); };
+const rb = document.getElementById("rockoff");
+rb.onclick = () => { rockOff = !rockOff; rb.setAttribute("aria-pressed", rockOff); refresh(); };
+const h = location.hash.slice(1);
+if (h === "way") { wayOn = true; wb.setAttribute("aria-pressed", true); }
+look(h in CAMS ? h : "front");
+refresh();
+function resize() {
+	const w = stage.clientWidth, hh = stage.clientHeight;
+	renderer.setSize(w, hh, false); labels.setSize(w, hh);
+	camera.aspect = w / hh; camera.updateProjectionMatrix();
+}
+new ResizeObserver(resize).observe(stage);
+resize();
+renderer.setAnimationLoop(() => { controls.update(); renderer.render(scene, camera); labels.render(scene, camera); });
+</script>

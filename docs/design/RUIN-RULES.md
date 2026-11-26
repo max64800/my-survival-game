@@ -89,6 +89,12 @@ New lesson? Add it to the right section here **and** add a check that would have
    mirrored copy. (F813.)
 8. **The round doorway's arch meets the wall above it with no slits** (F814, open), and its ends don't shimmer
    (F76). Check: `buildcheck part=edges`.
+9. **Every door has steps up to it**, or a floor level with its sill: never a door standing up in a wall with no way
+   to step in. (Owner's Mine-head play test, Nov 26: the ore shed doors.) No check yet.
+10. **No ramp, chute or stair ever leads to a window.** It looks like a way in and isn't. (Mine-head ore chutes, Nov 26.)
+    No check yet.
+11. **A ladder's top ends level with the floor you step onto**, never poking above it or stopping under it. (Mine-head
+    shaft ladders, Nov 26.) No check yet.
 
 ## 4. Mirrored and round parts
 1. **A mirrored tower mirrors everything:** its stairs (and their foot spot), its railing gaps, its doors. Check each
