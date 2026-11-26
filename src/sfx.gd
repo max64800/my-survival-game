@@ -34,6 +34,7 @@ static func play(name: String, at: Vector3, volume_db: float = 0.0, pitch: float
 	p.stream = list.pick_random()
 	p.volume_db = volume_db
 	p.pitch_scale = pitch * randf_range(0.92, 1.08)
+	p.bus = SoundSettings.EFFECTS_BUS
 	p.unit_size = minf(6.0, reach * 0.4)
 	p.max_distance = reach
 	tree.root.add_child(p)
@@ -52,6 +53,7 @@ static func ui(name: String, volume_db: float = -4.0, pitch: float = 1.0) -> voi
 	p.stream = list.pick_random()
 	p.volume_db = volume_db
 	p.pitch_scale = pitch * randf_range(0.95, 1.05)
+	p.bus = SoundSettings.EFFECTS_BUS
 	tree.root.add_child(p)
 	p.play()
 	p.finished.connect(p.queue_free)

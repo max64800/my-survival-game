@@ -61,6 +61,18 @@ func _ready() -> void:
 	mus.set_value_no_signal(SoundSettings.music_volume * 100.0)
 	mus.value_changed.connect(func(x: float): SoundSettings.set_music_volume(x / 100.0))
 	music.add_child(mus)
+	for e in [["Effects", "EffectsVolume", SoundSettings.effects_volume, SoundSettings.set_effects_volume],
+			["Voice", "VoiceVolume", SoundSettings.voice_volume, SoundSettings.set_voice_volume]]:  # F761
+		var sl := UiKit.slider(HSlider.new())
+		sl.name = e[1]
+		sl.min_value = 0
+		sl.max_value = 100
+		sl.step = 5
+		sl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		sl.set_value_no_signal(e[2] * 100.0)
+		var setter: Callable = e[3]
+		sl.value_changed.connect(func(x: float): setter.call(x / 100.0))
+		_row(v, e[0]).add_child(sl)
 	var mute := CheckButton.new()
 	mute.name = "Mute"
 	mute.text = "Mute"
