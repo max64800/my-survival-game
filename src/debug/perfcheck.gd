@@ -20,7 +20,8 @@ func _wait(s: float) -> void:
 	await get_tree().create_timer(s).timeout
 
 
-## Average over `seconds`: fps, frame ms, script (process) ms, physics ms, draw calls.
+## Over `seconds`: average fps + frame ms, and (F337, Nov 26) the median frame, the "1% low" (the fps of the slowest
+## 1 in 100 frames: what a stutter feels like) and the worst frame; graphics card ms; script/physics ms; draw calls.
 func _measure(seconds: float) -> Dictionary:
 	await _wait(0.5)  # let a change settle
 	var frames := 0
@@ -28,20 +29,42 @@ func _measure(seconds: float) -> Dictionary:
 	var proc := 0.0
 	var phys := 0.0
 	var draws := 0.0
+	var gpu := 0.0
+	var vp := get_viewport().get_viewport_rid()
+	var times := PackedFloat32Array()
+	var last := t0
 	while Time.get_ticks_usec() - t0 < seconds * 1000000.0:
 		await get_tree().process_frame
+		var now := Time.get_ticks_usec()
+		times.append((now - last) / 1000.0)
+		last = now
 		frames += 1
 		proc += Performance.get_monitor(Performance.TIME_PROCESS)
 		phys += Performance.get_monitor(Performance.TIME_PHYSICS_PROCESS)
 		draws += Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME)
+		gpu += RenderingServer.viewport_get_measured_render_time_gpu(vp)
 	var total := (Time.get_ticks_usec() - t0) / 1000000.0
-	return {fps = frames / total, ms = total * 1000.0 / frames, proc = proc * 1000.0 / frames,
-		phys = phys * 1000.0 / frames, draws = draws / frames}
+	var r := frame_stats(times)
+	r.merge({fps = frames / total, ms = total * 1000.0 / frames, proc = proc * 1000.0 / frames,
+		phys = phys * 1000.0 / frames, draws = draws / frames, gpu = gpu / frames})
+	return r
+
+
+## Median frame ms, 1% low (fps of the 99th-percentile frame) and worst frame ms, from a list of frame times in ms.
+static func frame_stats(times: PackedFloat32Array) -> Dictionary:
+	if times.is_empty():
+		return {median = 0.0, low1 = 0.0, worst = 0.0}
+	var s := times.duplicate()
+	s.sort()
+	var n := s.size()
+	var p99: float = s[mini(n - 1, int(n * 0.99))]
+	return {median = s[n / 2], low1 = 1000.0 / maxf(p99, 0.001), worst = s[n - 1]}
 
 
 func _line(name: String, r: Dictionary, base: Dictionary = {}) -> void:
 	var gain := "" if base.is_empty() else "   (%+.1f ms per frame)" % (base.ms - r.ms)
-	print("  %-34s %6.0f fps  %6.2f ms  script %5.2f  physics %5.2f  draws %5.0f%s" % [name, r.fps, r.ms, r.proc, r.phys, r.draws, gain])
+	print("  %-34s %5.0f fps  %6.2f ms  median %5.1f  1%% low %4.0f fps  worst %5.0f ms  gpu %5.2f  script %5.2f  physics %5.2f  draws %5.0f%s" % [
+		name, r.fps, r.ms, r.median, r.low1, r.worst, r.gpu, r.proc, r.phys, r.draws, gain])
 
 
 func _run() -> void:
@@ -66,19 +89,27 @@ func _run() -> void:
 		get_tree().quit()
 		return
 	print("ready to play %.1f s after the program started (cave layout %d)" % [Time.get_ticks_msec() / 1000.0, CaveMaker.layout])
+	print("loading steps (0.3 s or more): ", ", ".join(FreezeWatch.steps.map(func(s): return "%s %.1f s" % s)))
 	DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_DISABLED)
 	Engine.max_fps = 0
+	RenderingServer.viewport_set_measure_render_time(get_viewport().get_viewport_rid(), true)
 	var dwarf: Dwarf = _main.dwarf
-	# `at=ruin` (or any place type) stands there instead of the great hall.
+	# `at=ruin` (or any place type) stands there instead of the great hall. `at=dungeon`: in the first dungeon's first
+	# room past its way in.
 	var place := "great_hall"
 	for a in OS.get_cmdline_user_args():
 		if a.begins_with("at="):
 			place = a.substr(3)
-	var spots: Array = _main.world.maker.pois_of(place, "mossy")
-	if spots.is_empty():
-		spots = _main.world.maker.pois_of(place)
-	var hall: Dictionary = spots[0]
-	dwarf.global_position = hall.pos + Vector3(0, 1.0, 12.0)
+	if place == "dungeon":
+		dwarf.global_position = dungeon_room_spot(_main.world.maker.dungeons[0])
+	else:
+		var spots: Array = _main.world.maker.pois_of(place, "mossy")
+		if spots.is_empty():
+			spots = _main.world.maker.pois_of(place)
+		var hall: Dictionary = spots[0]
+		dwarf.global_position = hall.pos + Vector3(0, 1.0, 12.0)
+	if args.has("base"):  # F777: a big finished base all round you (the biggest blueprints, side by side)
+		place += " + big base (%d pieces)" % stamp_big_base(dwarf.global_position)
 	for a in OS.get_cmdline_user_args():  # `pos=x,y,z`: stand on an exact spot (from a LOW FPS line in a play log)
 		if a.begins_with("pos="):
 			var p := a.substr(4).split(",")
@@ -95,6 +126,11 @@ func _run() -> void:
 			await _fight(dwarf, a.substr(6))
 			get_tree().quit()
 			return
+	if args.has("quick"):  # only "everything on" + walking and digging (for before/after checks of one fix)
+		await _hitches(dwarf)
+		print("======================================")
+		get_tree().quit()
+		return
 	for n in ["GlowGroves", "Boulders", "MushroomGrass", "CaveWater", "CaveCritters", "GlowSwarms", "RootPillars",
 			"RootCurtains", "Pois", "Authority/Monsters"]:
 		var node := _main.get_node_or_null(n) as Node3D
@@ -153,6 +189,37 @@ func _run() -> void:
 	print("  objects drawn: %d, lights: %d, window %s" % [Performance.get_monitor(Performance.RENDER_TOTAL_OBJECTS_IN_FRAME), lights.size(), get_viewport().get_visible_rect().size])
 	print("======================================")
 	get_tree().quit()
+
+
+## The middle of a dungeon's first room past its way in, 1 m above its floor (map spaces: [name, x0, z0, x1, z1, y, h]).
+static func dungeon_room_spot(d: Dictionary) -> Vector3:
+	for s in d.map.spaces:
+		if String(s[0]) != "entry":
+			var local := Vector3((float(s[1]) + float(s[3])) * 0.5, float(s[5]) + 1.0, (float(s[2]) + float(s[4])) * 0.5)
+			return DungeonMap.to_world(d, local)
+	return d.mouth
+
+
+const BIG_BASE := [["stonehold_prow_hall", Vector2(0, -34)], ["hearthbrick_manor", Vector2(-40, 0)],
+	["hearthbrick_brewhall", Vector2(40, 0)], ["hearthbrick_smeltery", Vector2(0, 34)]]
+
+
+## F777: the four biggest blueprints stood up finished round `at` (like a big late-game base), all in one batch the
+## way a ruin is placed. Returns how many pieces went up.
+func stamp_big_base(at: Vector3) -> int:
+	var b: Builder = GameAuthority.instance.builder
+	var n := 0
+	b.batch = true
+	for e in BIG_BASE:
+		var bp := BlueprintLibrary.make(e[0])
+		var o: Vector3 = _main.world.maker.find_floor(at.x + e[1].x, at.z + e[1].y, at.y + 3.0)
+		if not o.is_finite():
+			o = Vector3(at.x + e[1].x, at.y - 1.0, at.z + e[1].y)
+		for p in bp.world_pieces(o.round(), 0):
+			b._ev_add_piece(b._next_uid, p.piece, p.family, p.pos, p.rot, true)
+			n += 1
+	b.end_batch()
+	return n
 
 
 ## F417 (Nov 20): the owner's play log showed 10-19 FPS for the first ~1.5 min after loading, the graphics card taking

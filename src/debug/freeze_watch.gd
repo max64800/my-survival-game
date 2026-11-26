@@ -20,9 +20,12 @@ static var doing := "starting":
 		var now := Time.get_ticks_msec()
 		if now - _step_since >= 300:
 			_say("[%s] STEP %s: %.1f s" % [_clock(), doing, (now - _step_since) / 1000.0])
+			steps.append([doing, (now - _step_since) / 1000.0])
 		_step_since = now
 		doing = v
 static var _step_since := 0
+## Every STEP so far as [what, seconds] (the speed check prints the loading steps from it).
+static var steps: Array = []
 ## Rock hits in the last few seconds (the dwarf counts them), so a slow moment says if you were mining.
 static var hits := 0
 
