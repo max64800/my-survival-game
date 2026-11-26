@@ -14306,3 +14306,28 @@ Owner's pick: "Quick + full".
 - I first planned a small round keep (ring R = 1). It's only 7.5 m across, too small for stairs with free floor at both ends. Fix: an 8 x 8 m square keep.
 
 **Next:** the owner OKs the shapes, then the blueprint `_sinkhole_ring()` (plan step 2).
+
+
+## 2026-11-26: Sound rounds 6 + 7 (creature cries, weapon hits, bandage, dungeon whispers)
+
+**What we did**
+- Round 6 and Round 7 review pages (Love / Maybe / No buttons). The owner listened and picked; every sound is CC0 from Freesound.
+- Put 27 picked sounds in the game (`assets/sfx/`): trimmed, levelled to the same loudness, cut short.
+- New in the game:
+  - Creatures cry when hit (spider, snail, beetle, bat, skeletons), on top of the weapon's sound.
+  - F792: creatures cry out the moment they spot you (spider, beetle, skeletons, boss skeletons roar, ghosts shriek). The snail stays quiet (owner: skip).
+  - Walking sounds: spiders skitter, snails squish, skeletons rattle (every couple of seconds, quiet, deeper for bigger ones).
+  - New spider death, a boss skeleton's own death scream.
+  - Each weapon lands with its own hit: axe, two-handed axe, mace, two-handed warhammer, spear. Two-handed swings get a big whoosh.
+  - A bandage makes a cloth-rip sound.
+  - Now and then a far-off whisper in stone dungeons and a moan in wooden mines.
+- Picks recorded in `docs/audio/sound-candidate-picks-2026-11-26.md`, credits in `CREDITS.md`.
+
+**Mistakes and hurdles**
+- Claude searched rat squeaks for the "tunnel rat", but in our game that kind is the Bone Rot, a small skeleton. The owner caught it; the rat rows were removed and all skeleton sounds grouped (shared, pitched by size).
+- A shell edit with the Mac's `sed a\` failed; a short Python script did the edit instead.
+- Re-using the search script inside another script broke (`__file__` is missing there); fixed by falling back to the file's name.
+- Search results had junk (turkeys, guitars, arcade "power ups"); filtered by title words and removed by hand.
+- First conversion trimmed quiet sounds too hard (a hit came out 0.06 s long). Fixed by making each sound loud first, then trimming the silence.
+- The level-up sound is still not found: arcade jingles were "too arcady", and anvils, bells, horns and singing bowls were all NO.
+- Godot isn't installed on the Mac, so the tests (`tests/test_sfx.gd`, updated + a new check) could not run here: run them on the PC.
