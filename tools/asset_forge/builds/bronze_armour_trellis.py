@@ -1,4 +1,4 @@
-# F697 step 7 (owner, Nov 26): the bronze armour is made the healing-fountain way, NOT hand-built:
+# F697 step 7 (owner, Nov 26): the bronze helm is made the healing-fountain way, NOT hand-built:
 # ChatGPT painting (tools/art/sheets/bronze_armour_sheet_nov26.png) -> cut out -> TRELLIS.2 website -> this script.
 # Owner's OK as an exception to model rule 1 (see docs/art/MODEL-RULES.md). This script:
 #   - turns each piece to face the front (-Y), sizes it like the copper piece, bottom on the floor
@@ -23,11 +23,9 @@ JOUR = GAME / "journey" / "3d" / "v2_hand_built" / "items"
 TARGET_TRIS = 9000
 
 # id: (height in m, turn in degrees about the up axis so the front faces -Y)
+# Only the helm: mail, greaves, boots are hand-built in items_gear.py (owner, Nov 26, when TRELLIS time ran out).
 PIECES = {
 	"helm_bronze": (0.27, 0.0),
-	"mail_bronze": (0.45, 0.0),
-	"greaves_bronze": (0.42, 0.0),
-	"boots_bronze": (0.26, 0.0),
 }
 
 

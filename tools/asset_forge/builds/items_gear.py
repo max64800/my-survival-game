@@ -8,7 +8,7 @@ from pathlib import Path
 
 import bmesh
 import bpy
-from mathutils import Matrix
+from mathutils import Matrix, Vector
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import kit  # noqa: E402
@@ -285,48 +285,190 @@ def helm_bronze():
 		kit.rivet((math.cos(a) * 0.136, math.sin(a) * 0.147, 0.1), bz("dark"), r=0.01)
 
 
+# Hand-built again (owner, Nov 26, when the free TRELLIS time ran out): round, padded shapes from
+# tools/art/sheets/bronze_armour_sheet_nov26.png (barrel chest + domed shoulders, knee cups, domed toe caps).
+kit.TILE.update({"bronzepad": 0.16})
+RNG = __import__("random").Random(697)
+
+
+def pad(variant="a"):
+	"""The dark quilted padding under the plates (tools/art/make_bronze_padding.py)."""
+	return kit.tex_mat("bronzepad", variant, metal=0.0, rough=0.9)
+
+
+def oval(cx, cy, rx, ry_front, ry_back, n=24, wob=0.0):
+	"""A loop seen from above, counter-clockwise; the front half (-Y) can bulge more than the back."""
+	pts = []
+	for i in range(n):
+		a = 2 * math.pi * i / n
+		k = 1 + RNG.uniform(-wob, wob)
+		ry = ry_front if math.sin(a) < 0 else ry_back
+		pts.append((cx + rx * k * math.cos(a), cy + ry * k * math.sin(a)))
+	return pts
+
+
+def _outward(o):
+	bpy.context.view_layer.objects.active = o
+	o.select_set(True)
+	bpy.ops.object.mode_set(mode="EDIT")
+	bpy.ops.mesh.select_all(action="SELECT")
+	bpy.ops.mesh.normals_make_consistent(inside=False)
+	bpy.ops.object.mode_set(mode="OBJECT")
+	o.select_set(False)
+	return o
+
+
+def loft(sections, material, smooth=True):
+	"""A closed shell through stacked loops [(z, loop), ...] (bottom first, same point count), capped both ends."""
+	n = len(sections[0][1])
+	verts = [(x, y, z) for z, loop in sections for x, y in loop]
+	faces = []
+	for r in range(len(sections) - 1):
+		for i in range(n):
+			j = (i + 1) % n
+			faces.append((r * n + i, r * n + j, (r + 1) * n + j, (r + 1) * n + i))
+	faces.append(tuple(reversed(range(n))))
+	faces.append(tuple((len(sections) - 1) * n + i for i in range(n)))
+	return _outward(kit._mesh_obj("loft", verts, faces, material, smooth=smooth))
+
+
+def arc_plate(cx, cy, r0, r1, a0, a1, z0, z1, thick, material, n=10):
+	"""A curved plate hugging a leg that is r0 wide at z0 and r1 at z1 (its inside bites 3 mm into the leg)."""
+	sections = []
+	for z, r in ((z0, r0), (z1, r1)):
+		ang = [math.radians(a0 + (a1 - a0) * i / n) for i in range(n + 1)]
+		out = [(cx + (r + thick) * math.cos(a), cy + (r + thick) * math.sin(a)) for a in ang]
+		inn = [(cx + (r - 0.003) * math.cos(a), cy + (r - 0.003) * math.sin(a)) for a in reversed(ang)]
+		sections.append((z, out + inn))
+	return loft(sections, material)
+
+
+def strap(x, path, w, t, material):
+	"""A leather strap along a path [(y, z), ...] at side x (over a shoulder)."""
+	verts, faces = [], []
+	for i, (y, z) in enumerate(path):
+		(ya, za), (yb, zb) = path[max(0, i - 1)], path[min(len(path) - 1, i + 1)]
+		ty, tz = yb - ya, zb - za
+		ln = math.hypot(ty, tz)
+		ny, nz = -tz / ln, ty / ln
+		for sx in (-1, 1):
+			for d in (-t / 2, t / 2):
+				verts.append((x + sx * w / 2, y + ny * d, z + nz * d))
+	k = len(path)
+	for i in range(k - 1):
+		a, b = 4 * i, 4 * (i + 1)
+		faces += [(a + 1, a + 3, b + 3, b + 1), (a, b, b + 2, a + 2), (a + 2, b + 2, b + 3, a + 3), (a, a + 1, b + 1, b)]
+	faces += [(0, 2, 3, 1), (4 * (k - 1), 4 * (k - 1) + 1, 4 * (k - 1) + 3, 4 * (k - 1) + 2)]
+	return _outward(kit._mesh_obj("strap", verts, faces, material, smooth=False))
+
+
+def buckle(loc, w, h, side=False):
+	"""A square bronze buckle frame (four little bars) with its pin; side=True faces it sideways (x)."""
+	frame = bz("dark")
+	x, y, z = loc
+	t = 0.006
+
+	def bar(sx, sy, sz, dx, dy, dz):
+		if side:
+			sx, sy, dx, dy = sy, sx, dy, dx
+		kit.box((sx, sy, sz), (x + dx, y + dy, z + dz), frame, bevel=0.0015, wobble=0)
+
+	bar(w, t, t, 0, 0, h / 2 - t / 2)
+	bar(w, t, t, 0, 0, -h / 2 + t / 2)
+	bar(t, t, h - 0.002, -w / 2 + t / 2, 0, 0)
+	bar(t, t, h - 0.002, w / 2 - t / 2, 0, 0)
+	bar(t * 0.7, t * 0.7, h * 0.8, 0, 0, 0)
+
+
 def mail_bronze():
-	kit.taper(0.34, 0.2, 0.42, 0.22, 0.4, (0, 0, 0.0), bz("a"), bevel=0.03)
-	knot_band(rrect_loop(0, 0, 0.178, 0.108, 0.04), 0.0, 0.06, variant="b")  # bottom rim
-	knot_band(rrect_loop(0, 0, 0.213, 0.118, 0.04), 0.345, 0.395, variant="b")  # neck rim
-	kit.tbox("leather", (0.36, 0.23, 0.045), (0, 0, 0.115), variant="dark", bevel=0.01)  # belt
-	kit.box((0.05, 0.02, 0.045), (0, -0.12, 0.115), bz("dark"), bevel=0.006, wobble=0)  # buckle
-	medallion((0, -0.128, 0.25), 0.082, 0.03)
+	# The chest: a barrel of hammered bronze, rounder at the front, closing in to the neck.
+	rows = ((0.0, 0.168, 0.118, 0.104), (0.09, 0.162, 0.114, 0.1), (0.17, 0.168, 0.122, 0.1), (0.26, 0.18, 0.132, 0.104),
+		(0.335, 0.184, 0.124, 0.1), (0.37, 0.155, 0.095, 0.085), (0.388, 0.075, 0.062, 0.056))
+	loft([(z, oval(0, 0, rx, rf, rb, n=28, wob=0.006 if 0 < z < 0.37 else 0)) for z, rx, rf, rb in rows], bz("a"))
+	knot_band(oval(0, 0, 0.172, 0.122, 0.108, n=28), 0.012, 0.085, thick=0.022, variant="b")  # wide knot skirt
+	kit.ring(0.068, 0.02, (0, 0, 0.392), pad("dark"), seg=20)  # padded collar
+	# The big knot medallion, its gold ring and four rivets round it.
+	medallion((0, -0.134, 0.225), 0.075, 0.032)
+	kit.ring(0.078, 0.008, (0, -0.128, 0.225), bz("dark"), rot=(90, 0, 0), seg=28)
+	for k in range(4):
+		a = math.radians(45 + 90 * k)
+		kit.rivet((0.097 * math.cos(a), -0.118 + 0.012 * abs(math.cos(a)), 0.225 + 0.097 * math.sin(a)), bz("dark"), r=0.009)
+	for k in range(9):  # a row of rivets just above the skirt
+		a = math.radians(-90 + (k - 4) * 22)
+		kit.rivet((0.166 * math.cos(a), 0.116 * math.sin(a), 0.1), bz("dark"), r=0.008)
 	for s in (-1, 1):
-		dome((s * 0.19, 0, 0.38), 0.11, 0.09, bz("c"))  # big domed shoulder plates
-		knot_band(ellipse_loop(s * 0.19, 0, 0.113, 0.11 * 1.08 + 0.003, n=24), 0.37, 0.405, thick=0.015, variant="c")
-		for dy in (-0.05, 0.05):
-			kit.rivet((s * 0.19, dy, 0.462), bz("dark"), r=0.011)
+		# Domed shoulder plate, leaning out, with a knot band round its rim and rivets on top.
+		loc = (s * 0.165, 0.0, 0.325)
+		tilt = Matrix.Translation(loc) @ Matrix.Rotation(math.radians(s * 32), 4, "Y") @ Matrix.Translation(loc).inverted()
+		d = dome(loc, 0.1, 0.085, bz("c"))
+		d.data.transform(tilt)
+		band = knot_band(oval(loc[0], loc[1], 0.103, 0.111, 0.111, n=24), loc[2] - 0.035, loc[2] + 0.006, thick=0.016, variant="c")
+		band.data.transform(tilt)
+		for dy in (-0.045, 0.045):
+			kit.rivet(tuple(tilt @ Vector((loc[0], dy, loc[2] + 0.079))), bz("dark"), r=0.01)
+		# Leather strap over the shoulder, with a buckle on the front.
+		x = s * 0.085
+		strap(x, [(-0.124, 0.2), (-0.118, 0.29), (-0.1, 0.345), (-0.06, 0.376), (0.0, 0.384), (0.05, 0.376),
+			(0.08, 0.345), (0.094, 0.29), (0.098, 0.22)], 0.03, 0.012, pad("plain"))
+		buckle((x, -0.133, 0.3), 0.04, 0.034)
 
 
 def greaves_bronze():
-	kit.tbox("leather", (0.34, 0.16, 0.08), (0, 0, 0.36), variant="dark", bevel=0.015)
-	knot_band(rrect_loop(0, 0, 0.176, 0.086, 0.03), 0.335, 0.385, variant="a")  # knot band round the top
+	# Two greaves side by side, their padded top rolls touching (so the pair is one piece).
+	prof = ((0.0, 0.068), (0.06, 0.07), (0.16, 0.078), (0.27, 0.082), (0.36, 0.085), (0.4, 0.087))
+
+	def r_at(z):
+		for (za, ra), (zb, rb) in zip(prof, prof[1:]):
+			if za <= z <= zb:
+				return ra + (rb - ra) * (z - za) / (zb - za)
+		return prof[-1][1]
+
 	for s in (-1, 1):
-		x = s * 0.085
-		kit.cone(0.08, 0.065, 0.34, (x, 0, 0.17), kit.tex_mat("leather", "b"), verts=12, bevel=0.01)  # padded leg
-		knot_band(ellipse_loop(x, 0, 0.085, 0.085, n=20), 0.0, 0.04, thick=0.015, variant="a")  # ankle rim
-		shin = kit.cone(0.076, 0.07, 0.15, (x, -0.02, 0.115), bz("a"), verts=12, bevel=0.008)
-		shin.scale = (1, 0.7, 1)
-		thigh = kit.cone(0.072, 0.067, 0.07, (x, -0.02, 0.29), bz("b"), verts=12, bevel=0.008)
-		thigh.scale = (1, 0.7, 1)
-		front_dome((x, -0.062, 0.215), 0.05, 0.024, bz("c"))  # round knee cup
-		for sx in (-1, 1):
-			kit.rivet((x + sx * 0.03, -0.074, 0.15), bz("dark"), r=0.009)
+		x = s * 0.092
+		loft([(z, oval(x, 0, r, r, r, n=20, wob=0.02 if 0 < z < 0.4 else 0)) for z, r in prof], pad("a" if s < 0 else "b"))
+		kit.ring(0.086, 0.017, (x, 0, 0.398), pad("dark"), seg=20)  # rolled top
+		kit.ring(0.07, 0.011, (x, 0, 0.012), bz("dark"), seg=20)  # bronze foot rim
+		# Two shin plates (lower one wider) and the knot band up top.
+		arc_plate(x, 0, r_at(0.035), r_at(0.125), -160, -20, 0.035, 0.125, 0.012, bz("a"))
+		arc_plate(x, 0, r_at(0.135), r_at(0.205), -150, -30, 0.135, 0.205, 0.012, bz("b"))
+		r = r_at(0.31)
+		knot_band(oval(x, 0, r + 0.007, r + 0.007, r + 0.007, n=24), 0.29, 0.345, thick=0.017, variant="a")
+		# Round knee cup with a gold rim, rivets either side and a side strap buckle.
+		rk = r_at(0.245)
+		front_dome((x, -rk + 0.008, 0.248), 0.05, 0.032, bz("c"))
+		kit.ring(0.05, 0.007, (x, -rk + 0.006, 0.248), bz("dark"), rot=(90, 0, 0), seg=24)
+		for a_deg in (-125, -55):
+			for z in (0.06, 0.18):
+				a = math.radians(a_deg)
+				kit.rivet((x + (r_at(z) + 0.012) * math.cos(a), (r_at(z) + 0.012) * math.sin(a), z), bz("dark"), r=0.007)
+		buckle((x + s * (rk + 0.004), 0, 0.248), 0.034, 0.03, side=True)
 
 
 def boots_bronze():
 	for s in (-1, 1):
-		x, y = s * 0.056, s * 0.04  # pair stands together, one a little ahead (as the other boots)
-		kit.tbox("leather", (0.11, 0.232, 0.032), (x, y - 0.04, 0.016), variant="dark", bevel=0.008)  # thick sole
-		for k in range(4):  # tread ridges on the sole's sides
-			kit.tbox("leather", (0.116, 0.012, 0.014), (x, y - 0.13 + k * 0.06, 0.012), variant="dark", bevel=0.003)
-		kit.tbox("leather", (0.1, 0.22, 0.065), (x, y - 0.04, 0.062), variant="b", bevel=0.03)
-		kit.tcyl("leather", 0.055, 0.16, (x, y + 0.02, 0.17), verts=12)
-		kit.ring(0.058, 0.014, (x, y + 0.02, 0.25), kit.tex_mat("leather", "dark"), seg=14)
-		knot_band(ellipse_loop(x, y + 0.02, 0.059, 0.059, n=18), 0.1, 0.145, thick=0.012, variant="c")  # ankle band
-		front_dome((x, y - 0.13, 0.058), 0.054, 0.03, bz("b"))  # thick toe cap
-		kit.rivet((x, y - 0.158, 0.075), bz("dark"), r=0.01)
+		x, y = s * 0.062, s * 0.03  # the pair stands together, one a little ahead
+		fy = y - 0.03  # foot centre
+		# Thick lugged sole (dark leather) with tread lugs poking out of its sides.
+		loft([(0.0, rrect_loop(x, fy, 0.053, 0.123, 0.045)), (0.03, rrect_loop(x, fy, 0.056, 0.127, 0.047))],
+			pad("plain"), smooth=False)
+		for k in range(5):
+			kit.box((0.12, 0.016, 0.018), (x, fy - 0.09 + k * 0.045, 0.011), pad("plain"), bevel=0.003, wobble=0)
+		# Padded foot and shaft.
+		loft([(0.028, rrect_loop(x, fy, 0.05, 0.118, 0.042)), (0.07, rrect_loop(x, fy + 0.005, 0.048, 0.108, 0.04)),
+			(0.105, rrect_loop(x, fy + 0.04, 0.046, 0.07, 0.04))], pad("b"))
+		loft([(z, oval(x, y + 0.03, r, r, r, n=20, wob=0.02 if 0.06 < z < 0.235 else 0))
+			for z, r in ((0.06, 0.056), (0.13, 0.057), (0.2, 0.06), (0.235, 0.062))], pad("a"))
+		kit.ring(0.063, 0.018, (x, y + 0.03, 0.236), pad("dark"), seg=20)  # rolled top
+		knot_band(oval(x, y + 0.03, 0.065, 0.065, 0.065, n=20), 0.15, 0.195, thick=0.014, variant="c")
+		# Ankle strap with its buckle on the front.
+		kit.ring(0.059, 0.007, (x, y + 0.03, 0.115), pad("plain"), seg=20)
+		buckle((x, y + 0.03 - 0.068, 0.115), 0.03, 0.026)
+		# Big domed bronze toe cap, rivets round its base.
+		toe = (x, fy - 0.065, 0.03)
+		dome(toe, 0.058, 0.056, bz("b"))
+		for k in range(5):
+			a = math.radians(-90 + (k - 2) * 38)
+			kit.rivet((toe[0] + 0.06 * math.cos(a), toe[1] + 0.065 * math.sin(a), 0.04), bz("dark"), r=0.008)
 
 
 def satchel():
@@ -448,8 +590,8 @@ BUILD = {
 	"plate_shell": lambda: chest_armor("shell"),
 	"trousers_leather": lambda: legs("leather"), "greaves_copper": lambda: legs("copper"), "greaves_shell": lambda: legs("shell"),
 	"boots_leather": lambda: boots("leather"), "boots_copper": lambda: boots("copper"), "boots_shell": lambda: boots("shell"),
-	# bronze has its own pieces (F697 step 7, Option B look). The helm is made the fountain way now
-	# (builds/bronze_armour_trellis.py); mail, greaves, boots move there too once TRELLIS has made them.
+	# bronze has its own pieces (F697 step 7, Option B look). The helm is made the fountain way
+	# (builds/bronze_armour_trellis.py); mail, greaves, boots stay hand-built here (owner, Nov 26).
 	"mail_bronze": mail_bronze, "greaves_bronze": greaves_bronze, "boots_bronze": boots_bronze,
 }
 

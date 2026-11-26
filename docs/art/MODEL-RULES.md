@@ -12,7 +12,7 @@ twice: the crafting stations (Nov 14) and the creatures (Nov 15, F68 🔁).
 - ChatGPT pictures are the **design reference** only: match their shapes, colours and face by eye.
 - Picture-to-3D may be used only as a rough size/shape guide that is thrown away, never as the final model.
   One exception (owner, Nov 22): the F782 healing fountain is the TRELLIS model reworked by script
-  (`builds/healing_fountain_trellis.py`: lighter paint, water cut out, crystals added). Second exception (owner, Nov 26): the bronze armour (helm, mail, greaves, boots) is made the same way:
+  (`builds/healing_fountain_trellis.py`: lighter paint, water cut out, crystals added). Second exception (owner, Nov 26): the bronze helm is made the same way (mail, greaves, boots are hand-built, owner Nov 26):
   our ChatGPT sheet -> TRELLIS -> `builds/bronze_armour_trellis.py` (size, metal look, fewer triangles). Only these two.
 - **Free packs may be imported and adapted (owner, Nov 19):** a build script loads a free pack model (CC0 first,
   e.g. Quaternius, KayKit), reshapes it and repaints it with our kit textures so it passes every rule here. Pack
