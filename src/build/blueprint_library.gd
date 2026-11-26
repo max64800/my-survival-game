@@ -3505,7 +3505,8 @@ func _mine_trestle() -> void:
 
 
 ## The ore shed on the lower ledge (x 17..29, z -11..-3, its back in the rock): a tall stone ground storey, a wooden
-## storey with three ore chutes out of its wide front windows, and a wooden loft (the trestle comes in at its left)
+## storey with wide front windows (no ore chutes: owner, Nov 26, F911, they looked like ramps up to the windows), stone
+## steps up to its front door, and a wooden loft (the trestle comes in at its left)
 ## under a sloped roof. Steps in the rock lead down from the cave floor to its side door.
 func _mine_ore_shed() -> void:
 	var S := STONE
@@ -3564,15 +3565,17 @@ func _mine_ore_shed() -> void:
 	_wall_z("railing", 19, -6, 5.25, W)
 	_wall_z("railing", 21, -6, 5.25, W)
 	_wall_x("railing", 20, -5, 5.25, W)
-	for x in [20, 24, 28]:
-		_add("ramp", W, Vector3(x, 2.0, -2), 0)                             # the ore chutes under the wide windows
+	_add("foundation_steps", S, Vector3(22, g, -2), 0)                      # up to the front door (owner, Nov 26: F911)
 	_mine_roof(sx, -4, 7.25, [17, 29], W)
 
 
 ## The shaft: ladders from the mine room's floor (-8) up the shaft's back wall to the collar; the mine room's mine
 ## props every 3 m.
 func _mine_shaft() -> void:
-	for y in [-8.0, -6.0, -4.0, -2.0, 0.0]:
+	# (owner, Nov 26, F911: the top one ends level with the collar's stone, not 1 m above it; so they stand on stone
+	# steps at the shaft's foot, 1 m up)
+	_add("foundation_steps", STONE, Vector3(4, -8.0, -6), 0)
+	for y in [-7.0, -5.0, -3.0, -1.0]:
 		_add("ladder", WOOD, Vector3(4, y, -6.73), 2)
 	for x in [-4.0, -1.0, 2.0]:
 		for z in [-6, -4]:
