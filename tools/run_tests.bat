@@ -1,5 +1,5 @@
 @echo off
-rem Runs all auto-checks on Windows. Usage: tools\run_tests.bat [only=name] [fn=name] [verbose=1]
+rem Runs all auto-checks on Windows. Usage: tools\run_tests.bat [only=name] [fn=name] [verbose=1] [full=1 = also the slow checks]
 rem Prints only FAILs + the summary (to save Claude tokens). verbose=1 shows every PASS; set QUIET=0 for raw output.
 rem Set GODOT to the full path of Godot's console exe if "godot" isn't a command.
 cd /d "%~dp0\.."

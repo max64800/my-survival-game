@@ -106,7 +106,8 @@ Nov 21 check: 60% of all tokens = Claude re-reading the chat on every step, so *
 - Never read big files whole. `JOURNAL.md`: append new entries at the end without reading it (Grep or the last ~40 lines for
   format). Design specs, `MODEL-RULES.md`, `CREATURE-STYLE.md`: Grep the heading, read only that section.
 - Pictures cost a lot: look at the fewest screenshots that answer the question (usually 1–3), use crops/zoom, not full sets.
-- Run single tests (`only=name`) while fixing; run the full suite once at the end. Always through `tools/run_tests.sh`
-  (prints only FAILs + summary). Every other game/Godot/Blender run goes through `python3 tools/quiet_run.py <command>`
+- Run single tests (`only=name`) while fixing; run the suite once at the end. Always through `tools/run_tests.sh`
+  (prints only FAILs + summary). A plain run is **quick** (owner, Nov 26): it skips checks that took 10 s+ last time
+  (world-growing, ruin rebuilds). Add `full=1` only after ruin, cave or world-making work. Every other game/Godot/Blender run goes through `python3 tools/quiet_run.py <command>`
   (drops shutdown chatter, folds repeats). `QUIET=0` / `verbose=1` only when the short output isn't enough.
 - Blender/model work: at most 2 render-review rounds before asking the owner.
