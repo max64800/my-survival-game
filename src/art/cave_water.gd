@@ -218,6 +218,7 @@ func _add_trickle(at: Node3D) -> void:
 		return
 	stream.loop = true
 	var p := AudioStreamPlayer3D.new()
+	p.bus = SoundSettings.EFFECTS_BUS
 	p.name = "Trickle"
 	p.stream = stream
 	p.volume_db = -9.0

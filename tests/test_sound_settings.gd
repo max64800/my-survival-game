@@ -50,3 +50,31 @@ func test_camera_shake_is_remembered() -> void:
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(TEST_PATH))
 	SoundSettings.camera_shake = old
 	SoundSettings.load_and_apply()
+
+
+## F761: four sliders (main, music, effects, voice); effects and voice each get their own bus and are remembered.
+func test_effects_and_voice_volume_are_remembered() -> void:
+	var old_e := SoundSettings.effects_volume
+	var old_v := SoundSettings.voice_volume
+	SoundSettings.set_effects_volume(0.5, TEST_PATH)
+	SoundSettings.set_voice_volume(0.25, TEST_PATH)
+	var eb := AudioServer.get_bus_index(SoundSettings.EFFECTS_BUS)
+	var vb := AudioServer.get_bus_index(SoundSettings.VOICE_BUS)
+	check(eb >= 0 and vb >= 0, "there is an Effects bus and a Voice bus")
+	check_near(AudioServer.get_bus_volume_db(eb), linear_to_db(0.5), 0.01, "half effects volume")
+	check_near(AudioServer.get_bus_volume_db(vb), linear_to_db(0.25), 0.01, "quarter voice volume")
+	SoundSettings.effects_volume = 1.0
+	SoundSettings.voice_volume = 1.0
+	SoundSettings.load_and_apply(TEST_PATH)
+	check_near(SoundSettings.effects_volume, 0.5, 0.001, "effects volume came back from the saved file")
+	check_near(SoundSettings.voice_volume, 0.25, 0.001, "voice volume came back from the saved file")
+	var panel := SettingsPanel.new()
+	tree.root.add_child(panel)
+	await tree.process_frame
+	check(panel.find_child("EffectsVolume", true, false) != null and panel.find_child("VoiceVolume", true, false) != null,
+			"the Audio tab shows the Effects and Voice sliders")
+	panel.free()
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(TEST_PATH))
+	SoundSettings.effects_volume = old_e
+	SoundSettings.voice_volume = old_v
+	SoundSettings.load_and_apply()

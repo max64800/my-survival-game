@@ -23,6 +23,7 @@ func run(main: Node, shots: String) -> void:
 		var p: Dictionary = b.structure.pieces[uid]
 		if p.piece in Pieces.DOORS and int(p.get("open", 0)) == 0:
 			b._ev_door(uid, 1)
+	b._door_shut_at.clear()  # (F869) the walk needs every door to stay open, also ones the save had open
 	await get_tree().create_timer(1.0).timeout
 	var flights := []
 	for uid in b.structure.pieces:

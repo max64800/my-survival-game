@@ -110,6 +110,28 @@ func _process(delta: float) -> void:
 	_big = move_toward(_big, _in_big_cavern(at), delta * 0.5)
 	_look_around(at, delta)
 	_apply()
+	_haunt(at, delta)
+
+
+# Owner's picks (sound round 6, Nov 26): now and then a far-off whisper in the stone dungeons and a moan in the
+# wooden mines, somewhere in the dark around you (only sounds, each computer hears its own).
+const WOODEN_DUNGEONS := ["lampwick", "pell", "mossprop"]  ## timber-propped mines; the rest are stone halls
+var _haunt_t := 20.0
+
+
+func _haunt(at: Vector3, delta: float) -> void:
+	_haunt_t -= delta
+	if _haunt_t > 0.0:
+		return
+	_haunt_t = randf_range(25.0, 55.0)
+	var w = get_parent().get("world") if get_parent() else null
+	if w == null or w.maker == null:
+		return
+	for d in w.maker.dungeons:
+		if DungeonMap.space_at(d, at) != "":
+			var far := Vector3.FORWARD.rotated(Vector3.UP, randf() * TAU) * randf_range(8.0, 14.0)
+			Sfx.play("ambient_wood" if d.map.get("id", "") in WOODEN_DUNGEONS else "ambient_stone", at + far, -8.0, randf_range(0.9, 1.05))
+			return
 
 
 # ---------------------------------------------------------------- the huge star cavern and dark-adapted eyes

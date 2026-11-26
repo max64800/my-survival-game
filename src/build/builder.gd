@@ -26,6 +26,8 @@ var _placed_at := {}  ## host: uid -> when it was placed (careful pick-up works 
 ## Taking pieces down (owner, Nov 15, F100): a careful pick-up gives everything back, but only right
 ## after placing (a misclick); breaking a piece gives back BREAK_SHARE of what it cost.
 const PICKUP_TIME := 10.0
+const DOOR_SHUT_TIME := 30.0  ## F869 (owner, Nov 25): an open door swings shut by itself after this long
+var _door_shut_at := {}  ## host: uid -> when that open door closes by itself
 const BREAK_SHARE := 0.5  ## owner, Nov 20: taking a piece down gives half back
 var _checks := []  ## host: [time, center, radius]
 var _falls := []  ## host: [time, points]
@@ -251,6 +253,7 @@ func request_door(peer_id: int, uid: int) -> bool:
 	if ps.node and ps.node.global_position.distance_to(p.pos) > Pieces.BUILD_REACH:
 		return false
 	var open_to := 0
+	_door_shut_at.erase(uid)
 	if int(p.get("open", 0)) != 0:
 		_ev_door.rpc(uid, 0)
 	else:
@@ -261,10 +264,14 @@ func request_door(peer_id: int, uid: int) -> bool:
 			side = signf(to_player.z) if absf(to_player.z) > 0.01 else 1.0
 		open_to = -1 if side > 0.0 else 1
 		_ev_door.rpc(uid, open_to)
+		_door_shut_at[uid] = _clock + DOOR_SHUT_TIME
 	if p.piece == "gate_leaf":
 		var partner := _find_gate_partner(uid, p)
 		if partner != -1:
-			_ev_door.rpc(partner, -open_to)  # F810: it is turned round, so "its back" is the other way: both swing alike
+			_ev_door.rpc(partner, -open_to)
+			_door_shut_at.erase(partner)
+			if open_to != 0:
+				_door_shut_at[partner] = _clock + DOOR_SHUT_TIME  # F810: it is turned round, so "its back" is the other way: both swing alike
 	return true
 
 
@@ -532,6 +539,11 @@ func _process(delta: float) -> void:
 	while not _checks.is_empty() and _checks[0][0] <= _clock:
 		var c: Array = _checks.pop_front()
 		_run_check(c[1], c[2], c[3] if c.size() > 3 else 0)
+	for uid in _door_shut_at.keys():  # F869: host shuts doors left open; _ev_door tells every screen
+		if _door_shut_at[uid] <= _clock:
+			_door_shut_at.erase(uid)
+			if structure.pieces.has(uid) and int(structure.pieces[uid].get("open", 0)) != 0:
+				_ev_door.rpc(uid, 0)
 	while not _falls.is_empty() and _falls[0][0] <= _clock:
 		_ev_cave_in.rpc(_falls.pop_front()[1])
 	while not _breaks.is_empty() and _breaks[0][0] <= _clock:
@@ -1687,6 +1699,7 @@ func load_snapshot(s: Dictionary) -> void:
 		_ev_add_piece(p[0], p[1], p[2], p[3], p[4], p[5])
 		if p.size() > 6 and p[6]:
 			_ev_door(p[0], int(p[6]))  # old saves stored true (= 1)
+			_door_shut_at[p[0]] = _clock + DOOR_SHUT_TIME  # F869: left open when saved, it still shuts by itself
 	_loading = false
 	_next_uid = s.get("next", _next_uid)
 	for st in s.get("sites", []):

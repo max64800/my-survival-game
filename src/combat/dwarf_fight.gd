@@ -505,7 +505,7 @@ func _crossbow_step(delta: float, move_dir := Vector3.ZERO) -> float:
 			reload_left -= delta
 			if reload_left < 0.0:
 				loaded = true
-				Sfx.play("clink", dwarf.global_position + Vector3.UP, -6.0, 1.3)
+				Sfx.play("crossbow_reload", dwarf.global_position + Vector3.UP, -4.0)
 	if Input.is_action_just_pressed("dig") and _busy <= 0.0:
 		if loaded:
 			_shoot(aiming())
@@ -553,6 +553,7 @@ func _shoot(aimed: bool) -> void:
 		return
 	ps.vitals.use_stamina(minf(Combat.WEAPONS.crossbow.light_sta, ps.vitals.stamina))
 	loaded = false
+	Sfx.play("crossbow_shot", dwarf.global_position + Vector3.UP)
 	dwarf.model.react("shoot")
 	_busy = Combat.WEAPONS.crossbow.heavy_speed if aimed else Combat.WEAPONS.crossbow.light_speed
 	var cam := dwarf.camera

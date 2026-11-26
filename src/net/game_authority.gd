@@ -977,6 +977,8 @@ func _ev_ruin_rebuilt(name: String) -> void:
 @rpc("authority", "call_local", "reliable")
 func _ev_stinger(name: String) -> void:
 	music_stinger.emit(name)
+	if name == "boss_defeated":
+		Sfx.ui("boss_cheer", -3.0)  # the dwarf's "Yeaah-hah-hah!" over the music (owner's pick, sound round 9, Nov 26)
 
 
 @rpc("authority", "call_local", "reliable")
@@ -2487,7 +2489,7 @@ func _eat(ps: PlayerState, peer_id: int, id: String, slot_i: int) -> String:
 		heal(peer_id, 10.0)  # Cooking ★100: your cooked food heals a little
 	if peer_id == local_peer_id():
 		ps.vitals.consume(id, roll)
-		Sfx.ui("eat", -4.0)
+		Sfx.ui("bandage" if id == "bandage" else "eat", -4.0)  # (owner's pick, Nov 26: a cloth bandage rip)
 	else:
 		_rpc_consumed.rpc_id(peer_id, id, roll)
 	# The host does the fighting, digging and drops math, so it remembers those food buffs itself.
@@ -3198,6 +3200,8 @@ func _rpc_consumed(item_id: String, roll: float) -> void:
 	var me := get_player(local_peer_id())
 	if me:
 		me.vitals.consume(item_id, roll)
+		if item_id == "bandage":
+			Sfx.ui("bandage", -4.0)
 
 
 @rpc("authority", "reliable")

@@ -14306,3 +14306,127 @@ Owner's pick: "Quick + full".
 - I first planned a small round keep (ring R = 1). It's only 7.5 m across, too small for stairs with free floor at both ends. Fix: an 8 x 8 m square keep.
 
 **Next:** the owner OKs the shapes, then the blueprint `_sinkhole_ring()` (plan step 2).
+
+
+## 2026-11-26: Sound rounds 6 + 7 (creature cries, weapon hits, bandage, dungeon whispers)
+
+**What we did**
+- Round 6 and Round 7 review pages (Love / Maybe / No buttons). The owner listened and picked; every sound is CC0 from Freesound.
+- Put 27 picked sounds in the game (`assets/sfx/`): trimmed, levelled to the same loudness, cut short.
+- New in the game:
+  - Creatures cry when hit (spider, snail, beetle, bat, skeletons), on top of the weapon's sound.
+  - F792: creatures cry out the moment they spot you (spider, beetle, skeletons, boss skeletons roar, ghosts shriek). The snail stays quiet (owner: skip).
+  - Walking sounds: spiders skitter, snails squish, skeletons rattle (every couple of seconds, quiet, deeper for bigger ones).
+  - New spider death, a boss skeleton's own death scream.
+  - Each weapon lands with its own hit: axe, two-handed axe, mace, two-handed warhammer, spear. Two-handed swings get a big whoosh.
+  - A bandage makes a cloth-rip sound.
+  - Now and then a far-off whisper in stone dungeons and a moan in wooden mines.
+- Picks recorded in `docs/audio/sound-candidate-picks-2026-11-26.md`, credits in `CREDITS.md`.
+
+**Mistakes and hurdles**
+- Claude searched rat squeaks for the "tunnel rat", but in our game that kind is the Bone Rot, a small skeleton. The owner caught it; the rat rows were removed and all skeleton sounds grouped (shared, pitched by size).
+- A shell edit with the Mac's `sed a\` failed; a short Python script did the edit instead.
+- Re-using the search script inside another script broke (`__file__` is missing there); fixed by falling back to the file's name.
+- Search results had junk (turkeys, guitars, arcade "power ups"); filtered by title words and removed by hand.
+- First conversion trimmed quiet sounds too hard (a hit came out 0.06 s long). Fixed by making each sound loud first, then trimming the silence.
+- The level-up sound is still not found: arcade jingles were "too arcady", and anvils, bells, horns and singing bowls were all NO.
+- Godot isn't installed on the Mac, so the tests (`tests/test_sfx.gd`, updated + a new check) could not run here: run them on the PC.
+
+
+## 2026-11-26: Sound round 8 (the gaps)
+
+**What we did**
+- The owner asked "did we do all the sounds?": no. The gaps were level up, beetle walking, ghost boss death, a one-handed swing sound, and the way-finding sounds (F794, not started).
+- Round 8 page with 22 tries. Put in: beetle walking (crab walking), ghost boss death (the Monster.wav the owner had saved), and a quick swish for every one-handed swing (sword, axe, mace, pickaxe; not fists).
+
+**Mistakes and hurdles**
+- Two ghost tries were spoken words, one of them a nasty phrase. Claude removed them before the owner saw the page. The search should skip voice clips.
+- The page's "Copy my picks" text still said "ROUND 7" (copied from the Round 7 page). Claude only changed the title. Next time, also change the copy text.
+- Level up failed a third time: harp, choir, kalimba, drum and chant were all NO.
+- Godot isn't on the Mac, so `tests/test_sfx.gd` could not run. Run it on the PC.
+
+
+## 2026-11-26: Sound round 9 (level up as a dwarf voice)
+
+**What we did**
+- Level up failed three rounds, so Claude asked the owner what they imagine (multiple choice). The owner picked "dwarf voice".
+- 8 voice tries. The owner said no to all of them for level up, but loved "Yeaah-hah-hah" for beating a boss. It now plays with the boss-defeated music (`_ev_stinger`, everyone hears it).
+
+**Mistakes and hurdles**
+- The first conversion cut the cheer at 2.5 s and lost its last "hah". Remade it at full length (3.4 s).
+- Two tries were dropped before the page (a crazy laugh, a sarcastic "yeah right").
+- Level up is still open after 4 rounds (about 26 tries).
+- Godot isn't on the Mac, so the tests could not run. Run `tests/test_sfx.gd` on the PC.
+
+
+## 2026-11-26: Sound round 10 (level up found)
+
+**What we did**
+- Level up in a new style: things from the mine and tiny tunes. The owner loved "Treasure Chest Reveal". It now plays when a skill or the dwarf goes up a level (`src/ui/skill_popup.gd`, on that player's computer only).
+- The owner also loved "Pickaxe3" as the new pickaxe-on-stone sound. It replaces the old `dig_rock` sound (Pickaxe2, by the same author).
+
+**Mistakes and hurdles**
+- Level up took 5 rounds (about 35 tries). Asking the owner what they imagine (round 9) didn't find it, but it got us the boss cheer.
+- Searches for lute, fiddle and coins found almost nothing usable on Freesound.
+- Tests could not run on the Mac (no Godot). Run `tests/test_sfx.gd` on the PC.
+
+
+## 2026-11-26 — Sound round 11 (F707): attack warnings, dwarf moves, crossbow, key
+
+**What we did**
+- Searched Freesound (CC0 only) for 13 slots in the owner's 3 groups and published a pick page with 67 tries.
+- Owner's LOVEs are in the game (14 sounds): spider, skeleton and ghost attack warnings (spiders, skeletons and
+  ghosts no longer borrow the beetle hiss), a second ghost warning for the Wrathful Shade's swoop, jump, land,
+  ladder creaks, crossbow shot, crossbow reload (replaces the clink) and the dungeon key unlock.
+- Wired in: `dwarf.gd` (jump, land after 0.45 s+ in the air, a ladder creak every 0.55 s while climbing),
+  `dwarf_fight.gd` (shot + reload), `dungeon_keys.gd:_ev_door` (unlock), `monsters.gd` warn_sound names.
+- `test_sfx.gd`: checks every round 11 sound exists and every attack's warning sound has a file.
+- Boss warnings, dodge roll and wood footsteps: every try was NO, so they keep today's sounds. Wood breaking:
+  the owner likes the current one.
+
+**Mistakes and hurdles**
+- `find.py`'s own word filter blocks titles with "door" and "chair", which would have hidden every key-unlock and
+  furniture try. I removed those two words for this run, in the scratch copy only.
+- The first unlock-sound version also played when a key was taken back and the door locked again. It now only
+  plays when the list of open locks gets longer.
+- Godot is not on the Mac, so no test ran here. Run `tools/run_tests.sh only=test_sfx` on the PC.
+
+
+## 2026-11-26: Doors shut by themselves, four volume sliders (Mac, small fixes)
+
+**What we did**
+- F880 (skill pop-up only on level up) and F823 (stamina numbers): skipped, another chat already built both on Nov 23/25; they wait for the owner's play test.
+- F869: an open door now swings shut by itself 30 s after it was opened. The host keeps a list of "shut at" times (`builder.gd` `_door_shut_at`, `DOOR_SHUT_TIME`) and closes the door with the normal `_ev_door` message, so every player sees it. Both leaves of a double gate get the timer. Test added to `test_doors_open_and_ladders_climb` (test_builder).
+- F761: checked F876 first. Its Audio tab already had main volume + Music, so the plan didn't change and no question was needed. Added Effects and Voice sliders with their own sound buses (`sound_settings.gd`), remembered in settings.cfg. All `Sfx` sounds and the cave trickle play on Effects. Voice is ready for F739; nothing talks yet. Test: `test_effects_and_voice_volume_are_remembered` (test_sound_settings).
+
+**Mistakes and hurdles**
+- Godot isn't on the Mac, so none of this has been run yet. The owner runs the tests on the PC.
+- First draft of the new settings test called `add_child` on the test itself. TestCase isn't a Node, so I switched to `tree.root.add_child` + one frame, the way test_hud_cleanup does it.
+- Not covered: a door that was open when the world was saved doesn't auto-shut after loading until someone opens it again (the timers aren't saved).
+
+
+## 2026-11-26: F869 follow-up: doors saved open shut too
+
+- Closed the gap from the first F869 entry: a door that was open when the world was saved now also gets its 30 s timer when the world loads (`builder.gd` load_snapshot). Test: extra check in `test_doors_open_and_ladders_climb`.
+- Hurdle found by reading: the `tower_walk` robot opens every door and needs them to stay open. With the new load timer, doors the save had open would have shut in the middle of its walk, so it now clears the timers after opening. `buildcheck`/`kitcheck` open doors directly (no timer), so they're unaffected.
+- Still not run: no Godot on the Mac.
+
+
+## 2026-11-26 — Speed run (F337) started on the Mac, moved to the PC
+
+**What we did**
+- Claimed F337 (with F266, F417, F384, F750, F777), checked that no other chat was on them.
+- A helper wrote the missing speed research: `docs/research/reports/2026-11-26-performance.md`
+  (visibility ranges, occlusion culling, Jolt physics, animation cost, threads, finding slow frames).
+- Looked at the speed robot (`src/debug/perfcheck.gd`): it already has fight, hitch, warm-up and spawn-cost modes.
+  Missing: standing inside a dungeon (`maker.dungeons` + `DungeonMap.to_world`), a big player base (F777), and loading timing.
+
+**Hurdles**
+- The first robot run sat doing nothing: the game didn't start. Claude didn't check the game log until a few
+  minutes later (lesson: read the log right after launching, not after waiting).
+- Cause: `main` on GitHub doesn't compile. `ruin_minehead.gd:373` and `ruin_cliff_galleries.gd:398` set `ground_y`,
+  which only exists in the Brickcrown chat's unsaved `ruin_tower.gd` on the PC (commit c9ca9b74 says so).
+- The task was written for the PC, but this chat ran on the Mac. Owner chose: move the speed run to the PC
+  (real numbers there), and let the Brickcrown chat save its work first.
+
+**Left to do:** everything from step 3 (measuring) on, on the PC.

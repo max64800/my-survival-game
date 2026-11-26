@@ -62,6 +62,7 @@ var _charging := 0.0     ## only looks: seconds of a beetle charge left (red eye
 var _charge_len := 1.0   ## only looks: that charge's wind-up (tell) in seconds
 var _dust_t := 0.0
 var _flap_was := 0.0
+var _move_t := 0.0  ## s until the next walking sound
 var _flinch := 0.0       ## only looks: a quick jolt back when hit
 var _charge_dir := Vector3.ZERO  ## straight_charge: the direction locked when the charge starts
 var _alt := INF                  ## swoops: the height this flyer is heading for
@@ -762,6 +763,7 @@ func _perceive(mgr: Node) -> void:
 	if found == 0:
 		return
 	target_peer = found
+	mgr.monster_notice(self)  # F792: the one that spots you cries out (its pack-mates stay quiet)
 	if state == State.SLEEP and data.get("rises", false):
 		_start_rise()
 		mgr.alert_pack(self, found)  # (the whole room gets up together)
@@ -1654,6 +1656,19 @@ func _lie_on_back(delta: float) -> void:
 		model.remove_meta("back_pos")
 
 
+## F707 (owner's picks, Nov 26): [sound, seconds between plays] while it moves; skeletons rattle (pitched by size).
+static func move_sound(k: String) -> Array:
+	if k == "cave_spider":
+		return ["spider_move", 1.8]
+	if k == "rock_snail":
+		return ["snail_move", 1.3]
+	if k in ["rock_beetle", "great_rock_beetle"]:
+		return ["beetle_move", 1.9]
+	if Monsters.LIST.get(k, {}).get("rises", false):
+		return ["bones_move", 1.9]
+	return []
+
+
 ## Only looks and sounds: charge dust, wing beats, the jolt when hit.
 func _creature_fx(delta: float) -> void:
 	if _charging > 0.0:
@@ -1676,6 +1691,14 @@ func _creature_fx(delta: float) -> void:
 		if _flap_was > 0.0 and wing <= 0.0:
 			Sfx.play(data.flap_sound, global_position, -20.0, _voice())  # one beat per downstroke (-20: a pack of 10 was too loud, owner Nov 19)
 		_flap_was = wing
+	var walk := move_sound(kind)
+	if walk.size() > 0 and is_alive() and _speed > 0.6:
+		_move_t -= delta
+		if _move_t <= 0.0:
+			_move_t = walk[1] * randf_range(0.85, 1.25)  # (a pack doesn't rattle in step)
+			Sfx.play(walk[0], global_position, -14.0, _voice())
+	else:
+		_move_t = randf() * 0.5
 	if _charging > 0.0 and data.get("straight_charge", false):
 		# Charging (owner F446): it rears up (head down, back end up) while it winds up, then runs normally (red eyes).
 		var rear := charge_rear(_charge_len + 0.6 - _charging, _charge_len)
