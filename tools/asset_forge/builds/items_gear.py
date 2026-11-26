@@ -448,8 +448,9 @@ BUILD = {
 	"plate_shell": lambda: chest_armor("shell"),
 	"trousers_leather": lambda: legs("leather"), "greaves_copper": lambda: legs("copper"), "greaves_shell": lambda: legs("shell"),
 	"boots_leather": lambda: boots("leather"), "boots_copper": lambda: boots("copper"), "boots_shell": lambda: boots("shell"),
-	# bronze has its own pieces (F697 step 7, Option B look)
-	"helm_bronze": helm_bronze, "mail_bronze": mail_bronze, "greaves_bronze": greaves_bronze, "boots_bronze": boots_bronze,
+	# bronze has its own pieces (F697 step 7, Option B look). The helm is made the fountain way now
+	# (builds/bronze_armour_trellis.py); mail, greaves, boots move there too once TRELLIS has made them.
+	"mail_bronze": mail_bronze, "greaves_bronze": greaves_bronze, "boots_bronze": boots_bronze,
 }
 
 ids = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
