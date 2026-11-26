@@ -575,6 +575,103 @@ func test_a_ghost_follows_you_up_the_grand_stair() -> void:
 	r.root.free()
 
 
+## F910 🔁 (owner, Nov 26: "he tries to fit between the tomb and the brazier, and he just can't fit"): you hide right
+## behind Hald's tomb (by either brazier, or in the middle) and he must come round it and reach you, never stand stuck.
+## The tomb, braziers and helm plinth are boxes the size and place the plan gives them; the room's walls are boxes too.
+func test_hald_comes_round_his_tomb_to_you() -> void:
+	var root := Node3D.new()
+	tree.root.add_child(root)
+	var world := World.new()
+	root.add_child(world)
+	world.setup(42)
+	var auth := GameAuthority.new()
+	auth.world = world
+	auth.drops_root = Node3D.new()
+	root.add_child(auth.drops_root)
+	auth.stations_root = Node3D.new()
+	root.add_child(auth.stations_root)
+	root.add_child(auth)
+	var player := Node3D.new()
+	root.add_child(player)
+	player.global_position = world.maker.cavern_spawn
+	var viewer := VoxelViewer.new()
+	viewer.view_distance = 48
+	viewer.requires_visuals = false
+	player.add_child(viewer)
+	auth.add_player(1, player)
+	for i in 900:
+		if world.terrain.is_area_meshed(AABB(player.global_position - Vector3.ONE * 10, Vector3.ONE * 20)):
+			break
+		await tree.physics_frame
+	# The tomb room (plan x 40-52, z 36-48) on a flat stone floor above the cave's own floor.
+	var base := world.maker.find_floor(player.global_position.x, player.global_position.z, player.global_position.y + 2.0)
+	base += Vector3.UP * 0.6
+	var at := func(x: float, z: float) -> Vector3: return base + Vector3(x - 46.0, 0.0, z - 42.0)
+	var room := StaticBody3D.new()
+	room.collision_layer = World.TERRAIN_LAYER
+	root.add_child(room)
+	var box := func(mid: Vector3, size: Vector3) -> void:
+		var cs := CollisionShape3D.new()
+		cs.shape = BoxShape3D.new()
+		(cs.shape as BoxShape3D).size = size
+		cs.position = mid
+		room.add_child(cs)
+	box.call(at.call(46.0, 42.0) + Vector3.DOWN * 0.25, Vector3(14, 0.5, 14))  # floor
+	box.call(at.call(39.5, 42.0) + Vector3.UP * 2, Vector3(1, 4, 14))  # west wall
+	box.call(at.call(52.5, 42.0) + Vector3.UP * 2, Vector3(1, 4, 14))  # east wall
+	box.call(at.call(46.0, 35.5) + Vector3.UP * 2, Vector3(14, 4, 1))  # north wall
+	box.call(at.call(46.0, 48.5) + Vector3.UP * 2, Vector3(14, 4, 1))  # south wall
+	for p: Dictionary in DungeonBuild.load_plan("hald").props:
+		var model := String(p.model)
+		if not (model.contains("th_hald_tomb") or model.contains("th_brazier_grand") or model.contains("th_brow_helm")):
+			continue
+		var foot: Array = p.foot
+		var turned := absf(fmod(float(p.yaw), 180.0)) > 45.0
+		var size := Vector3(foot[1], 1.4, foot[0]) if turned else Vector3(foot[0], 1.4, foot[1])
+		box.call(at.call(p.pos[0], p.pos[2]) + Vector3.UP * 0.7, size)
+	await tree.physics_frame
+	await tree.physics_frame
+	# The real Tomb map, lined up so the test room is where its tomb room is (the ghost finds its rooms and doors).
+	var real := _hald(_test_world())
+	var fake: Dictionary = real.duplicate()
+	var fy := DungeonMap.to_local(real, DungeonMap.space_floor(real, "halds_tomb")).y
+	var mouth: Vector2 = real.map.mouth
+	fake.basis = Basis()
+	fake.inv = Basis()
+	fake.mouth = base + Vector3(mouth.x, 0.0, mouth.y) - Vector3(46.0, fy, 42.0)
+	fake.wlo = base - Vector3.ONE * 60.0  # (its rough outline, round the test room now)
+	fake.whi = base + Vector3.ONE * 60.0
+	# Hiding spots behind the tomb (east of it, x 50.4): by the north brazier, the middle, by the south brazier.
+	for hide: Vector2 in [Vector2(50.4, 40.6), Vector2(50.4, 42.0), Vector2(50.4, 43.4)]:
+		for start: Vector2 in [Vector2(45.0, 42.0), Vector2(46.0, 44.6)]:  # (his own rising spot is 46, 44.6)
+			player.global_position = at.call(hide.x, hide.y)
+			var uid: int = auth.monsters._next_uid
+			auth.monsters._ev_spawn(uid, "hald_ironbrow", at.call(start.x, start.y) + Vector3.UP * 0.3, false, 0, "")
+			var m := auth.monsters.get_monster(uid)
+			check(m != null, "Hald appears")
+			if m == null:
+				continue
+			m.dungeon = fake
+			m.dungeon_room = "halds_tomb"
+			var reached := false
+			var t := 0.0
+			while t < 14.0:
+				await tree.physics_frame
+				t += 1.0 / 60.0
+				var to := (player.global_position - m.global_position) * Vector3(1, 0, 1)
+				if m.state == Monster.State.ATTACK or (to.length() < 2.6 and Ghost.clear_to(m, player.global_position)):
+					reached = true
+					break
+			check(reached, "from %s he reaches you hiding at %s (%.1f s, he ended at %s)" % [start, hide, t,
+				Vector2(m.global_position.x - base.x + 46.0, m.global_position.z - base.z + 42.0)])
+			auth.monsters._ev_remove(uid)
+			await tree.physics_frame
+	for mi: MeshInstance3D in root.find_children("*", "MeshInstance3D", true, false):
+		mi.material_override = null
+		mi.material_overlay = null
+	root.queue_free()
+
+
 func test_the_shield_brother_drops_the_bronze_key() -> void:
 	var root := Node3D.new()
 	tree.root.add_child(root)
@@ -607,3 +704,44 @@ func test_the_shield_brother_drops_the_bronze_key() -> void:
 		check_eq(auth._drops.values().filter(func(dr): return dr.item_id == "key_bronze").size(), 1, "the Bronze Key drops once")
 	root.queue_free()  # (keep this test last: the World it frees at the frame's end throws a
 	# harmless 'material is null' error into whatever test runs next)
+
+
+
+## F912 (owner, Nov 26: "floors breaking out under me, but there was no spikes, traps under them"): under every fake
+## floor slab a spike bed stands, and the rock the game really builds is dug out from the floor right down to the
+## spikes. (The pits' boxes ended exactly at the room's floor: there the two met at 0 and left a paper-thin sheet of
+## rock over every pit, so you fell through it but never saw a spike.)
+func test_spikes_you_can_see_under_every_fake_floor() -> void:
+	var m := _test_world()
+	var d := _hald(m)
+	var props: Array = DungeonBuild.load_plan("hald").props
+	var fakes: Array = props.filter(func(q): return DungeonBuild.thing_kind(q) == "floor")
+	check_eq(fakes.size(), 4, "four fake floors")
+	for p in fakes:
+		var spikes: Array = props.filter(func(q): return String(q.model) == "dungeon/trap_spikes.glb" 			and absf(float(q.pos[0]) - float(p.pos[0])) < 1.1 and absf(float(q.pos[2]) - float(p.pos[2])) < 1.1 			and float(q.pos[1]) < float(p.pos[1]) - 1.0)
+		check_eq(spikes.size(), 1, "spikes right under the slab at %s" % [p.pos])
+	for q in props.filter(func(q): return String(q.model) == "dungeon/trap_spikes.glb"):
+		var rock := open_over_spikes(m, d, q.pos)
+		check(rock == "", "the pit over the spikes at %s is open up to the floor%s" % [q.pos, rock])
+
+
+## "" when the rock the game builds is air all the way from 1 m over the spikes at `pos` (the map's metres) up through
+## the floor of the room above; else where the rock is. (Shared with test_barrows.)
+static func open_over_spikes(m: CaveMaker, d: Dictionary, pos: Array) -> String:
+	var w := DungeonMap.to_world(d, Vector3(float(pos[0]), float(pos[1]), float(pos[2])))
+	var o := Vector3i(w.floor()) - Vector3i(8, 0, 8)
+	var buf := VoxelBuffer.new()
+	buf.create(16, 16, 16)
+	m.generate_block(buf, o)
+	var top := -1e9   # (the floor of the room the pit opens into: the first room box above the spikes)
+	var local := Vector3(float(pos[0]), float(pos[1]), float(pos[2]))
+	for s in d.map.spaces:
+		if float(s[5]) > local.y + 1.5 and local.x > float(s[1]) and local.x < float(s[3]) and local.z > float(s[2]) 				and local.z < float(s[4]) and (top < -1e8 or float(s[5]) < top):
+			top = float(s[5])
+	for y in range(2, 16):
+		var at := Vector3(w.x, float(o.y + y), w.z)
+		if DungeonMap.to_local(d, at).y > top + 1.0:
+			break
+		if buf.get_voxel_f(8, y, 8, VoxelBuffer.CHANNEL_SDF) <= 0.0:
+			return " (rock at %.1f)" % DungeonMap.to_local(d, at).y
+	return ""

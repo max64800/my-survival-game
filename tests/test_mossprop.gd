@@ -549,6 +549,11 @@ func test_only_the_chasm_kills() -> void:
 	for safe in ["base_camp", "prop_room", "top_hall", "climbers_rest"]:
 		check_eq(DungeonBuild.deadly_space(d, DungeonMap.space_floor(d, safe) + Vector3.UP * 0.3), "", "standing in %s is safe" % safe)
 	check_eq(DungeonBuild.deadly_space(d, DungeonMap.space_floor(d, "chasm") + Vector3.UP * 0.3), "chasm", "the chasm kills")
+	# F912: the rock the game builds is open from the cave floor right down to every spike (no thin sheet of rock).
+	var m := _test_world()
+	for p in DungeonBuild.load_plan("mossprop").props.filter(func(q): return String(q.model) == "dungeon/trap_spikes.glb"):
+		var rock: String = load("res://tests/test_hald.gd").open_over_spikes(m, d, p.pos)
+		check(rock == "", "the chasm over the spikes at %s is open up to the cave%s" % [p.pos, rock])
 
 
 ## The rope slide (owner, Nov 21): E at its top post on the top deck sends you down the rope to Base Camp.

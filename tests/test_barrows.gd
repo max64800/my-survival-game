@@ -243,3 +243,9 @@ func test_one_spear_wall_and_a_spike_trench_you_can_see() -> void:
 	check(depth >= 2.5 and depth <= 4.0, "a shallow trench (%.1f m)" % depth)
 	var spikes: Array = plan.props.filter(func(p): return String(p.model) == "dungeon/trap_spikes.glb" and absf(float(p.pos[1]) - float(chasm[5])) < 0.1)
 	check(spikes.size() >= 12, "spikes all along it (%d)" % spikes.size())
+	# F912 (owner, Nov 26: "neither do we see it in the second stone dungeon"): the rock the game builds is open from
+	# the bridge's floor right down to every spike (no thin sheet of rock over the trench).
+	var m := _test_world()
+	for p in spikes:
+		var rock: String = load("res://tests/test_hald.gd").open_over_spikes(m, d, p.pos)
+		check(rock == "", "the trench over the spikes at %s is open up to the bridge%s" % [p.pos, rock])

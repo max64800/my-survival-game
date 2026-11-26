@@ -165,7 +165,7 @@ const MOSSPROP := {
 		["prop_room", 16, 18, 24, 24, 5, 4],          # 5 dart wall
 		["store_shed", 24, 18, 30, 24, 5, 4],         # 6 supplies, the cracked north wall
 		["vault", 24, 14, 28, 18, 5, 3],              # 7 the hidden vault
-		["chasm", 30, 24, 38, 34, -5, 5],             # 8 10 m under the bridge: spikes (falling in kills)
+		["chasm", 30, 24, 38, 34, -5, 5.5],           # 8 10 m under the bridge: spikes (falling in kills; F912: 0.5 m up into the cave, no rock sheet)
 		["climbers_rest", 46, 28, 52, 34, 5, 4],      # 10 healing basin; a spear wall by the upper ladder
 		["gallery", 20, 12, 24, 24, 10, 6],           # 12 crushers (rock overhead)
 		["roost", 14, 12, 20, 18, 10, 4],             # 13 Tunnel Rats' roost, the loose stone
@@ -204,13 +204,15 @@ const HALD := {
 	best = 130.0,
 	chase_out = true,
 	deadly = ["stair_pit", "chasm", "candle_pit", "names_pit"],  # (owner, Nov 25: "add a few spikes and fake floor")
+	# F912: each pit's box reaches 0.5 m up into the room over it (like Pell's shaft). Ending exactly at the room's
+	# floor, the two boxes met at 0 there and left a paper-thin sheet of rock over the pit: no spikes to see.
 	no_raising = true,
 	spaces = [
 		["entry", 40, 62, 44, 70, 0, 3.5],                 # the way in
 		["mourners_gate", 36, 54, 48, 62, 0, 5],           # 1 bell, banners; the barred gate on its east wall
 		["exit_way", 48, 56, 66, 60, 0, 3.5],              #   behind the gate: the lever, the Secret Stair's top
 		["candle_hall", 24, 56, 36, 60, 0, 3.5],           # 2 candle niches, the dart wall
-		["candle_pit", 32, 56, 34, 58, -3, 3],             #   under a fake floor slab: spikes (falling in kills)
+		["candle_pit", 32, 56, 34, 58, -3, 3.5],             #   under a fake floor slab: spikes (falling in kills)
 		["offering_room", 16, 54, 24, 62, 0, 4.5],         # 3 offering tables and niches
 		["scribe_niche", 12, 56, 16, 60, 0, 3],            # 4 the scribe's bones, the loose stone
 		["statue_corridor", 18, 42, 22, 54, 0, 4],         # 5 honour guards, the falling stones
@@ -219,21 +221,21 @@ const HALD := {
 		["ossuary", 30, 32, 38, 40, 0, 4.5],               # 7 bone walls, Drifting Shades; the cracked north wall
 		["ossuary_stash", 32, 28, 36, 32, 0, 3],           #   behind the cracked wall
 		["broken_stair", 38, 34, 44, 38, 0, 8],            # 8 4 m up to the chapel; the south half gives way
-		["stair_pit", 40, 34, 44, 36, -3, 3],              #   under the south half: spikes (falling in kills)
+		["stair_pit", 40, 34, 44, 36, -3, 3.5],              #   under the south half: spikes (falling in kills)
 		["honour_chapel", 44, 30, 54, 42, 4, 5.5],         # 9 the Shield-Brother (the Bronze Key); F850: was 8 x 8 m
 		["grand_stair_a", 18, 28, 22, 30, -2, 6],          # 10 the Grand Stair: 8 m down in four steps
 		["grand_stair_b", 18, 26, 22, 28, -4, 8],
 		["grand_stair_c", 18, 24, 22, 26, -6, 10],
 		["grand_stair", 18, 20, 22, 24, DEEP, 12],         #    its foot (the old door lies broken)
 		["names_hall", 14, 8, 28, 20, DEEP, 7],            # 11 name stones, carvings; Wrathful Shades
-		["names_pit", 22, 12, 24, 14, DEEP - 3.0, 3],      #    under a fake floor slab: spikes (falling in kills)
+		["names_pit", 22, 12, 24, 14, DEEP - 3.0, 3.5],      #    under a fake floor slab: spikes (falling in kills)
 		["embalm_door", 12, 12, 14, 16, DEEP, 3.5],
 		["embalmers", 4, 10, 12, 18, DEEP, 4.5],           # 12 stone tables, the drain grate; the hidden boulder west
 		["embalm_niche", 2, 12, 4, 14, DEEP, 3],           #    behind the boulder (the spiked chest)
 		["chapel_door", 6, 8, 10, 10, DEEP, 3.5],
 		["quiet_chapel", 4, 0, 12, 8, DEEP, 4.5],          # 13 the healing basin
 		["bridge_of_oaths", 28, 12, 42, 16, DEEP, 6],      # 14 cracked slabs over the chasm
-		["chasm", 30, 12, 40, 16, DEEP - 10.0, 10],        #    10 m down onto spikes (falling in kills)
+		["chasm", 30, 12, 40, 16, DEEP - 10.0, 10.5],        #    10 m down onto spikes (falling in kills)
 		["shield_hall", 42, 12, 46, 24, DEEP, 4],          # 15 shields down both walls
 		["goods_door", 46, 14, 48, 18, DEEP, 3.5],
 		["grave_goods", 48, 12, 56, 20, DEEP, 4.5],        # 19 the looted chest, the drinking horn
@@ -306,7 +308,7 @@ const BARROWS := {
 		["mourning_niche", 40, 20, 42, 22, OLDEST, 3],     # 18 behind the boulder (a chest)
 		["bridge_door", 32, 26, 34, 30, OLDEST, 3.5],
 		["ash_bridge", 18, 24, 32, 32, OLDEST, 6],         # 16 slabs over the chasm, swinging boulders, Wrathful Shades
-		["chasm", 22, 24, 30, 32, OLDEST - 3.0, 3],        #    a 3 m trench of spikes you can see (falling in kills; owner, F908)
+		["chasm", 22, 24, 30, 32, OLDEST - 3.0, 3.5],        #    a 3 m trench of spikes you can see (falling in kills; owner, F908)
 		["spear_gate", 18, 32, 22, 42, OLDEST, 4],         # 17 spear walls
 		["kings_door", 18, 42, 22, 44, OLDEST, 3.5],
 		["kings_barrow", 14, 44, 28, 56, OLDEST, 6],       # 19 the Barrow Keeper (the Barrow Key)
