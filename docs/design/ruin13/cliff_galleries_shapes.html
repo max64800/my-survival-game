@@ -53,24 +53,24 @@ li b { color: var(--ink); }
 		<p>A very simple shape model, not real pieces yet. It's the plan, shown in plain blocks.</p>
 		<div class="key">
 			<span><i style="background:#8b867c"></i>Stonehold stone</span>
-			<span><i style="background:#7a5434"></i>Shack wood</span>
-			<span><i style="background:#4f3a28"></i>Wood shingle roofs</span>
+			<span><i style="background:#9a4c34"></i>Hearthbrick brick</span>
+			<span><i style="background:#6b3426"></i>Clay tile roofs</span>
 			<span><i style="background:#e8a24a"></i>The way up</span>
 		</div>
 		<h2>The idea</h2>
-		<p>Dwarves once lived up a tall rock wall in the cave. Their stone hall is dug into the foot of the cliff. Higher up, houses sit on natural rock ledges, and wooden rooms and walkways hang out from the cliff on brackets (wooden supports, wide at the top).</p>
-		<p>Like the Mine-head, every building is <b>stone below, wood above</b>. Stone parts have flat roofs, wood parts sloped ones.</p>
+		<p>Dwarves once lived up a tall rock wall in the cave. Their stone hall is dug into the foot of the cliff. Higher up, houses sit on natural rock ledges, and brick rooms and walkways hang out from the cliff on brackets (supports under them, wide at the top).</p>
+		<p>Every building is <b>stone below, brick above</b>. Stone parts have flat roofs, brick parts sloped tile roofs.</p>
 		<p>You climb it like a mountain. Press <b>Show the way up</b> to see the path from the door to the top.</p>
 		<h2>The parts</h2>
 		<ul>
 			<li><b>Stone terrace + grand stair.</b> A wide stair up to the big round main door, with lanterns each side.</li>
-			<li><b>Stone Hall (stone, then wood).</b> A tall stone hall, its back dug into the cliff. On top, a wooden storey sticks out 1 m on the left and right on brackets (not over the door). Behind it, a flat stone roof terrace against the rock.</li>
-			<li><b>The crack + bridge.</b> A deep crack in the cave floor. A wooden bridge crosses it, from the hall's wooden storey to the ledge house.</li>
-			<li><b>Ledge House (stone, then wood).</b> On a rock ledge 6 m up. A stone room, then a wooden storey on brackets, sloped roof.</li>
-			<li><b>Cliff stairs.</b> Wooden stairs pinned to the cliff face, climbing left from the ledge house.</li>
-			<li><b>Hanging Gallery.</b> A long wooden walkway along the cliff, 13 m up, held by brackets in the rock and posts on the hall's roof.</li>
-			<li><b>Watch Tower (stone, then wood).</b> The tallest part, on a tall rock shelf. It changes shape 3 times: a two-storey stone base, a wider wooden storey on brackets, an 8-sided lookout, then a steep roof. The best chest waits in the lookout.</li>
-			<li><b>Hoist + store shed.</b> A wooden arm sticks out of the tower with a rope down to a small stone-and-wood shed at the bottom. The dwarves pulled goods up with it.</li>
+			<li><b>Stone Hall (stone, then brick).</b> A tall stone hall, its back dug into the cliff. On top, a brick storey sticks out 1 m on the left and right on brackets (not over the door). Behind it, a flat stone roof terrace against the rock.</li>
+			<li><b>The crack + bridge.</b> A deep crack in the cave floor. A brick bridge crosses it, from the hall's brick storey to the ledge house.</li>
+			<li><b>Ledge House (stone, then brick).</b> On a rock ledge 6 m up. A stone room, then a brick storey on brackets, sloped roof.</li>
+			<li><b>Cliff stairs.</b> Brick stairs pinned to the cliff face, climbing left from the ledge house.</li>
+			<li><b>Hanging Gallery.</b> A long brick walkway along the cliff, 13 m up, held by brackets in the rock and posts on the hall's roof.</li>
+			<li><b>Watch Tower (stone, then brick).</b> The tallest part, on a tall rock shelf. It changes shape 3 times: a two-storey stone base, a wider brick storey on brackets, an 8-sided lookout, then a steep roof. The best chest waits in the lookout.</li>
+			<li><b>Hoist + store shed.</b> A timber arm sticks out of the tower with a rope down to a small stone-and-brick shed at the bottom. The dwarves pulled goods up with it.</li>
 		</ul>
 		<h2>Built into the cave</h2>
 		<p>Every building's back is in the rock. Three ground levels (cave floor, a ledge, a high shelf), a bridge over a crack, and stairs and a walkway along the cliff.</p>
@@ -122,8 +122,8 @@ scene.add(sun);
 
 // Colours: stone, darker stone, light stone trim, wood, lighter beams, shingles, the wheel, dark openings, rock, ground
 const M = {};
-for (const [k, c] of Object.entries({ stone: 0x8b867c, stone2: 0x76716a, trim: 0xb9b1a2, wood: 0x7a5434, beam: 0x8f6a44,
-	roof: 0x4f3a28, wheel: 0xc9a25a, iron: 0x3b3835, dark: 0x1a1210, rock: 0x66564a, floor: 0x3a3027, rope: 0xcdb98e }))
+for (const [k, c] of Object.entries({ stone: 0x8b867c, stone2: 0x76716a, trim: 0xb9b1a2, wood: 0x9a4c34, beam: 0xb5684a,
+	roof: 0x6b3426, wheel: 0xc9a25a, iron: 0x3b3835, dark: 0x1a1210, rock: 0x66564a, floor: 0x3a3027, rope: 0xcdb98e }))
 	M[k] = new THREE.MeshStandardMaterial({ color: c, roughness: 0.9 });
 const ground = new THREE.MeshStandardMaterial({ color: 0x3a3027, roughness: 1, transparent: true, opacity: 1 });
 const rockM = M.rock;
@@ -209,6 +209,7 @@ function tag(text, x, y, z, under = false) {
 
 
 // ---- the cave: floor (y 0), a crack (x 8..12, down to -5), ledge R (top 6), shelf L (top 12.75), the cliff (face z -10) ----
+M.timber = new THREE.MeshStandardMaterial({ color: 0x7a5434, roughness: 0.9 });
 M.glow = new THREE.MeshStandardMaterial({ color: 0xffc070, emissive: 0xffa040, emissiveIntensity: 1.4 });
 const gbox = (x0, x1, y0, y1, z0, z1) => box(x0, x1, y0, y1, z0, z1, ground);
 gbox(-60, 8, -10, 0, -10, 50); gbox(12, 60, -10, 0, -10, 50);      // the floor, both sides of the crack
@@ -247,7 +248,7 @@ for (const z of [-6.2, -3.8]) { corbel(-6.5, 6.1, z); corbel(6.5, 6.1, z); }
 windows("z", -2.9, -5.2, 5.2, 6.6, 0.8, 1.1, 2.6);
 roofX(-7, 7, -7, -3, 8.4);
 roundDoorX(7.06, -5, 6.1, 1.4, 2.0);                               // out onto the bridge
-tag("Stone Hall (stone + wood)", -3, 11.5, -2);
+tag("Stone Hall (stone + brick)", -3, 11.5, -2);
 
 // ---- the bridge over the crack (deck y 6) ----
 box(7, 13, 5.85, 6.1, -6, -4, "wood");
@@ -267,7 +268,7 @@ for (const x of [14, 18, 22]) corbel(x, 8.4, -3.5);                // on plain w
 windows("z", -2.94, 15.5, 20.5, 8.9, 0.8, 1.0, 2.5);
 roofX(13, 23, -10, -3, 10.5);
 roundDoorX(12.94, -9, 8.4, 1.4, 2.0);                              // out onto the cliff stairs
-tag("Ledge House (stone + wood)", 18, 15.5, -3);
+tag("Ledge House (stone + brick)", 18, 15.5, -3);
 
 // ---- the cliff stairs: a landing at 8.25, two flights straight on, going left, pinned to the cliff (z -10..-8) ----
 box(10, 13, 8.15, 8.4, -10, -8, "wood");
@@ -291,7 +292,7 @@ for (const x of [-5, -1]) post(x, -8.3, 6.1, 12.5, 0.32, "beam");
 for (const x of [-7, -3, 1]) corbel(x, 12.5, -9.5);
 tag("Hanging Gallery", -2, 15.5, -8);
 
-// ---- the Watch Tower on shelf L (top 12.75): stone, a wider wooden storey on brackets, an 8-sided lookout, steep roof ----
+// ---- the Watch Tower on shelf L (top 12.75): stone, a wider brick storey on brackets, an 8-sided lookout, steep roof ----
 const TX = -14.5, TZ = -6.5;
 box(-18, -10, 12.75, 17.25, -12, -3, "stone");
 box(-18.2, -9.8, 14.9, 15.1, -10, -2.8, "trim");
@@ -313,11 +314,11 @@ for (let j = 0; j < 8; j++) {                                      // a window s
 add(new THREE.CylinderGeometry(3.25, 3.25, 0.25, 8), "beam", TX, 21.9, TZ).rotation.y = Math.PI / 8;
 add(new THREE.CylinderGeometry(0.12, 3.9, 4.4, 8), "roof", TX, 24.2, TZ).rotation.y = Math.PI / 8;   // the steep roof
 add(new THREE.SphereGeometry(0.3, 8, 6), "iron", TX, 26.5, TZ);
-tag("Watch Tower (stone + wood)", -6, 22.5, -3);
+tag("Watch Tower (stone + brick)", -6, 22.5, -3);
 tag("Lookout + best chest", TX, 28, TZ);
 // the hoist: an arm out of the wooden storey, a rope down to the yard, a crate on it
-beam([-12.5, 18.4, -2], [-12.5, 19.3, 3], 0.3);
-beam([-12.5, 17.6, -2], [-12.5, 19.1, 1.5], 0.18);
+beam([-12.5, 18.4, -2], [-12.5, 19.3, 3], 0.3, "timber");
+beam([-12.5, 17.6, -2], [-12.5, 19.1, 1.5], 0.18, "timber");
 beam([-12.5, 19.2, 2.9], [-12.5, 1.0, 2.9], 0.07, "rope");
 box(-13.1, -11.9, 0, 1.0, 2.4, 3.4, "wood");
 tag("Hoist", -12.5, 20.8, 4);

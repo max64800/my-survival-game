@@ -2,8 +2,12 @@
 
 Owner, Nov 26: "I really liked the stone and wood" (the Mine-head). Picked from 4 ideas: **Cliff Galleries**.
 Shape model first, for the owner's OK: `docs/design/ruin13/cliff_galleries_shapes.html`.
-Owner's rule from the Mine-head: **every building is stone below, wood above.** Stone parts have flat roofs
-(Stonehold), wood parts sloped ones (Shack). Mix per piece with `_add(id, mat, pos, rot)` like `_minehead()`.
+**Owner, Nov 26, after the first shape page: "change wood to brick and build it".** So every building is
+**stone below, Hearthbrick brick above** (`STONE` = `cut_stone`, `BRICK` = `clay_brick`). Everything this plan calls
+"wood" is now brick: the upper storeys, the bridge, the cliff stairs, the gallery, the tower's upper storey and
+lookout, the shed's top. Stone parts have flat roofs (Stonehold), brick parts sloped tile roofs (Hearthbrick).
+Only the hoist arm stays timber (decor). Mix per piece with `_add(id, mat, pos, rot)` like `_brickcrown()`.
+Ruin 11 (Brickcrown) is also stone + brick: keep this one looking different (cliff, ledges, galleries).
 
 ## The idea
 Dwarves lived up a tall rock wall. A stone hall is dug into the foot of the cliff; above it, houses sit on natural
