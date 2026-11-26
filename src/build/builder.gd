@@ -1639,6 +1639,8 @@ func _finish_ruin(box_id: int, site: Dictionary, chest: Dictionary) -> void:
 		auth.world_state["ruins"] = ruins
 		ruin_name = String(r.get("name", "ruin"))
 		learn = [String(r.wood), String(r.stone)]  # owner, Nov 20: whichever material you rebuild it with, you learn both
+		if learn[0] == learn[1]:
+			learn = [learn[0]]  # (the Mine-head Works, F899: one blueprint for both, so one card)
 	auth._ev_ruin_rebuilt.rpc(ruin_name)  # F636: a clear "it's done" line before the blueprint cards
 	var known: Array = auth.world_state.get("blueprints", []).duplicate()
 	for k in learn:
