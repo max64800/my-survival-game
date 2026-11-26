@@ -1298,6 +1298,7 @@ func _wear_armor(id: String) -> Node3D:
 			if made and parts[1] == "chest":  # (the hand-built gauntlets go with it)
 				for pat in ["armor_chest_gauntlet*"]:
 					_add_built_meshes(made, ARMOR_FILES["copper"], pat)
+				_pad_shirt_under(made)
 		if not made:
 			made = _wear_built_armor(parts[1], ARMOR_FILES[parts[2]])
 		if made:
@@ -1363,6 +1364,29 @@ func _wear_built_armor(slot: String, path: String) -> Node3D:
 		holder.tree_exiting.connect(mi.queue_free)
 	src.free()
 	return holder
+
+
+## Padding colour of the shirt under the picture-to-3D chest (F914, owner: "no shirt showing"): the cream shirt peeked
+## out in the gaps under his arms and beside his throat; dark leather brown there reads as the padding under the plate.
+const SHIRT_PADDING := Color(0.36, 0.25, 0.17)
+
+
+## While holder is worn, the shirt is painted SHIRT_PADDING (its own pictures kept, only darker); back when it comes off.
+func _pad_shirt_under(holder: Node3D) -> void:
+	if not is_instance_valid(_body_root):
+		return
+	for mi: MeshInstance3D in _body_root.find_children("body_shirt*", "MeshInstance3D", true, false):
+		for s in mi.get_surface_override_material_count():
+			var was := mi.get_surface_override_material(s)
+			var mat := mi.get_active_material(s) as BaseMaterial3D
+			if mat == null:
+				continue
+			var dark := mat.duplicate() as BaseMaterial3D
+			dark.albedo_color = mat.albedo_color * SHIRT_PADDING
+			mi.set_surface_override_material(s, dark)
+			holder.tree_exiting.connect(func() -> void:
+				if is_instance_valid(mi):
+					mi.set_surface_override_material(s, was))
 
 
 ## Adds the meshes of another set file matching pattern to a worn armor holder (freed with it).
