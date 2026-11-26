@@ -39,6 +39,7 @@ import dwarf_head as dh  # noqa: E402
 ARGS = sys.argv[sys.argv.index("--") + 1:]
 SKEL, OUT = ARGS[0], ARGS[1]
 FAST = "fast" in ARGS[2:]
+FAST_GLB = "glb" in ARGS[2:]  # fast glb: the grey, unpainted dwarf, weighted and saved (for shape pages; F916, Nov 26)
 REVIEW = next((a[7:] for a in ARGS[2:] if a.startswith("review=")), None)
 CLOTHES = "clothes" in ARGS[2:]  # (Nov 18: the bare dwarf in linen underpants first; the clothes go on later as layers)
 ck.reset()
@@ -490,50 +491,51 @@ def patch_box(px, py, front, p):
 
 CLOTH_CHAINS = {}  # springy cloth bones: name -> ([joints], angle round the body)
 if not CLOTHES:
-	# the body's outline (height, half-width, front, back): a round belly that hangs low, a barrel chest, broad but
-	# sloping shoulders (the arms are added below), a thick neck under the beard
+	# the body's outline (height, half-width, front, back). F916 (owner, Nov 26: "buff, not fat"; dwarf_buff_target.png):
+	# a broad, deep barrel chest that is the widest part, a firm flat stomach (no hanging belly: plate armour poked
+	# through it), a slight taper to the waist, hips a little narrower than the chest. (Before: a round belly, F25.)
 	# (the back only gently curved: owner Nov 18, a deeper upper back looked "like he is gonna grow wings")
-	TORSO = [(0.3, 0.06, 0.05, 0.05), (0.35, 0.16, 0.13, 0.13), (0.4, 0.222, 0.19, 0.16),  # (a narrow rounded crotch, not a flat plate: Nov 18)
-		 (0.47, 0.23, 0.24, 0.158), (0.55, 0.224, 0.265, 0.164),
-		(0.62, 0.216, 0.255, 0.175), (0.69, 0.21, 0.222, 0.177), (0.76, 0.21, 0.19, 0.177), (0.82, 0.198, 0.15, 0.17),
-		(0.87, 0.162, 0.11, 0.145), (0.93, 0.085, 0.07, 0.09)]
+	TORSO = [(0.3, 0.06, 0.05, 0.05), (0.35, 0.16, 0.13, 0.13), (0.4, 0.205, 0.16, 0.152),  # (a narrow rounded crotch, not a flat plate: Nov 18)
+		 (0.47, 0.192, 0.172, 0.148), (0.55, 0.19, 0.18, 0.152),
+		(0.62, 0.222, 0.187, 0.168), (0.69, 0.265, 0.193, 0.184), (0.76, 0.285, 0.198, 0.19), (0.82, 0.278, 0.192, 0.184),
+		(0.87, 0.228, 0.145, 0.158), (0.93, 0.095, 0.07, 0.09)]
+	# (round 4, owner Nov 26 "still has woman boobs": the side view bulged out at the chest and curved back in under it.
+	# Now the front runs nearly straight from the collar down to the stomach, so the chest is deep but has no underside.)
 	cl = clay((-0.72, 0.09, -0.36), (0.72, 1.0, 0.33))
 	cl.add(loft(cl, TORSO), 0.012)
-	cl.add(cl.ell(Q(0, 0.535, -0.125), (0.2, 0.175, 0.155)), 0.06)                       # the round belly, hanging a little
-	cl.add(cl.ell(Q(0, 0.43, -0.09), (0.17, 0.07, 0.12)), 0.05)                           # (its underside, over the pants)
+	# (no stomach lump either: its round edge made a ball low on the front. The front is one flat slab, like a breastplate.)
 	for s in (-1, 1):
-		cl.add(cl.ell(Q(s * 0.085, 0.765, -0.152), (0.088, 0.056, 0.042)), 0.035)          # chest
 		cl.add(cl.ell(Q(s * 0.088, 0.36, 0.11), (0.1, 0.098, 0.098)), 0.04)                # buttock (round, sticking out: Nov 18)
-		cl.add(cl.ell(Q(s * 0.19, 0.5, 0.0), (0.05, 0.1, 0.12)), 0.06)                     # the soft sides
+		cl.add(cl.ell(Q(s * 0.19, 0.69, 0.035), (0.07, 0.12, 0.11)), 0.06)                 # the back's wings (lats): a V to the waist
+		cl.add(cl.ell(Q(s * 0.1, 0.77, 0.15), (0.1, 0.08, 0.045)), 0.05)                   # shoulder blades' muscle (a broad back)
 	for side in ("l", "r"):
 		sh, el, wr = B(f"upperarm_{side}"), B(f"lowerarm_{side}"), B(f"hand_{side}")
 		s = 1 if sh.x > 0 else -1
 		inward = -s
 		d, f_ = el - sh, wr - el
 		# the slope from the neck to the shoulder (trapezius) and the round shoulder muscle
-		cl.add(cl.tube(Q(s * 0.05, 0.925, 0.035), QV(sh + Vector((inward * 0.07, 0.03, 0.04))), 0.048, 0.05), 0.05)
-		cl.add(cl.ell(QV(sh + Vector((inward * 0.01, 0.0, 0.016))), (0.078, 0.07 * 0.8, 0.072 * 1.15)), 0.045)  # (round; narrow from the front, deeper from the side: Nov 18)
+		cl.add(cl.tube(Q(s * 0.05, 0.925, 0.035), QV(sh + Vector((inward * 0.07, 0.04, 0.04))), 0.074, 0.08), 0.05)  # (F916: bigger)
+		cl.add(cl.ell(QV(sh + Vector((inward * 0.0, 0.016, 0.01))), (0.124, 0.116 * 0.8, 0.108 * 1.15)), 0.045)  # (owner: even bigger)  # (F916: big shoulders)  # (round; narrow from the front, deeper from the side: Nov 18)
 		# upper arm with the biceps in front and the triceps behind, the elbow
-		cl.add(etube(cl, QV(sh), QV(el), 0.056, 0.047, 0.8, 1.15), 0.025)  # (owner Nov 18: 20% narrower from the front, 15% deeper from the side)
-		cl.add(cl.ell(QV(sh + d * 0.5 + Vector((0, -0.02, 0.008))), (0.068, 0.04 * 0.8, 0.044 * 1.15)), 0.025)
-		cl.add(cl.ell(QV(sh + d * 0.42 + Vector((0, 0.022, 0.0))), (0.072, 0.038 * 0.8, 0.04 * 1.15)), 0.025)
-		cl.add(cl.ell(QV(el + Vector((0, 0.012, 0))), (0.04, 0.042 * 0.8, 0.043 * 1.15)), 0.02)
+		cl.add(etube(cl, QV(sh), QV(el), 0.086, 0.068, 0.9, 1.05), 0.025)  # (F916: thick strong arms)  # (owner Nov 18: 20% narrower from the front, 15% deeper from the side)
+		cl.add(cl.ell(QV(sh + d * 0.5 + Vector((0, -0.022, 0.01))), (0.088, 0.066 * 0.9, 0.068 * 1.05)), 0.025)
+		cl.add(cl.ell(QV(sh + d * 0.42 + Vector((0, 0.026, 0.0))), (0.09, 0.064 * 0.9, 0.064 * 1.05)), 0.025)
+		cl.add(cl.ell(QV(el + Vector((0, 0.012, 0))), (0.052, 0.058 * 0.9, 0.056 * 1.05)), 0.02)
 		# the forearm: thick by the elbow, tapering to a clear wrist (owner Nov 18: "the forearms are still too large")
-		cl.add(etube(cl, QV(el), QV(wr), 0.042, 0.031, 0.8, 1.15), 0.02)
-		cl.add(cl.ell(QV(el + f_ * 0.3 + Vector((0, 0, 0.004))), (0.06, 0.036 * 0.8, 0.038 * 1.15)), 0.025)
+		cl.add(etube(cl, QV(el), QV(wr), 0.06, 0.039, 0.9, 1.05), 0.02)
+		cl.add(cl.ell(QV(el + f_ * 0.3 + Vector((0, 0, 0.004))), (0.076, 0.056 * 0.9, 0.056 * 1.05)), 0.025)
 		cl.add(cl.ell(QV(wr), (0.024, 0.031, 0.036)), 0.015)
 		cl.add(cl.ell(QV(wr + Vector((0, 0.022, 0.0))), (0.012, 0.011, 0.011)), 0.006)  # the wrist bone's knob
 		# hip, thigh, knee and kneecap, shin and calf muscle
 		th, kn, an = B(f"thigh_{side}"), B(f"calf_{side}"), B(f"foot_{side}")
-		cl.add(cl.tube(QV(th + Vector((s * 0.012, 0, 0))), QV(kn + Vector((0, 0, 0.03))), 0.098, 0.06), 0.05)  # (tapers into the knee)
+		cl.add(cl.tube(QV(th + Vector((s * 0.012, 0, 0))), QV(kn + Vector((0, 0, 0.03))), 0.106, 0.066), 0.05)  # (F916: thick legs)  # (tapers into the knee)
 		cl.add(cl.ell(QV(kn), (0.054, 0.05, 0.05)), 0.02)                                 # the knee
 		cl.add(cl.ell(QV(kn + Vector((0, -0.05, 0.008))), (0.034, 0.036, 0.022)), 0.01)   # kneecap
 		cl.add(cl.tube(QV(kn + Vector((0, 0, -0.02))), Q(an.x, 0.105, an.y), 0.054, 0.036), 0.03)  # shin (into the foot, no step)
-		cl.add(cl.ell(QV(kn + (an - kn) * 0.32 + Vector((0, 0.024, 0))), (0.056, 0.07, 0.048)), 0.035)
+		cl.add(cl.ell(QV(kn + (an - kn) * 0.32 + Vector((0, 0.026, 0))), (0.062, 0.072, 0.054)), 0.035)
 	# soft lines: under the chest, the breastbone, the spine, the cleft, the navel, the belly's fold over the pants
-	groove(cl, [(-0.16, 0.718), (-0.08, 0.705), (-0.02, 0.712)], True, 0.0025, 0.009)
-	groove(cl, [(0.02, 0.712), (0.08, 0.705), (0.16, 0.718)], True, 0.0025, 0.009)
-	groove(cl, [(0.0, 0.82), (0.0, 0.73)], True, 0.0025, 0.01)
+	# (F916: no line under the chest at all: any groove there read as the underside of breasts)
+	# (F916: no breastbone line down the chest: it read as a cleavage)
 	groove(cl, [(0.0, 0.87), (0.0, 0.7), (0.0, 0.5)], False, 0.003, 0.012)
 	groove(cl, [(0.0, 0.43), (0.0, 0.32)], False, 0.006, 0.01)
 	for s in (-1, 1):  # the crease under each buttock, where it meets the thigh
@@ -542,10 +544,9 @@ if not CLOTHES:
 		kn = B(f"calf_{side}")
 		press(cl, [(QV(kn + Vector((-0.02, 0.05, 0.0))), QV(kn + Vector((0.02, 0.05, 0.0))), 1.0)], 0.006, 0.012)
 	cl.cut(cl.ell(on_surf(cl, 0.0, 0.53, True, -0.004), (0.011, 0.014, 0.012)), 0.005)
-	groove(cl, [(-0.17, 0.42), (-0.08, 0.385), (0.0, 0.378), (0.08, 0.385), (0.17, 0.42)], True, 0.004, 0.01)
+	# (F916: no belly, so no fold over the pants)
 	for s in (-1, 1):
 		groove(cl, [(s * 0.03, 0.88), (s * 0.1, 0.875), (s * 0.18, 0.86)], True, -0.004, 0.009)  # collarbone (a ridge)
-		cl.add(cl.ell(on_surf(cl, s * 0.088, 0.75, True, 0.002), (0.007, 0.007, 0.005)), 0.004)  # nipple
 	body_D = cl.D.copy()
 	finish(cl.mesh("torso", skin, PARTS), 16000)
 	# ---- the underpants: a linen wrap lying on the skin (its inside 4 mm under the skin, 8 mm thick), cut along the
@@ -594,7 +595,8 @@ if not CLOTHES:
 	th_ = np.arctan2(x_, -(HC.y - sc.W))
 	hem = 0.415 - 0.02 * np.clip(np.cos(th_), 0, None) + 0.005 * np.sin(3 * th_ + 0.6)  # (a little lower over the belly)
 	# (lower down the shirt stands well off the shorts: Nov 18 the shorts' top showed through the shirt above the hem)
-	off = 0.016 + 0.026 * np.clip((0.52 - up_) / 0.1, 0, 1) + 0.002 * np.clip((np.abs(x_) - 0.22) / 0.05, 0, 1)
+	off = 0.016 + 0.014 * np.clip((0.52 - up_) / 0.1, 0, 1)  # (F916: less flare, so the waist shows; was 0.026)
+	off = off + 0.002 * np.clip((np.abs(x_) - 0.22) / 0.05, 0, 1)
 	arms = np.maximum(x_ - sl["l"], sl["r"] - x_) if sl["l"] > 0 else np.maximum(x_ - sl["r"], sl["l"] - x_)
 	sc.D = np.maximum(np.maximum(shell_of(sc, off), hem - up_), np.maximum(arms, up_ - 0.915)).astype(np.float32)
 	sc.add(np.maximum(lip(sc, off, up_ - hem - 0.006, 0.009), arms), 0.005)                     # the hem
@@ -742,7 +744,7 @@ if not FAST:
 if REVIEW:
 	dh.review(REVIEW)
 BODYREV = next((a[5:] for a in ARGS[2:] if a.startswith("body=")), None)
-if FAST and not BODYREV:
+if FAST and not BODYREV and not FAST_GLB:
 	print("DWARF_FAST_DONE")
 	sys.exit(0)
 if FAST:  # (the body pictures need the weights: the unbaked head is thinned like the game's copy first, or weighing it takes ages)
@@ -1182,7 +1184,7 @@ if BODYREV:
 		bpy.ops.render.render(write_still=True)
 		shots.append(path)
 	print("BODY_REVIEW", shots)
-	if FAST:
+	if FAST and not FAST_GLB:
 		print("DWARF_FAST_DONE")
 		sys.exit(0)
 	for pb in arm.pose.bones:  # (back to the rest pose for the export)

@@ -26,6 +26,7 @@ var use_body := BODY_ON or "newdwarf" in OS.get_cmdline_user_args()
 ## With the hand-built body the head keeps only this much of each animation's neck and head turning: it sits right on
 ## the shoulders with a big beard on the chest, so a full human nod pushed the face into the chest (F183).
 const BODY_HEAD_FOLLOW := 0.35
+const BODY_ARM_GAP := 8.0  ## degrees the thick arms hang out from the body (F916, Nov 26; DwarfProportions.set_arm_gap)
 const LIBS := {"": "res://assets/characters/anims/UAL1.glb", "b": "res://assets/characters/anims/UAL2.glb"}
 const CROSSBOW_LIB := "res://assets/anim/crossbow_kaykit.res"  ## "c/": Aim, Shoot, Reload, Reload1H (KayKit, chat 17)
 const HEIGHT := 0.98  ## where the head bone ends up (metres); with the helmet the dwarf is ~1.3 m tall
@@ -284,6 +285,7 @@ func build(tint: Color) -> void:
 	prop.setup(skeleton)
 	if use_body and ResourceLoader.exists(BODY):
 		prop.head_follow = BODY_HEAD_FOLLOW
+		prop.set_arm_gap(skeleton, BODY_ARM_GAP)
 		pass  # prop.no_skew(skeleton): off, it broke the arms (owner, Nov 17); see DwarfProportions.no_skew  # (the sword swing stretched his head flat: see there)
 	proportions = prop
 	# Weight (Nov 19, "heavy + chunky"): follow-through, waddle, breathing, landing squash. After the shaping,
@@ -903,6 +905,8 @@ func set_hold(what: String) -> void:
 ## not a real jump) — stretched the same way, so a far running jump doesn't finish the pose early mid-flight.
 func set_motion(speed: float, on_floor: bool, rolling: bool, roll_duration: float = ROLL_TIME, jump_duration: float = 0.0) -> void:
 	tree.set("parameters/move/blend_position", speed)
+	if proportions:  # (both hands on a great weapon: no arm gap, it would pull the fists apart on the handle; F916)
+		proportions.arm_gap_on = not (tool_look in DwarfFist.TWO_HANDED)
 	if grip_feet:
 		tree.set("parameters/move_speed/scale", loop_rate(speed))
 	var dt := get_process_delta_time()

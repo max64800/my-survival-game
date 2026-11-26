@@ -27,11 +27,11 @@ const THICK := {
 }
 ## Where each joint sits, as a share of a human's distance from the joint before it.
 const LENGTHS := {
-	"upperarm_l": 1.15, "upperarm_r": 1.15,     # shoulder width (round, not a V-shape)
+	"upperarm_l": 1.3, "upperarm_r": 1.3,       # shoulder width (F916, Nov 26: buff, broad shoulders; was 1.15)
 	"clavicle_l": 0.35, "clavicle_r": 0.35,     # shoulders ~12 cm lower, like the turnaround picture (owner, Nov 18: they sat up by the chin)
 	"lowerarm_l": 0.5, "lowerarm_r": 0.5,       # upper-arm length (short arms: hands reach the hips)
 	"hand_l": 0.5, "hand_r": 0.5,               # forearm length
-	"thigh_l": 1.2, "thigh_r": 1.2,             # hip width (planted stance)
+	"thigh_l": 1.3, "thigh_r": 1.3,             # hip width (planted stance; F916: legs a little apart, was 1.2)
 	"calf_l": 0.45, "calf_r": 0.45,             # thigh length (stubby legs: about 1/4 of the height; Nov 18: longer,
 	"foot_l": 0.215, "foot_r": 0.215,           # shin length   so the knee sits lower, away from the belly: owner)
 	"spine_02": 0.85, "spine_03": 0.85,         # a short, round body
@@ -53,6 +53,15 @@ const SHOULDER_FORWARD := 0.2
 ## in the sword swing) pushed the face and the beard into the chest (F183; tools/asset_forge/dwarf_clip_check.py).
 var head_follow := 1.0
 var _turners := PackedInt32Array()  ## neck_01 and Head
+## The arm gap (F916, owner Nov 26: thick arms hang a little away from the body, so they never sink into it): both upper
+## arms are turned out sideways by this much, on top of every move. Set with set_arm_gap (the hand-built body uses 8).
+var _gap := {}          ## upper-arm bone -> the extra turn, in its parent's frame
+var _gap_anim := {}     ## bone -> the rotation the animation wrote
+var _gap_written := {}  ## bone -> the rotation we wrote
+var _gap_frame := {}    ## bone -> its parent's rest frame (to tell how far down the arm hangs)
+var _gap_down := Vector3.DOWN  ## "down" along the body, in skeleton space
+var arm_gap_on := true  ## off while both hands hold a great weapon (DwarfRig.set_motion); the gap eases in and out
+var _gap_amount := 1.0
 var _turn_anim := {}     ## bone -> the rotation the animation wrote
 var _turn_written := {}  ## bone -> the rotation we wrote (to tell if the animation wrote a new one)
 var _pos := {}    ## bone index -> new local position
@@ -134,6 +143,30 @@ func _shoulders_forward(sk: Skeleton3D) -> void:
 		_pos[b] = (_pos[b] if _pos.has(b) else sk.get_bone_rest(b).origin) + to_local * shift
 
 
+## Turn both upper arms out from the body by `degrees`, round the body's forward line, on top of every move.
+func set_arm_gap(sk: Skeleton3D, degrees: float) -> void:
+	_gap.clear()
+	var ul := sk.find_bone("upperarm_l")
+	var ur := sk.find_bone("upperarm_r")
+	var pel := sk.find_bone("pelvis")
+	var head := sk.find_bone("Head")
+	if degrees == 0.0 or mini(mini(ul, ur), mini(pel, head)) < 0:
+		return
+	var mid := (_rest_global(sk, ul, true).origin + _rest_global(sk, ur, true).origin) * 0.5
+	var up := (_rest_global(sk, head, true).origin - _rest_global(sk, pel, true).origin).normalized()
+	var across := (_rest_global(sk, ur, true).origin - _rest_global(sk, ul, true).origin).normalized()
+	var fwd := up.cross(across).normalized()
+	for b in [ul, ur]:
+		var out := _rest_global(sk, b, true).origin - mid  # the side this shoulder is on
+		var a := deg_to_rad(degrees)
+		if (-up).rotated(fwd, a).dot(out) < 0.0:  # pick the way that swings a hanging hand out to this side
+			a = -a
+		var to_parent := _rest_global(sk, sk.get_bone_parent(b), true).basis.orthonormalized().inverse()
+		_gap[b] = Quaternion((to_parent * fwd).normalized(), a)
+		_gap_frame[b] = _rest_global(sk, sk.get_bone_parent(b), true).basis.orthonormalized()
+	_gap_down = -up
+
+
 ## For the hand-built body: drop the uneven (Vector3) thickness of the hips, belly and chest, keeping every joint exactly
 ## where it stands. An uneven scale on a bone skews every bone under it once that bone turns: in the sword swing the
 ## chest bends far forward and the neck and head were stretched out flat like a beak (owner, Nov 17: "sword attack has
@@ -211,6 +244,18 @@ func _process_modification_with_delta(_delta: float) -> void:
 			var rest := sk.get_bone_rest(i).basis.get_rotation_quaternion()
 			_turn_written[i] = rest.slerp(_turn_anim[i], head_follow)
 			sk.set_bone_pose_rotation(i, _turn_written[i])
+
+	_gap_amount = move_toward(_gap_amount, 1.0 if arm_gap_on else 0.0, _delta * 4.0)
+	for i in _gap:  # the arm gap: like the head turn, add it to what the animation wrote, never twice
+		var now := sk.get_bone_pose_rotation(i)
+		if not (_gap_written.has(i) and now.is_equal_approx(_gap_written[i])):
+			_gap_anim[i] = now
+		# only while the arm hangs down: raised or reaching forward (a swing, a two-handed grip) it fades out, so the
+		# fists still meet on the handle (test_great_swings_keep_fists_and_handle_room)
+		var along: Vector3 = (_gap_frame[i] * Basis(_gap_anim[i])) * Vector3.UP
+		var hang := clampf((along.normalized().dot(_gap_down) - 0.5) / 0.35, 0.0, 1.0) * _gap_amount
+		_gap_written[i] = (Quaternion.IDENTITY.slerp(_gap[i], hang) * _gap_anim[i]).normalized()
+		sk.set_bone_pose_rotation(i, _gap_written[i])
 
 	if _pelvis >= 0:
 		# Only lower the hips from what the animation wrote, never twice (if the animation
