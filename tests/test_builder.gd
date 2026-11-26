@@ -349,7 +349,14 @@ func test_doors_open_and_ladders_climb() -> void:
 	player.global_position = pos + Vector3(0, 0, -1.5)  # behind it
 	auth.builder.request_door(1, 500)
 	check_eq(auth.builder.structure.pieces[500].open, 1, "from the back it swings to the front")
-	auth.builder._ev_door(500, 0)
+	# F869: an open door swings shut by itself after 30 s (the host decides, _ev_door tells everyone)
+	auth.builder._clock += Builder.DOOR_SHUT_TIME - 1.0
+	auth.builder._process(0.0)
+	check_eq(auth.builder.structure.pieces[500].open, 1, "still open just before 30 s")
+	auth.builder._clock += 2.0
+	auth.builder._process(0.0)
+	check_eq(auth.builder.structure.pieces[500].open, 0, "it shut by itself after 30 s (F869)")
+	check(not auth.builder.nodes[500].is_open, "and the door swings shut on screen")
 	auth.builder.load_snapshot({pieces = [[503, "door", "plank_root", pos + Vector3(0, 0, 8), 0, true, true]]})
 	check_eq(auth.builder.structure.pieces[503].open, 1, "an old save's open door (true) still opens")
 	# F810: a double gate (the right leaf is the left one turned round): both leaves swing to the same side, and the
