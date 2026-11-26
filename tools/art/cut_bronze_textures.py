@@ -36,6 +36,18 @@ def wrap_xy(a, blend):
 	return wrap_x(a.transpose(1, 0, 2), blend).transpose(1, 0, 2)
 
 
+BRONZE = np.array([142.0, 102.0, 58.0])  # calm worn bronze (owner, Nov 26: the sheet's orange "looks like lava")
+
+
+def calm(a, keep=0.12, contrast=0.6):
+	"""Turn the sheet's glowing orange into calm brown-gold bronze: mostly our bronze colour, softer light and dark."""
+	lum = a.mean(axis=2, keepdims=True)
+	m = lum.mean()
+	lum = m + (lum - m) * contrast
+	tinted = lum / m * BRONZE
+	return tinted * (1 - keep) + a * keep * (BRONZE.mean() / a.mean())
+
+
 def save(arr, name, size):
 	Image.fromarray(np.clip(arr, 0, 255).astype(np.uint8)).resize(size, Image.LANCZOS).save(OUT / name)
 	print("wrote", name)
@@ -43,7 +55,7 @@ def save(arr, name, size):
 
 def main():
 	sheet = Image.open(SHEET).convert("RGB")
-	src = np.asarray(sheet).astype(float)
+	src = calm(np.asarray(sheet).astype(float))
 	for v, (y0, y1) in STRIPS.items():
 		save(wrap_x(src[y0:y1], 90), f"bronzeknot_{v}.png", (1024, 256))
 	save(src[MEDAL[1]:MEDAL[3], MEDAL[0]:MEDAL[2]], "bronzemedal_a.png", (512, 512))

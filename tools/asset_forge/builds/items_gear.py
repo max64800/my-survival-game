@@ -380,95 +380,131 @@ def buckle(loc, w, h, side=False):
 	bar(t * 0.7, t * 0.7, h * 0.8, 0, 0, 0)
 
 
+# Round 2 (owner, Nov 26: "not good" on the dwarf: blocky, didn't fit, lava colour). The pieces are now built
+# round the real dwarf body (assets/characters/dwarf/dwarf_body.glb, measured slice by slice; front = -Y),
+# then shrunk to half size for the item (to_item). So on the dwarf they need only a 2x scale, never a stretch.
+# Like the picture (assets/concepts/dwarf/dwarf_wearing_bronze_b.png): the beard lies over the chest, the
+# medallion sits under it, belt + chain skirt + hanging thigh plates, fat quilted legs with knee cups, big boots.
+ITEM_SCALE = 0.5
+
+
+def to_item(k=ITEM_SCALE):
+	"""Bake bevels and spots into the points, then shrink everything round the origin (kit.save re-centres it)."""
+	objs = [o for o in bpy.context.scene.objects if o.type == "MESH"]
+	for o in objs:
+		bpy.context.view_layer.objects.active = o
+		for m in list(o.modifiers):
+			bpy.ops.object.modifier_apply(modifier=m.name)
+		o.data.transform(o.matrix_world)
+		o.matrix_world = Matrix.Identity(4)
+	co = [v.co for o in objs for v in o.data.vertices]
+	print("WORN", min(v.z for v in co), (min(v.y for v in co) + max(v.y for v in co)) / 2)  # where it sits on the dwarf
+	for o in objs:
+		o.data.transform(Matrix.Scale(k, 4))
+
+
+def band(loop, z0, z1, thick, material):
+	"""A plain band round a loop (belts, straps), using the knot band's shape."""
+	o = knot_band(loop, z0, z1, thick=thick)
+	o.data.materials[0] = material
+	return o
+
+
+def body_loops(rows, n=28, wob=0.0):
+	"""rows of (z, cx, cy, rx, ry_front, ry_back) -> loft sections."""
+	return [(z, oval(cx, cy, rx, rf, rb, n=n, wob=wob if i not in (0, len(rows) - 1) else 0))
+		for i, (z, cx, cy, rx, rf, rb) in enumerate(rows)]
+
+
 def mail_bronze():
-	# The chest: a barrel of hammered bronze, rounder at the front, closing in to the neck.
-	rows = ((0.0, 0.168, 0.118, 0.104), (0.09, 0.162, 0.114, 0.1), (0.17, 0.168, 0.122, 0.1), (0.26, 0.18, 0.132, 0.104),
-		(0.335, 0.184, 0.124, 0.1), (0.37, 0.155, 0.095, 0.085), (0.388, 0.075, 0.062, 0.056))
-	loft([(z, oval(0, 0, rx, rf, rb, n=28, wob=0.006 if 0 < z < 0.37 else 0)) for z, rx, rf, rb in rows], bz("a"))
-	knot_band(oval(0, 0, 0.172, 0.122, 0.108, n=28), 0.012, 0.085, thick=0.022, variant="b")  # wide knot skirt
-	kit.ring(0.068, 0.02, (0, 0, 0.392), pad("dark"), seg=20)  # padded collar
-	# The big knot medallion, its gold ring and four rivets round it.
-	medallion((0, -0.134, 0.225), 0.075, 0.032)
-	kit.ring(0.078, 0.008, (0, -0.128, 0.225), bz("dark"), rot=(90, 0, 0), seg=28)
+	# The chest shell hugs his round belly (2 cm off his shirt), narrowing up to the neck.
+	rows = ((0.38, 0, -0.025, 0.32, 0.29, 0.285), (0.44, 0, -0.035, 0.325, 0.29, 0.29), (0.52, 0, -0.06, 0.3, 0.27, 0.262),
+		(0.6, 0, -0.055, 0.278, 0.268, 0.262), (0.68, 0, -0.034, 0.258, 0.252, 0.25), (0.76, 0, -0.01, 0.262, 0.218, 0.21),
+		(0.84, 0, 0.0, 0.252, 0.2, 0.2), (0.9, 0, 0.017, 0.212, 0.157, 0.16), (0.935, 0, 0.012, 0.135, 0.1, 0.12))
+	loft(body_loops(rows, wob=0.005), bz("a"))
+	kit.ring(0.14, 0.026, (0, 0.012, 0.93), pad("dark"), seg=24)  # padded collar
+	# Knot band round the bottom of the shell, the leather belt under it with a big buckle.
+	knot_band(oval(0, -0.033, 0.33, 0.298, 0.295, n=32), 0.42, 0.475, thick=0.02, variant="b")
+	band(oval(0, -0.03, 0.332, 0.3, 0.296, n=32), 0.355, 0.41, 0.022, pad("plain"))
+	buckle((0, -0.335, 0.382), 0.085, 0.062)
+	for k in (-1, 1):
+		kit.rivet((k * 0.12, -0.31, 0.382), bz("dark"), r=0.012)
+	# Chain skirt: quilted padding with a row of bronze rings, then four hanging thigh plates.
+	band(oval(0, -0.02, 0.305, 0.27, 0.27, n=32), 0.295, 0.36, 0.02, pad("dark"))
+	for k in range(30):
+		a = 2 * math.pi * k / 30
+		x, y = 0.312 * math.cos(a), -0.02 + 0.277 * math.sin(a)
+		kit.ring(0.016, 0.0045, (x, y, 0.3), bz("dark"), rot=(90, 0, math.degrees(a) + 90), seg=10)
+	for a0, a1 in ((-128, -94), (-86, -52), (-168, -134), (-46, -12)):
+		arc_plate(0, -0.02, 0.305, 0.31, a0, a1, 0.29, 0.355, 0.014, bz("b"))
+		for a_deg in (a0 + 6, a1 - 6):
+			a = math.radians(a_deg)
+			kit.rivet((0.322 * math.cos(a), -0.02 + 0.322 * math.sin(a), 0.335), bz("dark"), r=0.009)
+	# The big knot medallion on the belly, just under the beard, with its gold ring and four rivets.
+	medallion((0, -0.335, 0.505), 0.088, 0.04)
+	kit.ring(0.092, 0.009, (0, -0.33, 0.505), bz("dark"), rot=(90, 0, 0), seg=32)
 	for k in range(4):
 		a = math.radians(45 + 90 * k)
-		kit.rivet((0.097 * math.cos(a), -0.118 + 0.012 * abs(math.cos(a)), 0.225 + 0.097 * math.sin(a)), bz("dark"), r=0.009)
-	for k in range(9):  # a row of rivets just above the skirt
-		a = math.radians(-90 + (k - 4) * 22)
-		kit.rivet((0.166 * math.cos(a), 0.116 * math.sin(a), 0.1), bz("dark"), r=0.008)
+		kit.rivet((0.115 * math.cos(a), -0.318, 0.505 + 0.115 * math.sin(a)), bz("dark"), r=0.01)
 	for s in (-1, 1):
-		# Domed shoulder plate, leaning out, with a knot band round its rim and rivets on top.
-		loc = (s * 0.165, 0.0, 0.325)
-		tilt = Matrix.Translation(loc) @ Matrix.Rotation(math.radians(s * 32), 4, "Y") @ Matrix.Translation(loc).inverted()
-		d = dome(loc, 0.1, 0.085, bz("c"))
-		d.data.transform(tilt)
-		band = knot_band(oval(loc[0], loc[1], 0.103, 0.111, 0.111, n=24), loc[2] - 0.035, loc[2] + 0.006, thick=0.016, variant="c")
-		band.data.transform(tilt)
-		for dy in (-0.045, 0.045):
-			kit.rivet(tuple(tilt @ Vector((loc[0], dy, loc[2] + 0.079))), bz("dark"), r=0.01)
-		# Leather strap over the shoulder, with a buckle on the front.
-		x = s * 0.085
-		strap(x, [(-0.124, 0.2), (-0.118, 0.29), (-0.1, 0.345), (-0.06, 0.376), (0.0, 0.384), (0.05, 0.376),
-			(0.08, 0.345), (0.094, 0.29), (0.098, 0.22)], 0.03, 0.012, pad("plain"))
-		buckle((x, -0.133, 0.3), 0.04, 0.034)
+		# Big domed shoulder plate over his shoulder (arms are out to the side), knot band round its rim.
+		loc = (s * 0.29, 0.0, 0.79)
+		tilt = Matrix.Translation(loc) @ Matrix.Rotation(math.radians(s * 38), 4, "Y") @ Matrix.Translation(loc).inverted()
+		dome(loc, 0.14, 0.12, bz("c")).data.transform(tilt)
+		knot_band(oval(loc[0], loc[1], 0.143, 0.152, 0.152, n=28), loc[2] - 0.045, loc[2] + 0.005, thick=0.018,
+			variant="c").data.transform(tilt)
+		for dy in (-0.06, 0.0, 0.06):
+			kit.rivet(tuple(tilt @ Vector((loc[0], dy, loc[2] + 0.112))), bz("dark"), r=0.012)
+	to_item()
 
 
 def greaves_bronze():
-	# Two greaves side by side, their padded top rolls touching (so the pair is one piece).
-	prof = ((0.0, 0.068), (0.06, 0.07), (0.16, 0.078), (0.27, 0.082), (0.36, 0.085), (0.4, 0.087))
-
-	def r_at(z):
-		for (za, ra), (zb, rb) in zip(prof, prof[1:]):
-			if za <= z <= zb:
-				return ra + (rb - ra) * (z - za) / (zb - za)
-		return prof[-1][1]
-
+	# Fat quilted legs over his shorts (his shins are tiny and the boots cover them): the top hides under the
+	# mail's skirt, the bottom tucks into the boots. The two legs touch at the top, so the pair is one piece.
+	rows = ((0.16, 0.127, 0.035, 0.072, 0.072, 0.072), (0.2, 0.128, 0.03, 0.087, 0.092, 0.092),
+		(0.24, 0.123, 0.045, 0.125, 0.145, 0.145), (0.3, 0.12, 0.054, 0.137, 0.195, 0.195),
+		(0.36, 0.13, 0.0, 0.147, 0.262, 0.262), (0.44, 0.14, -0.028, 0.157, 0.277, 0.277))
 	for s in (-1, 1):
-		x = s * 0.092
-		loft([(z, oval(x, 0, r, r, r, n=20, wob=0.02 if 0 < z < 0.4 else 0)) for z, r in prof], pad("a" if s < 0 else "b"))
-		kit.ring(0.086, 0.017, (x, 0, 0.398), pad("dark"), seg=20)  # rolled top
-		kit.ring(0.07, 0.011, (x, 0, 0.012), bz("dark"), seg=20)  # bronze foot rim
-		# Two shin plates (lower one wider) and the knot band up top.
-		arc_plate(x, 0, r_at(0.035), r_at(0.125), -160, -20, 0.035, 0.125, 0.012, bz("a"))
-		arc_plate(x, 0, r_at(0.135), r_at(0.205), -150, -30, 0.135, 0.205, 0.012, bz("b"))
-		r = r_at(0.31)
-		knot_band(oval(x, 0, r + 0.007, r + 0.007, r + 0.007, n=24), 0.29, 0.345, thick=0.017, variant="a")
-		# Round knee cup with a gold rim, rivets either side and a side strap buckle.
-		rk = r_at(0.245)
-		front_dome((x, -rk + 0.008, 0.248), 0.05, 0.032, bz("c"))
-		kit.ring(0.05, 0.007, (x, -rk + 0.006, 0.248), bz("dark"), rot=(90, 0, 0), seg=24)
-		for a_deg in (-125, -55):
-			for z in (0.06, 0.18):
-				a = math.radians(a_deg)
-				kit.rivet((x + (r_at(z) + 0.012) * math.cos(a), (r_at(z) + 0.012) * math.sin(a), z), bz("dark"), r=0.007)
-		buckle((x + s * (rk + 0.004), 0, 0.248), 0.034, 0.03, side=True)
+		loft(body_loops([(z, s * cx, cy, rx, rf, rb) for z, cx, cy, rx, rf, rb in rows], n=24, wob=0.015),
+			pad("a" if s < 0 else "b"))
+		x = s * 0.123
+		# Round knee cup with a gold ring, rivets either side.
+		front_dome((x, -0.093, 0.238), 0.07, 0.048, bz("c"))
+		kit.ring(0.071, 0.009, (x, -0.097, 0.238), bz("dark"), rot=(90, 0, 0), seg=28)
+		for dx in (-0.1, 0.1):
+			kit.rivet((x + dx, -0.07, 0.238), bz("dark"), r=0.01)
+		# Shin strap with its buckle on the outside, and a bronze band at the top of the knee.
+		band(oval(s * 0.128, 0.03, 0.091, 0.096, 0.096, n=24), 0.18, 0.205, 0.016, pad("plain"))
+		buckle((s * 0.221, 0.03, 0.193), 0.032, 0.03, side=True)
+		knot_band(oval(s * 0.124, 0.05, 0.14, 0.175, 0.175, n=28), 0.31, 0.345, thick=0.016, variant="a")
+	to_item()
 
 
 def boots_bronze():
 	for s in (-1, 1):
-		x, y = s * 0.062, s * 0.03  # the pair stands together, one a little ahead
-		fy = y - 0.03  # foot centre
-		# Thick lugged sole (dark leather) with tread lugs poking out of its sides.
-		loft([(0.0, rrect_loop(x, fy, 0.053, 0.123, 0.045)), (0.03, rrect_loop(x, fy, 0.056, 0.127, 0.047))],
+		x = s * 0.134
+		# Thick sole (dark leather) with tread lugs poking out of its sides.
+		loft([(0.0, rrect_loop(x, -0.052, 0.074, 0.142, 0.05)), (0.035, rrect_loop(x, -0.052, 0.077, 0.146, 0.052))],
 			pad("plain"), smooth=False)
 		for k in range(5):
-			kit.box((0.12, 0.016, 0.018), (x, fy - 0.09 + k * 0.045, 0.011), pad("plain"), bevel=0.003, wobble=0)
-		# Padded foot and shaft.
-		loft([(0.028, rrect_loop(x, fy, 0.05, 0.118, 0.042)), (0.07, rrect_loop(x, fy + 0.005, 0.048, 0.108, 0.04)),
-			(0.105, rrect_loop(x, fy + 0.04, 0.046, 0.07, 0.04))], pad("b"))
-		loft([(z, oval(x, y + 0.03, r, r, r, n=20, wob=0.02 if 0.06 < z < 0.235 else 0))
-			for z, r in ((0.06, 0.056), (0.13, 0.057), (0.2, 0.06), (0.235, 0.062))], pad("a"))
-		kit.ring(0.063, 0.018, (x, y + 0.03, 0.236), pad("dark"), seg=20)  # rolled top
-		knot_band(oval(x, y + 0.03, 0.065, 0.065, 0.065, n=20), 0.15, 0.195, thick=0.014, variant="c")
+			kit.box((0.165, 0.022, 0.024), (x, -0.16 + k * 0.058, 0.014), pad("plain"), bevel=0.004, wobble=0)
+		# Padded foot and shaft round his foot and ankle.
+		loft([(0.032, rrect_loop(x, -0.05, 0.07, 0.137, 0.05)), (0.08, rrect_loop(x, -0.04, 0.068, 0.125, 0.048)),
+			(0.125, rrect_loop(x, 0.0, 0.066, 0.088, 0.05))], pad("b"))
+		loft([(z, oval(x, 0.035, r, r, r, n=24, wob=0.015 if 0.08 < z < 0.21 else 0))
+			for z, r in ((0.08, 0.066), (0.14, 0.068), (0.19, 0.07), (0.215, 0.073))], pad("a"))
+		kit.ring(0.075, 0.021, (x, 0.035, 0.216), pad("dark"), seg=24)  # rolled top
+		knot_band(oval(x, 0.035, 0.076, 0.076, 0.076, n=24), 0.15, 0.192, thick=0.015, variant="c")
 		# Ankle strap with its buckle on the front.
-		kit.ring(0.059, 0.007, (x, y + 0.03, 0.115), pad("plain"), seg=20)
-		buckle((x, y + 0.03 - 0.068, 0.115), 0.03, 0.026)
+		kit.ring(0.072, 0.008, (x, 0.035, 0.105), pad("plain"), seg=24)
+		buckle((x, 0.035 - 0.08, 0.105), 0.034, 0.03)
 		# Big domed bronze toe cap, rivets round its base.
-		toe = (x, fy - 0.065, 0.03)
-		dome(toe, 0.058, 0.056, bz("b"))
+		toe = (x, -0.12, 0.034)
+		dome(toe, 0.072, 0.07, bz("b"))
 		for k in range(5):
 			a = math.radians(-90 + (k - 2) * 38)
-			kit.rivet((toe[0] + 0.06 * math.cos(a), toe[1] + 0.065 * math.sin(a), 0.04), bz("dark"), r=0.008)
+			kit.rivet((toe[0] + 0.074 * math.cos(a), toe[1] + 0.08 * math.sin(a), 0.044), bz("dark"), r=0.01)
+	to_item()
 
 
 def satchel():
