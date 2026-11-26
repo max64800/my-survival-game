@@ -14403,3 +14403,10 @@ Owner's pick: "Quick + full".
 - Godot isn't on the Mac, so none of this has been run yet. The owner runs the tests on the PC.
 - First draft of the new settings test called `add_child` on the test itself. TestCase isn't a Node, so I switched to `tree.root.add_child` + one frame, the way test_hud_cleanup does it.
 - Not covered: a door that was open when the world was saved doesn't auto-shut after loading until someone opens it again (the timers aren't saved).
+
+
+## 2026-11-26: F869 follow-up: doors saved open shut too
+
+- Closed the gap from the first F869 entry: a door that was open when the world was saved now also gets its 30 s timer when the world loads (`builder.gd` load_snapshot). Test: extra check in `test_doors_open_and_ladders_climb`.
+- Hurdle found by reading: the `tower_walk` robot opens every door and needs them to stay open. With the new load timer, doors the save had open would have shut in the middle of its walk, so it now clears the timers after opening. `buildcheck`/`kitcheck` open doors directly (no timer), so they're unaffected.
+- Still not run: no Godot on the Mac.
