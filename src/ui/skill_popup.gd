@@ -87,6 +87,7 @@ static func icon(s: String) -> Texture2D:
 
 func _show_skill(p: Progression, s: String) -> void:
 	_skill = s
+	Sfx.ui("level_up", -4.0)  # treasure chest reveal (owner's pick, sound round 10, Nov 26)
 	_name.text = "%s %d!" % [Progression.SKILL_INFO[s][0], p.skill_level[s]]
 	_pic.texture = icon(s)
 	_pic.visible = _pic.texture != null
@@ -95,6 +96,7 @@ func _show_skill(p: Progression, s: String) -> void:
 
 func _show_level(p: Progression) -> void:
 	_skill = ""
+	Sfx.ui("level_up", -2.0)
 	_name.text = "Level %d!   +1 perk point (K)" % p.level
 	_pic.visible = false
 	_left = SHOW_SECONDS + 1.0

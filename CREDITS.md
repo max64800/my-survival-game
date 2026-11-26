@@ -193,7 +193,7 @@ All CC0 (public domain), checked on each page. Trimmed, loudness-matched and con
 | thud.wav | OtisJames | https://freesound.org/s/215162/ | CC0 | hit_heavy_2 (MAYBE) |
 | Hundreds of bats screaming and coming out of their nest | felix.blume | https://freesound.org/s/245768/ | CC0 | bat_screech_0 (MAYBE) |
 | Bat chirp (close-up) | coelhoigor | https://freesound.org/s/455593/ | CC0 | bat_screech_1 (MAYBE) |
-| Pickaxe2 | NoisyRedFox | https://freesound.org/s/760566/ | CC0 | dig_rock_0 |
+| Pickaxe3 | NoisyRedFox | https://freesound.org/s/760567/ | CC0 | dig_rock_0 (round 10, Nov 26: replaces Pickaxe2) |
 
 ### Freesound sounds, F870 parry and block (Nov 25, 2026)
 
@@ -251,3 +251,4 @@ The new `refill_0..1` (lantern) replace the older refill rows above (heavy_swall
 | crab walking | stuniverso | https://freesound.org/s/761559/ | CC0 | beetle_move_0 (round 8) |
 | Whoosh Short | FartCTO | https://freesound.org/s/789840/ | CC0 | swing_light_0 (round 8) |
 | Yeaah-hah-hah.wav | HenKonen | https://freesound.org/s/682138/ | CC0 | boss_cheer_0 (round 9: plays with the boss-defeated music) |
+| Treasure Chest Reveal | Qvantor | https://freesound.org/s/878615/ | CC0 | level_up_0 (round 10) |

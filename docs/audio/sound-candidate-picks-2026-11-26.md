@@ -33,7 +33,8 @@ Owner listened on the review pages and picked; all CC0 from Freesound (credits i
 | ghost_boss_death | 185366 Monster.wav | round 8, LOVE (the saved MAYBE) |
 | swing_light | 789840 Whoosh Short | round 8, MAYBE (sword, axe, mace, pickaxe swings) |
 | boss_cheer | 682138 Yeaah-hah-hah.wav | round 9 LOVE: "this can be when you defeat the boss" (plays with the boss-defeated music) |
-| level_up | none yet | all NO in rounds 6-9 (round 9: dwarf voices, the other 7 also NO): arcade jingles "too arcady"; anvil, bell, horn, singing bowl also NO |
+| level_up | 878615 Treasure Chest Reveal | round 10 LOVE (after rounds 6-9 were all NO) |
+| dig_rock | 760567 Pickaxe3 | round 10 LOVE: "the new pickaxe against the stone" (replaces Pickaxe2) |: arcade jingles "too arcady"; anvil, bell, horn, singing bowl also NO |
 
 Saved for later: 320521 "Unsheathed blade" (owner liked it, no use yet).
 
