@@ -349,11 +349,14 @@ SETS = {
 	"copper": dict(plates=True, hard=True, bulk=0.011, pads=1.35, rim=0.0, bevel=0.0045, flare=0.006,
 		rimw=0.0085, rimh=0.0024,  # (round 3: a raised rim round every plate, owner: "you can see the rims around each plate")
 		# (round 1 looked like dark blotchy leather; round 2: darker hammered faces, bright polished edges, more shine)
-		plate=dict(base=(0.6, 0.33, 0.18), dark=(0.26, 0.12, 0.06), light=(1.0, 0.76, 0.55), strokes=0.05,
-			picture=["textures/kit/copper_a.png", 7.0], amount=0.3, metal=0.7, rough=0.3,
-			polish=(1.6, 1.38, 1.18), face=0.86),
-		rivet=dict(base=(0.66, 0.4, 0.24), dark=(0.25, 0.12, 0.06), light=(1.0, 0.8, 0.6), strokes=0.05,
-			picture=["textures/kit/copper_a.png", 18.0], amount=0.4, metal=0.7, rough=0.3)),
+		# (round 4, owner: brighter, redder copper like the picture, bigger hammer dents that show)
+		plate=dict(base=(0.8, 0.36, 0.16), dark=(0.33, 0.11, 0.04), light=(1.0, 0.66, 0.42), strokes=0.05,
+			picture=["textures/kit/copper_a.png", 7.0], amount=0.22, metal=0.8, rough=0.27,
+			polish=(1.75, 1.32, 1.05), face=0.92),
+		rivet=dict(base=(0.84, 0.46, 0.24), dark=(0.3, 0.12, 0.05), light=(1.0, 0.78, 0.55), strokes=0.05,
+			picture=["textures/kit/copper_a.png", 18.0], amount=0.3, metal=0.8, rough=0.27),
+		# (round 4: the cloth and leather under the plates dark, so the gaps between plates read as deep shadow)
+		under=dict(base=(0.2, 0.12, 0.08), dark=(0.08, 0.045, 0.03), light=(0.3, 0.19, 0.12), strokes=0.1)),
 }
 if SET not in SETS:
 	raise SystemExit(f"ARMOR: no '{SET}' set (sets: {', '.join(SETS)})")
@@ -366,6 +369,8 @@ if RC["plates"]:
 	for k in ("plate", "rivet"):
 		PAINT[k] = {q: RC[k][q] for q in ("base", "dark", "light", "strokes")}
 		PICTURE[(k, None)] = RC[k]["picture"]
+if RC.get("under"):
+	PAINT["leather"] = RC["under"]
 
 
 def plate_shell(surf, cell, reg, gap=0.0045, k=0.003, bulk=None):
@@ -395,7 +400,7 @@ def plate_tint(cell_id):
 	return tint
 
 
-DENT = 48.0  # hammer dents per metre (about 2 cm each, like the picture's)
+DENT = 30.0  # hammer dents per metre (about 3 cm each; round 4, owner: bigger dents that show, like the picture's)
 
 
 def hammer_dents(co):
@@ -411,7 +416,7 @@ def plate_disp(q, n):
 	"""Hammered metal: shallow dents from the smith's hammer, and a little grain."""
 	if HARD:
 		d = noise.voronoi(q * DENT, distance_metric="DISTANCE")[0]
-		return -0.0009 * min((d[1] - d[0]) / 0.55, 1.0) ** 0.7 + 0.00015 * noise.noise(q * 400)
+		return -0.0016 * min((d[1] - d[0]) / 0.55, 1.0) ** 0.7 + 0.00015 * noise.noise(q * 400)
 	return 0.0006 * noise.noise(q * 70) - 0.0005 * abs(noise.noise(q * 140)) + 0.0002 * noise.noise(q * 400)
 
 
@@ -545,7 +550,7 @@ def hard_tint(parts, norim=(), rimw=None):
 			rgb[rimmed & (e > rw + 0.0004) & (e < rw + 0.0032)] *= 0.62
 			dm = hammer_dents(co)  # each hammer dent darker in its middle, light on its ridges (like the picture)
 			face = ((e > rw + 0.0032) | ~rimmed & (e > RC["bevel"] * 1.4))[:, None]
-			rgb = np.where(face, rgb * (1.12 - 0.3 * dm[:, None]), rgb)
+			rgb = np.where(face, rgb * (1.2 - 0.45 * dm[:, None]), rgb)
 		rgb[e < 0.0006] *= 0.42
 		return rgb
 	return tint
@@ -556,20 +561,29 @@ def hard_helm_region(X, Y, Z):
 	over the cheeks to the jaw, the nape at the back."""
 	th = np.arctan2(X, -(Y - HC.y))
 	S = np.abs(th) * 0.14
-	# (round 3, owner: "the helmet can be lower": the face guard down to the moustache, the cheek guards 3 cm lower)
-	bottom = 1.006 - 0.044 * sstep((S - 0.095) / 0.06) + 0.068 * sstep((S - 0.27) / 0.05)
+	# (round 3, owner: "the helmet can be lower": the face guard down to the moustache, the cheek guards 3 cm lower;
+	# round 4: the bell-shaped guard comes down over the nape too)
+	bottom = 1.006 - 0.044 * sstep((S - 0.095) / 0.06) + 0.036 * sstep((S - 0.27) / 0.05)
 	return bottom - Z, S
 
 
-def helm_cells(X, Y, Z):
-	"""The closed helmet's plates (how far inside its plate each point is, and which plate): the dome in two halves
-	either side of the crest, a brow band all round, the face guard, a cheek guard each side, the neck guard."""
-	reg, S = hard_helm_region(X, Y, Z)
-	conds = [Z >= 1.142, Z >= 1.112, S < 0.125, S < 0.265]
-	cell = np.select(conds, [np.minimum(np.abs(X), Z - 1.142), np.minimum(Z - 1.112, 1.142 - Z), np.minimum(1.112 - Z, 0.125 - S),
-		np.minimum.reduce([1.112 - Z, S - 0.125, 0.265 - S])], np.minimum(1.112 - Z, S - 0.265))
-	rid = np.select(conds, [np.where(X > 0, 0, 1), 2, 3, np.where(X > 0, 4, 5)], 6)
-	return np.minimum(cell, -reg), rid
+def pointed_dome(X, Y, Z, fit):
+	"""The closed helmet's outside (round 4, owner: "the helmet is too round"; the picture: a tall dome rising to a
+	point, a bell-shaped guard flaring out over the cheeks and the nape). fit = (side, front and back radius at the
+	brow, brow height, point height), measured round the hat hair. Above the brow its radius shrinks as (1 - u^2.5) to
+	a soft point; below the brow it goes straight down and flares out at the sides and back (not the face)."""
+	rx, rf, rb, zb, zt = fit
+	yc = DOME_C.y
+	ry = np.where(Y < yc, rf, rb)
+	rho = np.sqrt((X / rx) ** 2 + ((Y - yc) / ry) ** 2)  # (1 on the brow's oval)
+	rl = np.sqrt(X ** 2 + (Y - yc) ** 2) / np.maximum(rho, 1e-4)  # (the oval's radius this way round, metres)
+	u = np.clip((Z - zb) / (zt - zb), 0.0, 1.0)
+	k = np.where(Z > zb, 1.0 - u ** 2.5, 1.0)
+	slope = np.where(Z > zb, 2.5 * u ** 1.5 * rl / (zt - zb), 0.0)
+	S = np.abs(np.arctan2(X, -(Y - HC.y))) * 0.14
+	flare = 0.026 * sstep((1.075 - Z) / 0.09) * sstep((S - 0.1) / 0.07)
+	dist = (rho * rl - (k * rl + flare)) / np.sqrt(1.0 + slope ** 2)
+	return np.where(Z > zt, np.sqrt(X ** 2 + (Y - yc) ** 2 + (Z - zt) ** 2), dist)
 
 
 def eye_slits(X, Y, Z):
@@ -683,7 +697,18 @@ def build_helmet():
 	log("helmet: measuring the head")
 	hair = capped_head()
 	dome_reach()
-	g = G((-0.215, -0.19, 0.95), (0.215, 0.235, 1.29), 0.004)
+	fit = None
+	top = 1.29
+	if HARD:  # (round 4: the pointed dome's size from the hat hair: its widest at the brow, its top + 6 cm)
+		hv = world_verts(hair)
+		yc = DOME_C.y
+		band = hv[(hv[:, 2] > 1.12) & (hv[:, 2] < 1.22)]
+		fr = hv[(hv[:, 2] > 1.14) & (hv[:, 1] < yc)]
+		fit = (float(np.percentile(np.abs(band[:, 0]), 99.5)) + 0.016, float(np.percentile(yc - fr[:, 1], 99.5)) + 0.016,
+			float(np.percentile(band[:, 1] - yc, 99.5)) + 0.016, 1.12, float(hv[:, 2].max()) + 0.06)
+		top = fit[4] + 0.02
+		log("helmet fit (side, front, back, brow, point):", [round(f, 3) for f in fit])
+	g = G((-0.215, -0.19, 0.95), (0.215, 0.235, top), 0.004)
 	# (how close the head is, not inside/outside: the hair locks' surfaces fooled the inside test into spikes and lumps)
 	d = np.abs(g.field(["armor_head_hair"], band=0.05, far=0.05))
 	reg, S = helm_region(g.X, g.Y, g.Z)
@@ -695,22 +720,44 @@ def build_helmet():
 	outer = np.minimum(dome_dist(g.X, g.Y, g.Z), d - 0.009) + wobble(g, 0.002 if not HARD else 0.001, 1)
 	leather = np.maximum(outer, reg)
 	if HARD:
+		# Round 4: the pointed dome and bell guard (one piece, the eye slit through it; hollow under the guard), and
+		# on it, each its own piece standing out with a thick edge: a riveted brow band all round, a band over the top
+		# from front to back, a nose plate under the eye slit.
+		S0 = smin(pointed_dome(g.X, g.Y, g.Z, fit), outer, 0.012)
 		slit = eye_slits(g.X, g.Y, g.Z)
-		lo = g.mesh("armor_head_leather", MAT["leather"], np.maximum(leather, -slit))
-		cell, rid = helm_cells(g.X, g.Y, g.Z)
-		band = ((g.Z > 1.112) & (g.Z < 1.142)).astype(np.float32)
-		front = g.Y < -0.06
-		cr_in = np.minimum(0.014 - np.abs(g.X), g.Z - 1.128) - GAP * 0.3  # the crest, front to back over the top
-		no_in = np.where(front, np.minimum.reduce([0.012 - np.abs(g.X), g.Z - 0.99, 1.14 - g.Z]), -0.02)  # the nose plate
-		P, E, I = union_parts([(hard_plate(outer, cell - GAP, lift=0.0025 * band), cell - GAP, rid),
-			(hard_plate(outer, cr_in, lift=0.012, rimw=0), cr_in, 10), (hard_plate(outer, no_in, lift=0.005, rimw=0), no_in, 11)])
-		P = np.maximum(np.maximum(P, -slit), 0.004 - d)
-		E = np.minimum(E, slit)  # (a polished rim round the eye slits too)
-		po = g.mesh("armor_head_plate", MAT["plate"], P)
-		ptint = hard_tint([(g, P, E, I)], norim=(10, 11))
+		lo = g.mesh("armor_head_leather", MAT["leather"], np.maximum(np.maximum(np.maximum(S0 + 0.01, reg + 0.004), 0.001 - slit), 0.006 - d))
+		e0 = np.minimum(-reg, slit) - 0.001
+		top0 = S0 - 0.006 - hard_rim(e0)
+		P0 = np.maximum(top0, -e0)
+		P0 = np.maximum(P0, top0 + RC["bevel"] - e0)
+		P0 = np.where(g.Z < 1.1, np.maximum(P0, -(S0 + 0.005)), P0)  # (the guard a shell: his neck and beard inside)
+		e1 = np.minimum.reduce([g.Z - 1.1, 1.138 - g.Z, -reg]) - 0.001
+		e2 = np.minimum(0.016 - np.abs(g.X), g.Z - 1.146)
+		e3 = np.where(g.Y < HC.y - 0.06, np.minimum.reduce([0.014 - np.abs(g.X), g.Z - 0.995, 1.07 - g.Z]), -0.02)
+		parts = [(P0, e0, 0, None)]
+		for e_, out_, pid, rw in ((e1, 0.012, 2, None), (e2, 0.014, 10, 0.0), (e3, 0.013, 11, 0.0)):
+			tp = S0 - out_ - hard_rim(e_, rw)
+			p_ = smax(np.maximum(tp, 0.002 - S0), -e_, 0.0012)
+			parts.append((np.maximum(p_, tp + RC["bevel"] - e_), e_, pid, rw))
+		objs, tparts = [], []
+		# (kept off the face and beard; not cut round the hair at the sides and back: try 1 cut a big arch out of
+		# the neck guard where his back hair passes under it)
+		keep = np.where((g.Z < 1.1) & (S > 0.12), -1.0, 0.004 - d)
+		for k, (P, E, pid, _) in enumerate(parts):
+			P = np.maximum(P, keep)
+			objs.append(g.mesh(f"_helm_{k}", MAT["plate"], P))
+			tparts.append((g, P, E, np.full(P.shape, pid, np.float32)))
+		bpy.ops.object.select_all(action="DESELECT")
+		for o in objs:
+			o.select_set(True)
+		bpy.context.view_layer.objects.active = objs[0]
+		bpy.ops.object.join()
+		po = bpy.context.view_layer.objects.active
+		po.name = "armor_head_plate"
+		ptint = hard_tint(tparts, norim=(10, 11))
 		tb = bvh_of(po)
 		items = []
-		for a in np.linspace(0.45, 2.75, 9):  # rivets down the crest
+		for a in np.linspace(0.3, 2.85, 11):  # rivets up the band over the top
 			dirn = Vector((0, -math.cos(a), math.sin(a)))
 			hit = ray_to(tb, HC + dirn * 0.4, -dirn)
 			if hit:
@@ -718,12 +765,12 @@ def build_helmet():
 		pts = []
 		for th in (0.5, 0.95, 1.4, 1.85, 2.3, 2.75, -0.5, -0.95, -1.4, -1.85, -2.3, -2.75, math.pi):  # round the brow band
 			dirn = Vector((math.sin(th), -math.cos(th), 0))
-			pts.append((Vector((HC.x, HC.y, 1.127)) + dirn * 0.4, -dirn))
-		for sx in (1, -1):  # the cheek guards' corners
-			for th, z in ((1.15, 1.09), (1.6, 1.03), (1.15, 0.99), (0.55, 1.035)):
+			pts.append((Vector((HC.x, HC.y, 1.119)) + dirn * 0.4, -dirn))
+		for sx in (1, -1):  # round the bell guard, near its lower edge
+			for th, z in ((1.15, 1.0), (1.6, 1.0), (2.1, 1.03), (0.62, 1.03)):
 				dirn = Vector((math.sin(th * sx), -math.cos(th), 0))
 				pts.append((Vector((HC.x, HC.y, z)) + dirn * 0.4, -dirn))
-		items += plate_items(po, pts, 0.0072)
+		items += plate_items(po, pts, 0.0076)
 		br = small_piece(f"armor_head_{RIVET}", MAT[RIVET], items)
 		PIECES.extend([(lo, "head", "leather", None, None), (br, "head", RIVET, None, None), (po, "head", "plate", ptint, plate_disp)])
 		return
@@ -868,10 +915,19 @@ def quilt(X, Y, Z):
 
 
 HARD_COLS = (-2.5, -1.25, 1.25, 2.5)  # hard sets: one big breastplate and wide lames round the front, sides, back
-SKIRT_SPLIT = 0.412                    # hard sets: the skirt below the belt in two rows of plates
-# hard sets' shoulder guards: one round cap cut into three bands down the arm (from, to: metres out from his middle;
-# how far out it stands), each band tucked under the one above (round 2 try 1: three round plates read as one blob)
-PAULDRON = ((0.0, 0.345, 0.031), (0.335, 0.395, 0.022), (0.385, 0.5, 0.014))
+SKIRT_COL = math.pi / 4               # hard sets: eight skirt plates round the hips (a split at the front and back)
+# Round 4 (owner on round 3: "it looks like it's glued together"): every plate is its own stiff shell with a thick
+# edge, laid over a very smooth copy of the body (not its lumps), and each band's lower edge stands out over the next
+# band down like roof tiles, with a real gap (and shadow) under it. LIFT: how far a band's lower edge stands out more
+# than its top (the plate's thickness + its rim + a 8 mm air gap over the band below); OV: how far it reaches down
+# over that band.
+SHELL_T = 0.008
+LIFT = SHELL_T + 0.0024 + 0.008
+OV = 0.014
+SKIRT_LOW = 0.348  # where the lowest skirt band starts (its lower edge reaches OV further down)
+# the shoulder guards: a domed cap and three bands stepping down the arm (metres out from his middle, from, to), each
+# band's outer edge over the next (round 3's three plates were cut from one smooth lump and read as one)
+PAULDRON = ((-9.0, 0.34), (0.34, 0.385), (0.385, 0.43), (0.43, 0.478))
 
 
 def chest_v(th):
@@ -881,32 +937,31 @@ def chest_v(th):
 	return 0.05 * np.clip(a / 1.1, 0.0, 1.0)
 
 
-def hard_chest_cells(X, Y, Z):
-	"""The hard chest plates: how far each point is inside its plate (metres), which plate, and how far it stands out
-	extra (each lame's lower edge stands out over the next one down, like roof tiles). Rows: two rows of skirt plates
-	below the belt, two belly lames, the breastplate (and back plate) up to the neck."""
-	th = np.arctan2(X, -Y)
-	cd = np.full(np.shape(X), 9.0)
-	for a in HARD_COLS:
-		cd = np.minimum(cd, np.abs(((th - a + math.pi) % (2 * math.pi)) - math.pi) * 0.24)
-	skirt_c = 0.26 * 0.24 - np.abs(((th + math.pi) % 0.52) - 0.26) * 0.24
-	fl = RC["flare"]
-	v = chest_v(th)
-	rows = ((-9.0, SKIRT_SPLIT, skirt_c, 0), (SKIRT_SPLIT, BELT - BELT_GAP, skirt_c, 1), (BELT + BELT_GAP, 0.562 + v * 0.6, cd, 2),
-		(0.562 + v * 0.6, 0.612 + v, cd, 3), (0.612 + v, 9.0, cd, 4))
-	cell = np.full(np.shape(X), -0.01, np.float32)
-	rid = np.zeros(np.shape(X), np.float32)
-	lift = np.zeros(np.shape(X), np.float32)
-	for zlo, zhi, c, r in rows:
-		m = (Z >= zlo) & (Z < zhi)
-		cell = np.where(m, np.minimum(np.minimum(Z - zlo, zhi - Z), c), cell)
-		rid = np.where(m, r, rid)
-		up = fl + 0.002 if r == 4 else fl * np.clip((zhi - Z) / np.minimum(zhi - zlo, 0.035), 0, 1)
-		lift = np.where(m, up, lift)
-	cell = np.minimum(cell, 0.272 - np.abs(X))  # (not down the arms)
-	cell = np.where(Z > 0.7, np.minimum(cell, 0.25 - np.abs(X)), cell)  # (the shoulder guards cover the shoulders)
-	col = np.where(rid <= 1, np.floor((th + math.pi) / 0.52), np.digitize(th, HARD_COLS))
-	return cell, rid * 16 + col, lift
+def sub_grid(g, lo, hi):
+	"""The part of grid g inside the box lo..hi (views, no copies): each plate band is meshed on its own small grid."""
+	i0 = np.clip(np.floor((np.array(lo) - g.lo) / g.h).astype(int), 0, None)
+	i1 = np.minimum(np.ceil((np.array(hi) - g.lo) / g.h).astype(int) + 1, g.X.shape)
+	sl = tuple(slice(a_, b_) for a_, b_ in zip(i0, i1))
+	s_ = G.__new__(G)
+	s_.h, s_.lo = g.h, g.lo + i0 * g.h
+	s_.X, s_.Y, s_.Z, s_.D = g.X[sl], g.Y[sl], g.Z[sl], g.D[sl]
+	return s_, sl
+
+
+def stiff_shell(base, off, inner, rimw=None):
+	"""One stiff plate: a shell SHELL_T thick whose inside lies `off` out from `base` (a smooth distance field), cut to
+	its outline (inner = how far inside the outline, metres) with a bevelled edge and a raised rim round it."""
+	outer = base - off - SHELL_T - hard_rim(inner, rimw)
+	p = np.maximum(outer, off - base)
+	p = smax(p, -inner, 0.0012)
+	return np.maximum(p, outer + RC["bevel"] - inner)
+
+
+def lame_lift(dz, h, ov, lift):
+	"""How far a band stands out more at this point (dz = how far below its top): nothing at the top (it tucks under
+	the band above), rising to `lift` at its lower edge over the last 5 cm."""
+	ramp = np.minimum(h + ov, 0.05)
+	return lift * np.clip((dz - (h + ov - ramp)) / ramp, 0.0, 1.0)
 
 
 CHEST_COLS = (-2.6, -1.75, -0.62, 0.62, 1.75, 2.6)  # the plates' sides follow the leather's panel seams (SEAMS)
@@ -949,7 +1004,7 @@ def jerkin_cells(X, Y, Z):
 def build_jerkin():
 	log("jerkin: measuring the shirt")
 	wx = 0.515 if HARD else 0.475  # (the hard set's third shoulder plate reaches further down the arm)
-	g = G((-wx, -0.36, 0.33), (wx, 0.32, 0.965), 0.004)
+	g = G((-wx, -0.36, 0.31 if HARD else 0.33), (wx, 0.32, 0.965), 0.004)  # (hard sets: the skirt hangs lower)
 	# the shirt and the shorts' top; the bare skin only out on the arms past the shirt's sleeves (round 2 used the skin
 	# everywhere: its inside/outside test failed in places and cut round holes in the jerkin, showing the shirt)
 	d = g.field(["body_shirt", "body_shorts"])
@@ -1013,23 +1068,70 @@ def build_jerkin():
 	po = None
 	ptint = None
 	if HARD:
-		cell, rid, lift_ = hard_chest_cells(g.X, g.Y, g.Z)
-		cell = np.minimum(cell, -reg) - GAP
-		parts = [(hard_plate(surf, cell, lift=lift_), cell, rid)]
-		smooth = blur(soft, 5)  # (round 3: the shoulder guards smooth domes like the picture's, not following his lumps)
-		for sx in (1, -1):  # the shoulder guards: three plates each, the top one standing out furthest over the next
-			ax = g.X * sx
-			rr = np.sqrt((ax - 0.33) ** 2 * 0.8 + (g.Y - 0.035) ** 2 * 0.9 + (g.Z - 0.80) ** 2) - 0.115 * RC["pads"]
-			cap = np.minimum(-rr, g.Z - 0.768 + 0.05 * (ax - 0.3))
-			for k, (a_, b_, o_out) in enumerate(PAULDRON):
-				inner = np.minimum.reduce([cap, ax - a_, b_ - ax]) - GAP * 0.5
-				top = smooth - o_out - RC["bulk"] - 0.008 - hard_rim(inner)
-				p = np.maximum(np.maximum(top, 0.010 - d), -inner)
-				parts.append((np.maximum(p, top + RC["bevel"] - inner), inner, 40 + k + 3 * (sx > 0)))
-		P, E, I = union_parts(parts)
-		P = np.maximum(np.maximum(P, 0.003 - d), 0.004 - dbeard)
-		po = g.mesh("armor_chest_plate", MAT["plate"], P)
-		ptint = hard_tint([(g, P, E, I)])
+		# Round 4: separate stiff plates (see LIFT), each band meshed on its own grid, then joined into one piece.
+		# (a very smooth body pushed 4 mm out, so the plates don't follow his lumps; never closer than the shirt's own
+		# soft copy: try 1 let them sink into the leather where he is round, and the leather poked through as dark tears)
+		base = np.minimum(blur(d, 7) - 0.004, soft)
+		# (only the beard's main mass dents the plates, with a smooth edge: try 1 cut round every thin strand and
+		# left the breastplate full of little holes and copper crumbs under his beard)
+		dbeard_s = blur(dbeard, 6)
+		smooth = blur(soft, 5)
+		o0 = t_ - 0.003  # (each band's top starts just inside the leather)
+		th = np.arctan2(g.X, -g.Y)
+		v = chest_v(th)
+		cd = np.full(np.shape(g.X), 9.0, np.float32)
+		for a_ in HARD_COLS:
+			cd = np.minimum(cd, np.abs(((th - a_ + math.pi) % (2 * math.pi)) - math.pi) * 0.24)
+		sc = (SKIRT_COL / 2 - np.abs(((th + math.pi) % SKIRT_COL) - SKIRT_COL / 2)) * 0.24
+		bcol, scol = np.digitize(th, HARD_COLS), np.floor((th + math.pi) / SKIRT_COL)
+		top_ = BELT - BELT_GAP
+		hs = (top_ - SKIRT_LOW) / 3
+		# (from, to, columns, which column, reach down over the next band, lift, row): three skirt bands under the
+		# belt, two belly lames, the breastplate (the lower belly lame has the belt under its edge: no reach)
+		rows = ((SKIRT_LOW, SKIRT_LOW + hs, sc, scol, OV, 0.010, 0), (SKIRT_LOW + hs, SKIRT_LOW + 2 * hs, sc, scol, OV, LIFT, 1),
+			(SKIRT_LOW + 2 * hs, top_, sc, scol, OV, LIFT, 2), (BELT + BELT_GAP, 0.562 + v * 0.6, cd, bcol, 0.0, 0.008, 3),
+			(0.562 + v * 0.6, 0.612 + v, cd, bcol, OV, LIFT, 4), (0.612 + v, 9.0, cd, bcol, OV, LIFT, 5))
+		objs, tparts = [], []
+		for zlo, zhi, col_in, col_id, ov, lift, r in rows:
+			z0 = float(np.min(zlo)) - ov - 0.012
+			z1 = min(float(np.max(zhi)) + 0.012, 0.965)
+			sg, sl = sub_grid(g, (-wx, -0.36, z0), (wx, 0.32, z1))
+			Z = sg.Z
+			zl = zlo[sl] if np.ndim(zlo) else zlo
+			zh = zhi[sl] if np.ndim(zhi) else zhi
+			inner = np.minimum.reduce([Z - (zl - ov), zh - Z, col_in[sl]]) - GAP
+			inner = np.minimum(inner, 0.272 - np.abs(sg.X))  # (not down the arms)
+			inner = np.where(Z > 0.7, np.minimum(inner, 0.25 - np.abs(sg.X)), inner)  # (the shoulder guards cover the shoulders)
+			if r >= 3:  # (the skirt hangs below the leather's hem; the rest stays inside the leather's edges)
+				inner = np.minimum(inner, -reg[sl])
+			off = o0[sl] + lame_lift(zh - Z, zh - zl, ov, lift)
+			P = stiff_shell(base[sl], off, inner)
+			P = np.maximum(np.maximum(P, 0.003 - d[sl]), 0.002 - dbeard_s[sl])
+			objs.append(sg.mesh(f"_chest_row{r}", MAT["plate"], P, min_island=400))
+			tparts.append((sg, P, inner, (r * 16 + col_id[sl]).astype(np.float32)))
+		for sx in (1, -1):  # the shoulder guards: a domed cap and three bands down the arm, each over the next
+			sg, sl = sub_grid(g, (min(0.16 * sx, wx * sx), -0.36, 0.66), (max(0.16 * sx, wx * sx), 0.32, 0.965))
+			ax = sg.X * sx
+			rr = np.sqrt((ax - 0.33) ** 2 * 0.8 + (sg.Y - 0.035) ** 2 * 0.9 + (sg.Z - 0.80) ** 2) - 0.115 * RC["pads"]
+			cap = np.minimum.reduce([-rr, sg.Z - 0.768 + 0.05 * (ax - 0.3), ax - 0.2])  # (try 1: a fin up the neck)
+			for k, (a_, b_) in enumerate(PAULDRON):
+				last = k == len(PAULDRON) - 1
+				ov = 0.0 if last else 0.013
+				inner = np.minimum.reduce([cap, ax - a_, b_ + ov - ax]) - GAP * 0.5
+				h = (b_ - 0.2) if k == 0 else (b_ - a_)
+				off = 0.03 - 0.004 * k + lame_lift(ax - (b_ - h), h, ov, 0.008 if last else LIFT)
+				P = stiff_shell(smooth[sl], off, inner)
+				P = np.maximum(P, 0.010 - d[sl])
+				objs.append(sg.mesh(f"_pauldron_{k}_{sx}", MAT["plate"], P, min_island=400))
+				tparts.append((sg, P, inner, np.full(P.shape, 40 + k + 4 * (sx > 0), np.float32)))
+		bpy.ops.object.select_all(action="DESELECT")
+		for o in objs:
+			o.select_set(True)
+		bpy.context.view_layer.objects.active = objs[0]
+		bpy.ops.object.join()
+		po = bpy.context.view_layer.objects.active
+		po.name = "armor_chest_plate"
+		ptint = hard_tint(tparts)
 	elif RC["plates"]:
 		cell, _ = jerkin_cells(g.X, g.Y, g.Z)
 		plate = plate_shell(surf, cell, reg)
@@ -1079,10 +1181,14 @@ def build_jerkin():
 					dirn = Vector((math.sin(ang), -math.cos(ang), 0))
 					ang_ = ((ang + math.pi) % (2 * math.pi)) - math.pi
 					pts.append((Vector((0, 0, zr + vk * float(chest_v(ang_)))) + dirn * 0.6, -dirn))
-		for k in range(12):
-			ang = -math.pi + 0.26 + k * 0.52
+		if HARD:  # one in the middle of every skirt plate, near its lower edge
+			hs = (BELT - BELT_GAP - SKIRT_LOW) / 3
+			skirt_r = [(SKIRT_LOW + j * hs + 0.004, -math.pi + SKIRT_COL / 2 + k * SKIRT_COL) for j in range(3) for k in range(8)]
+		else:
+			skirt_r = [(BELT - BELT_GAP - 0.016, -math.pi + 0.26 + k * 0.52) for k in range(12)]
+		for zr, ang in skirt_r:
 			dirn = Vector((math.sin(ang), -math.cos(ang), 0))
-			pts.append((Vector((0, 0, BELT - BELT_GAP - 0.016)) + dirn * 0.6, -dirn))
+			pts.append((Vector((0, 0, zr)) + dirn * 0.6, -dirn))
 		items += plate_items(po, pts, 0.0072 if HARD else 0.006)
 	br = small_piece(f"armor_chest_{RIVET}", MAT[RIVET], items)
 
@@ -1450,31 +1556,32 @@ def build_legs():
 		phi = np.arctan2(ax - 0.129, -(g.Y - 0.03))  # round the leg: 0 = front, + = his outside
 		r_ = 0.085  # (the leg's rough radius: angle to metres)
 		ring = lambda a0, a1: np.minimum((phi - a0) * r_, (a1 - phi) * r_)
-		u, w = phi * r_, g.Z - 0.259
+		u, w = phi * r_, g.Z - 0.268
 		hexd = np.maximum(np.abs(u) * 0.866 + np.abs(w) * 0.5, np.abs(w))  # (a six-sided outline, flat top and bottom)
-		cop_in = 0.04 - hexd - GAP
+		cop_in = 0.047 - hexd - GAP  # (round 4: bigger and standing out more, owner: "the knee cop clearer")
 		lames = (  # (how far inside the plate, extra stand-off at its lower edge, from z, plate id)
 			(np.minimum.reduce([g.Z - 0.292, 0.395 - g.Z, ring(-0.9, 2.4)]), 0.006, 0.292, 0.395, 0),
-			(np.minimum.reduce([g.Z - 0.226, 0.298 - g.Z, ring(-2.3, 2.3)]), 0.004, 0.226, 0.298, 1),
-			(np.minimum.reduce([g.Z - 0.18, 0.234 - g.Z, ring(-1.6, 1.6)]), 0.003, 0.18, 0.234, 2),
-			(np.minimum.reduce([g.Z - 0.18, 0.234 - g.Z, np.minimum(ring(1.6, 4.6), ring(-4.6, -1.6))]), 0.003, 0.18, 0.234, 3))
+			(np.minimum.reduce([g.Z - 0.24, 0.302 - g.Z, ring(-2.3, 2.3)]), 0.004, 0.24, 0.302, 1),
+			# (round 4: the greaves taller, from inside the boot's top up under the knee)
+			(np.minimum.reduce([g.Z - 0.174, 0.248 - g.Z, ring(-1.6, 1.6)]), 0.003, 0.174, 0.248, 2),
+			(np.minimum.reduce([g.Z - 0.174, 0.248 - g.Z, np.minimum(ring(1.6, 4.6), ring(-4.6, -1.6))]), 0.003, 0.174, 0.248, 3))
 		parts = []
 		for inn, fl_, zlo, zhi, pid in lames:
 			inn = inn - GAP
 			lift = fl_ * np.clip((zhi - g.Z) / (zhi - zlo), 0, 1)
 			parts.append((hard_plate(surf, inn, bulk=0.0075, lift=lift), inn, pid + 16 * (side == "r")))
-		parts.append((hard_plate(surf, cop_in, bulk=0.0075, lift=0.011), cop_in, 4 + 16 * (side == "r")))
+		parts.append((hard_plate(surf, cop_in, bulk=0.0075, lift=0.015), cop_in, 4 + 16 * (side == "r")))
 		P, E, I = union_parts(parts)
 		P = np.maximum(P, 0.003 - d)
 		o = g.mesh(f"_legs_{side}", MAT["plate"], P)
 		objs.append(o)
 		tparts.append((g, P, E, I))
 		pts = []
-		for a_, z in ((-0.7, 0.375), (2.2, 0.375), (1.0, 0.383), (-2.05, 0.282), (2.05, 0.282),
-				(-1.35, 0.222), (1.35, 0.222), (1.85, 0.222), (-1.85, 0.222)):  # rivets at the plates' top corners
+		for a_, z in ((-0.7, 0.375), (2.2, 0.375), (1.0, 0.383), (-2.05, 0.288), (2.05, 0.288),
+				(-1.35, 0.236), (1.35, 0.236), (1.85, 0.236), (-1.85, 0.236)):  # rivets at the plates' top corners
 			dirn = Vector((sx * math.sin(a_), -math.cos(a_), 0))
 			pts.append((Vector((sx * 0.129, 0.03, z)) + dirn * 0.25, -dirn))
-		for a_, z in ((-0.33, 0.259), (0.33, 0.259), (0.0, 0.287), (0.0, 0.231)):  # round the knee cop
+		for a_, z in ((-0.4, 0.268), (0.4, 0.268), (0.0, 0.302), (0.0, 0.234)):  # round the knee cop
 			dirn = Vector((sx * math.sin(a_), -math.cos(a_), 0))
 			pts.append((Vector((sx * 0.129, 0.03, z)) + dirn * 0.25, -dirn))
 		items += plate_items(o, pts, 0.0064)
@@ -1614,6 +1721,8 @@ for o, piece, mname, *_ in PIECES:
 		o.vertex_groups.remove(vg)
 	groups = {}
 	wv = world_verts(o)
+	# (round 4 tried each chest plate moving as one stiff piece: standing, his belly bent forward and poked through
+	# the breastplate. The plates' shapes are stiff; their weights follow the body like the leather under them.)
 	for i, p in enumerate(wv):
 		if piece == "head":
 			ws = {"Head": 1.0}  # the helmet is one hard piece on the head
