@@ -1,5 +1,5 @@
 extends SceneTree
-## Photographs the copper set side by side: left hand-built, right the picture-to-3D test (F914). Usage:
+## Photographs the copper set side by side: left the picture-to-3D test, right the new hand-built plates (F914). Usage:
 ## godot --audio-driver Dummy --path . -s tools/shot_armor.gd -- claude=armor3d out=<file.png> [back=1] [side=1]
 
 const WEAR := ["armor_head_copper", "armor_chest_copper", "armor_legs_copper", "armor_feet_copper"]
@@ -9,7 +9,7 @@ func _init() -> void:
 	_run.call_deferred()
 
 
-func _dwarf(x: float, pic3d: bool, turn: float) -> void:
+func _dwarf(x: float, look: String, turn: float) -> void:
 	var holder := Node3D.new()
 	root.add_child(holder)
 	holder.position = Vector3(x, 0, 0)
@@ -18,7 +18,7 @@ func _dwarf(x: float, pic3d: bool, turn: float) -> void:
 	rig.use_body = true
 	holder.add_child(rig)
 	rig.build(Color(0.6, 0.45, 0.3))
-	DwarfRig.armor_pic3d_test = pic3d
+	DwarfRig.armor_look = look
 	rig.set_wear(WEAR)
 
 
@@ -46,8 +46,8 @@ func _run() -> void:
 	var turn := 0.35 if back else PI + 0.35  # (he faces -Z)
 	if side:
 		turn = PI * 0.5
-	_dwarf(-0.42, false, turn)
-	_dwarf(0.42, true, turn)
+	_dwarf(-0.42, "pic3d", turn)
+	_dwarf(0.42, "plate", turn)
 	var cam := Camera3D.new()
 	cam.fov = 30
 	root.add_child(cam)

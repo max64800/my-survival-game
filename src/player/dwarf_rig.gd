@@ -1266,9 +1266,11 @@ const ARMOR_FILES := {
 	"hide": "res://assets/characters/dwarf/armor_hide.glb", "leather": "res://assets/characters/dwarf/armor_hide.glb",
 	"copper": "res://assets/characters/dwarf/armor_copper.glb",  # (F914: the Hide set's shapes with copper plates)
 }
-## F914 TEST (Nov 26): the copper helmet and chest plate made from ChatGPT pictures by Hunyuan3D, then fitted in Blender
-## (tools/asset_forge/builds/armor_picture3d.py). The gauntlets and boots stay hand-built. False = all hand-built again.
-static var armor_pic3d_test := true
+## F914 (Nov 26): which copper helmet + chest he wears. "plate" = the new hand-built hard plates
+## (tools/asset_forge/builds/copper_plate_armor.py), "pic3d" = the test made from ChatGPT pictures by Hunyuan3D
+## (armor_picture3d.py; can't ship, licence), "old" = the first hand-built set. Gauntlets and boots stay hand-built.
+static var armor_look := "plate"
+const ARMOR_PLATE := "res://assets/characters/dwarf/armor_copper_plate.glb"
 const ARMOR_PIC3D := "res://assets/characters/dwarf/armor_copper_picture3d.glb"
 var _bind_poses := []  ## every bone as the body was built (set by _wear_body)
 var _model_to_skel := Transform3D()
@@ -1293,12 +1295,14 @@ func _wear_armor(id: String) -> Node3D:
 		return null
 	if not _bind_poses.is_empty() and ARMOR_FILES.has(parts[2]) and ResourceLoader.exists(ARMOR_FILES[parts[2]]):
 		var made: Node3D = null
-		if armor_pic3d_test and parts[2] == "copper" and parts[1] in ["head", "chest"] and ResourceLoader.exists(ARMOR_PIC3D):
-			made = _wear_built_armor(parts[1], ARMOR_PIC3D)
+		var look_file: String = {"plate": ARMOR_PLATE, "pic3d": ARMOR_PIC3D}.get(armor_look, "")
+		if look_file != "" and parts[2] == "copper" and parts[1] in ["head", "chest"] and ResourceLoader.exists(look_file):
+			made = _wear_built_armor(parts[1], look_file)
 			if made and parts[1] == "chest":  # (the hand-built gauntlets go with it)
 				for pat in ["armor_chest_gauntlet*"]:
 					_add_built_meshes(made, ARMOR_FILES["copper"], pat)
-				_pad_shirt_under(made)
+				if armor_look == "pic3d":  # (the plate set has its own leather undercoat)
+					_pad_shirt_under(made)
 		if not made:
 			made = _wear_built_armor(parts[1], ARMOR_FILES[parts[2]])
 		if made:

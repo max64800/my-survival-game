@@ -59,8 +59,8 @@ func _init() -> void:
 	holder.add_child(rig)
 	rig.build(Color(0.6, 0.45, 0.3))
 	for a in OS.get_cmdline_user_args():
-		if a == "pic3d=0":  # (F914 test: the hand-built copper set instead of the picture-made helmet + chest)
-			DwarfRig.armor_pic3d_test = false
+		if a.begins_with("look="):  # (F914: plate / pic3d / old copper helmet + chest)
+			DwarfRig.armor_look = a.trim_prefix("look=")
 	for a in OS.get_cmdline_user_args():
 		if a.begins_with("wear="):
 			rig.set_wear(Array(a.substr(5).split(",")))
