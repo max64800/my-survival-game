@@ -14357,3 +14357,15 @@ Owner's pick: "Quick + full".
 - Two tries were dropped before the page (a crazy laugh, a sarcastic "yeah right").
 - Level up is still open after 4 rounds (about 26 tries).
 - Godot isn't on the Mac, so the tests could not run. Run `tests/test_sfx.gd` on the PC.
+
+
+## 2026-11-26: Sound round 10 (level up found)
+
+**What we did**
+- Level up in a new style: things from the mine and tiny tunes. The owner loved "Treasure Chest Reveal". It now plays when a skill or the dwarf goes up a level (`src/ui/skill_popup.gd`, on that player's computer only).
+- The owner also loved "Pickaxe3" as the new pickaxe-on-stone sound. It replaces the old `dig_rock` sound (Pickaxe2, by the same author).
+
+**Mistakes and hurdles**
+- Level up took 5 rounds (about 35 tries). Asking the owner what they imagine (round 9) didn't find it, but it got us the boss cheer.
+- Searches for lute, fiddle and coins found almost nothing usable on Freesound.
+- Tests could not run on the Mac (no Godot). Run `tests/test_sfx.gd` on the PC.
