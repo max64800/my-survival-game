@@ -2,14 +2,13 @@
 import json, os, re, time, urllib.request
 src = open('find.py').read().split('seen, data')[0]; ns = {}; exec(src, ns); search = ns['search']
 BAD = re.compile(r"fuck|shit|kill|sex|moan|orgasm|female|woman|girl|child|kid|baby|scream|pain|hurt|death|die|sound design elements|bullet|cartoon|laser|8.?bit|retro|arcade|game ?over|coin|level|achievement|synth|zap|notification|ui\b|guitar|door|glass|bottle|cat\b|glitch|loop|anvil|bell|horn|bowl|turkey|power.?up", re.I)
-seen = {c['id'] for f in ['cands.json', 'cands7.json', 'cands8.json', 'cands9.json'] for s in json.load(open(f)) for c in s['cands']}
+seen = {c['id'] for f in __import__('glob').glob('cands*.json') for s in json.load(open(f)) for c in s['cands']}
 PER = 10
 SLOTS = [
  ("level_up", "Dwarf", "Level up: mine sounds + tiny tunes", "a skill goes up: coins, a treasure chest, a stone thunk, or a 1-2 s tune on a lute, flute or fiddle", 3.5,
   ["lute strum short", "flute short phrase", "fiddle short", "coins pour", "treasure chest open", "pickaxe stone hit", "hammer on stone", "medieval short melody"]),
 ]
 OLD = {"ghost_boss_death": "cand/old/ghost_death_0.ogg"}
-r6 = {c['id']: c for s in json.load(open('cands.json')) for c in s['cands']}
 data = []
 for slot, cat, name, when, maxd, qs in SLOTS:
     lists = []
@@ -27,7 +26,7 @@ for slot, cat, name, when, maxd, qs in SLOTS:
         os.makedirs(os.path.dirname(c['file']), exist_ok=True)
         open(c['file'], 'wb').write(urllib.request.urlopen(urllib.request.Request(c['mp3'], headers={"User-Agent": "Mozilla/5.0"}), timeout=60).read())
         c.pop('mp3'); c.pop('dur')
-    prev = [dict(r6["185366"], title=r6["185366"]['title'] + " (your saved MAYBE)")] if slot == "ghost_boss_death" else []
+    prev = []  # (earlier MAYBEs to compare again go here)
     data.append({"id": slot, "cat": cat, "name": name, "when": when, "old": OLD.get(slot), "cands": prev + got})
     print(slot, [c['title'][:30] for c in got])
 json.dump(data, open('cands10.json', 'w'), indent=1)
