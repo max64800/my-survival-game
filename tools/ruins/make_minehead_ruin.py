@@ -321,7 +321,7 @@ props = [
 	prop_at("bv_strongbox", -11.6, 5.25, -9.9, label="Strongbox"),                           # its wooden top storey
 	prop_at("cf_charcoal_bay", -20.3, 1.0, -5.0, 90, label="Charcoal bay"),                  # the boiler shed
 	prop_at("hw_ingot_cart", 24.0, -1.25, -10.0, label="Ingot cart"),                        # the ore shed
-	# not lootable: the old works' carts and rails (owner's plan: rails along the ledge, 2 carts; no fallen cage: its spot is the shaft steps, owner, Nov 26, F911)
+	# not lootable: the old works' carts and rails (owner's plan: rails along the ledge, 2 carts; no fallen cage: its spot is the shaft steps, owner, Nov 26, F912)
 	prop_at("cf_slag_cart_tipped", 15.6, -4.0, 2.6, 70, "decor"),                            # a cart rolled into the dip
 	prop_at("lw_ore_sorting_table", 25.0, -1.25, -4.5, 0, "decor"),
 	prop_at("ore_basket", 20.2, 3.0, -9.8, 0, "decor"),

@@ -49,7 +49,7 @@ func test_plan_is_whole() -> void:
 	check(copper.size() == 1 and float(copper[0].pos[1]) < 0.5, "its best chest is down in the mine room")
 	var models := props.map(func(p): return String(p.model).get_file().get_basename())
 	check(models.count("rail_track") >= 8 and models.count("mine_cart") >= 2, "rails and mine carts on the ledge")
-	# F911 (owner, Nov 26): the shaft's top ladder ends level with the collar's stone (box y 9), standing on steps
+	# F912 (owner, Nov 26): the shaft's top ladder ends level with the collar's stone (box y 9), standing on steps
 	var tops: Array = plan.pieces.filter(func(p): return p.id == "ladder").map(func(p): return snappedf(float(p.pos[1]) + 2.0, 0.01))
 	check(tops.has(9.0), "the shaft's top ladder ends level with the collar's stone (tops %s)" % [tops])
 	check(not tops.has(10.0), "no ladder sticks up 1 m over the collar")
