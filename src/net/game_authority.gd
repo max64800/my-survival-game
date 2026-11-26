@@ -977,6 +977,8 @@ func _ev_ruin_rebuilt(name: String) -> void:
 @rpc("authority", "call_local", "reliable")
 func _ev_stinger(name: String) -> void:
 	music_stinger.emit(name)
+	if name == "boss_defeated":
+		Sfx.ui("boss_cheer", -3.0)  # the dwarf's "Yeaah-hah-hah!" over the music (owner's pick, sound round 9, Nov 26)
 
 
 @rpc("authority", "call_local", "reliable")

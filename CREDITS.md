@@ -250,3 +250,4 @@ The new `refill_0..1` (lantern) replace the older refill rows above (heavy_swall
 | Monster.wav | anwul | https://freesound.org/s/185366/ | CC0 | ghost_boss_death_0 (round 8) |
 | crab walking | stuniverso | https://freesound.org/s/761559/ | CC0 | beetle_move_0 (round 8) |
 | Whoosh Short | FartCTO | https://freesound.org/s/789840/ | CC0 | swing_light_0 (round 8) |
+| Yeaah-hah-hah.wav | HenKonen | https://freesound.org/s/682138/ | CC0 | boss_cheer_0 (round 9: plays with the boss-defeated music) |

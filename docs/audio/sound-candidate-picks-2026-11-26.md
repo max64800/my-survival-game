@@ -32,7 +32,8 @@ Owner listened on the review pages and picked; all CC0 from Freesound (credits i
 | beetle_move | 761559 crab walking | round 8, MAYBE |
 | ghost_boss_death | 185366 Monster.wav | round 8, LOVE (the saved MAYBE) |
 | swing_light | 789840 Whoosh Short | round 8, MAYBE (sword, axe, mace, pickaxe swings) |
-| level_up | none yet | all NO in rounds 6, 7 and 8 (round 8: harp, choir, kalimba, drum, chant also NO): arcade jingles "too arcady"; anvil, bell, horn, singing bowl also NO |
+| boss_cheer | 682138 Yeaah-hah-hah.wav | round 9 LOVE: "this can be when you defeat the boss" (plays with the boss-defeated music) |
+| level_up | none yet | all NO in rounds 6-9 (round 9: dwarf voices, the other 7 also NO): arcade jingles "too arcady"; anvil, bell, horn, singing bowl also NO |
 
 Saved for later: 320521 "Unsheathed blade" (owner liked it, no use yet).
 
