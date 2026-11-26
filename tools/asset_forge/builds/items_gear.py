@@ -6,7 +6,9 @@ import shutil
 import sys
 from pathlib import Path
 
+import bmesh
 import bpy
+from mathutils import Matrix
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import kit  # noqa: E402
@@ -108,6 +110,223 @@ def boots(set_):
 		if set_ == "shell":
 			shell_spiral((x, y - 0.09, 0.07), 0.035, rot=(70, 0, 0))
 			kit.ring(0.06, 0.016, (x, y + 0.02, 0.12), kit.tex_mat("stone", "c"), seg=14)
+
+
+# ---- Bronze: its own look (F697 step 7, owner picked Option B: assets/concepts/dwarf/dwarf_wearing_bronze_b.png) ----
+# Warm gold hammered plate, bold knot bands only on the rims, ONE big knot medallion on the chest.
+# Textures cut from a painted sheet by tools/art/cut_bronze_textures.py.
+kit.TILE.update({"bronzeplate": 0.2, "bronzeknot": 1.0, "bronzemedal": 1.0})
+
+
+def bz(variant=None):
+	return kit.tex_mat("bronzeplate", variant, metal=0.6, rough=0.42)
+
+
+def ellipse_loop(cx, cy, rx, ry, n=28):
+	return [(cx + rx * math.cos(2 * math.pi * i / n), cy + ry * math.sin(2 * math.pi * i / n)) for i in range(n)]
+
+
+def rrect_loop(cx, cy, hx, hy, rc, steps=5):
+	"""A rounded rectangle, counter-clockwise seen from above."""
+	pts = []
+	for k, (sx, sy) in enumerate(((1, -1), (1, 1), (-1, 1), (-1, -1))):
+		ox, oy = cx + sx * (hx - rc), cy + sy * (hy - rc)
+		for j in range(steps):
+			a = math.radians(-90 + 90 * k + 90 * j / (steps - 1))
+			pts.append((ox + rc * math.cos(a), oy + rc * math.sin(a)))
+	return pts
+
+
+def knot_band(loop, z0, z1, thick=0.02, variant="a"):
+	"""A rim band with the knot pattern running round it (the strip repeats a whole number of times, so no seam)."""
+	m = kit.tex_mat("bronzeknot", variant, metal=0.6, rough=0.42)
+	n = len(loop)
+	inner = []
+	for i, (x, y) in enumerate(loop):
+		(xa, ya), (xb, yb) = loop[i - 1], loop[(i + 1) % n]
+		tx, ty = xb - xa, yb - ya
+		ln = math.hypot(tx, ty)
+		inner.append((x - ty / ln * thick, y + tx / ln * thick))
+	seg = [math.dist(loop[i], loop[(i + 1) % n]) for i in range(n)]
+	reps = max(1, round(sum(seg) / ((z1 - z0) * 4)))  # the strip picture is 4x wider than tall
+	us = [0.0]
+	for s in seg:
+		us.append(us[-1] + s / sum(seg) * reps)
+	bm = bmesh.new()
+	ob = [bm.verts.new((x, y, z0)) for x, y in loop]
+	ot = [bm.verts.new((x, y, z1)) for x, y in loop]
+	ib = [bm.verts.new((x, y, z0)) for x, y in inner]
+	it = [bm.verts.new((x, y, z1)) for x, y in inner]
+	uv = bm.loops.layers.uv.new("UVMap")
+	for i in range(n):
+		j = (i + 1) % n
+		u0, u1 = us[i], us[i + 1]
+		for vs, uvs in (
+			((ob[i], ob[j], ot[j], ot[i]), ((u0, 0), (u1, 0), (u1, 1), (u0, 1))),  # outside: the knots
+			((ib[j], ib[i], it[i], it[j]), ((u1, 0.03), (u0, 0.03), (u0, 0.0), (u1, 0.0))),  # inside: plain rim
+			((ot[i], ot[j], it[j], it[i]), ((u0, 0.99), (u1, 0.99), (u1, 0.97), (u0, 0.97))),  # top edge
+			((ib[i], ib[j], ob[j], ob[i]), ((u0, 0.03), (u1, 0.03), (u1, 0.01), (u0, 0.01))),  # bottom edge
+		):
+			f = bm.faces.new(vs)
+			for lp, c in zip(f.loops, uvs):
+				lp[uv].uv = c
+	me = bpy.data.meshes.new("knot_band")
+	bm.to_mesh(me)
+	bm.free()
+	o = bpy.data.objects.new("knot_band", me)
+	bpy.context.scene.collection.objects.link(o)
+	me.materials.append(m)
+	for p in me.polygons:
+		p.use_smooth = True
+	return o
+
+
+def medallion(loc, r, depth):
+	"""The big round knot medallion, facing front (-Y); its back sinks into the plate behind it."""
+	m = kit.tex_mat("bronzemedal", "a", metal=0.6, rough=0.4)
+	x, y, z = loc
+	n = 32
+	bm = bmesh.new()
+	ring = [(math.cos(2 * math.pi * i / n), math.sin(2 * math.pi * i / n)) for i in range(n)]
+	fr = [bm.verts.new((x + r * c, y, z + r * s)) for c, s in ring]
+	bk = [bm.verts.new((x + r * c, y + depth, z + r * s)) for c, s in ring]
+	fc, bc = bm.verts.new((x, y - depth * 0.15, z)), bm.verts.new((x, y + depth, z))  # front bulges a little
+	uv = bm.loops.layers.uv.new("UVMap")
+	tuv = [(0.5 + 0.47 * c, 0.5 + 0.47 * s) for c, s in ring]
+	for i in range(n):
+		j = (i + 1) % n
+		for vs, uvs in (((fc, fr[j], fr[i]), ((0.5, 0.5), tuv[j], tuv[i])),
+				((bc, bk[i], bk[j]), ((0.5, 0.5), tuv[i], tuv[j])),
+				((fr[i], fr[j], bk[j], bk[i]), (tuv[i], tuv[j], tuv[j], tuv[i]))):
+			f = bm.faces.new(vs)
+			for lp, c in zip(f.loops, uvs):
+				lp[uv].uv = c
+	bm.normal_update()
+	me = bpy.data.meshes.new("medallion")
+	bm.to_mesh(me)
+	bm.free()
+	o = bpy.data.objects.new("medallion", me)
+	bpy.context.scene.collection.objects.link(o)
+	me.materials.append(m)
+	return o
+
+
+def crest(cz, ry, rz, w=0.03, up=0.028):
+	"""A thick ridge running front to back over a helmet dome (follows the dome, ends sink into it)."""
+	verts, faces, k = [], [], 14
+	for i in range(k + 1):
+		t = 0.25 + (math.pi - 0.5) * i / k
+		y, z = -ry * math.cos(t), cz + rz * math.sin(t)
+		ny, nz = y / ry ** 2, (z - cz) / rz ** 2
+		ln = math.hypot(ny, nz)
+		ny, nz = ny / ln, nz / ln
+		for sx in (-1, 1):
+			for d in (-0.012, up):
+				verts.append((sx * w / 2, y + ny * d, z + nz * d))
+	for i in range(k):
+		a, b = 4 * i, 4 * (i + 1)
+		faces += [(a + 1, a + 3, b + 3, b + 1), (a, b, b + 2, a + 2), (a + 2, b + 2, b + 3, a + 3), (a, a + 1, b + 1, b)]
+	faces += [(0, 2, 3, 1), (4 * k, 4 * k + 1, 4 * k + 3, 4 * k + 2)]
+	o = kit._mesh_obj("crest", verts, faces, bz("a"), smooth=False)
+	bpy.context.view_layer.objects.active = o
+	o.select_set(True)
+	bpy.ops.object.mode_set(mode="EDIT")
+	bpy.ops.mesh.select_all(action="SELECT")
+	bpy.ops.mesh.normals_make_consistent(inside=False)
+	bpy.ops.object.mode_set(mode="OBJECT")
+	return o
+
+
+def front_dome(loc, r, h, material):
+	"""A dome bulging forward (-Y): knee cups, toe caps. (dome() bakes its spot into the mesh, so turn it about loc.)"""
+	o = dome(loc, r, h, material)
+	t = Matrix.Translation(loc)
+	o.data.transform(t @ Matrix.Rotation(math.radians(90), 4, "X") @ t.inverted())
+	return o
+
+
+def shell_arc(rx, ry, a0, a1, z0, z1, thick, material, n=8):
+	"""A curved plate that follows a round rim (cheek and nose guards); a0..a1 in degrees, -90 = front."""
+	verts, faces = [], []
+	for i in range(n + 1):
+		a = math.radians(a0 + (a1 - a0) * i / n)
+		c, s_ = math.cos(a), math.sin(a)
+		for d in (0, thick):
+			verts += [((rx + d) * c, (ry + d) * s_, z0), ((rx + d) * c, (ry + d) * s_, z1)]
+	for i in range(n):
+		a, b = 4 * i, 4 * (i + 1)
+		faces += [(a + 2, b + 2, b + 3, a + 3), (a, a + 1, b + 1, b), (a + 1, a + 3, b + 3, b + 1), (a, b, b + 2, a + 2)]
+	faces += [(0, 2, 3, 1), (4 * n, 4 * n + 1, 4 * n + 3, 4 * n + 2)]
+	o = kit._mesh_obj("guard", verts, faces, material, smooth=True)
+	bpy.context.view_layer.objects.active = o
+	o.select_set(True)
+	bpy.ops.object.mode_set(mode="EDIT")
+	bpy.ops.mesh.select_all(action="SELECT")
+	bpy.ops.mesh.normals_make_consistent(inside=False)
+	bpy.ops.object.mode_set(mode="OBJECT")
+	o.select_set(False)
+	return o
+
+
+def helm_bronze():
+	cz, r, h = 0.05, 0.14, 0.19  # a taller dome than the copper helm
+	dome((0, 0, cz), r, h, bz("a"))
+	knot_band(ellipse_loop(0, 0, r + 0.008, r * 1.08 + 0.008), 0.03, 0.085, variant="a")
+	crest(cz, r * 1.08, h)
+	rx, ry = r + 0.004, r * 1.08 + 0.004  # guards bite 4 mm into the rim band (touching, never floating)
+	shell_arc(rx, ry, -97, -83, 0.0, 0.135, 0.02, bz("c"), n=3)  # nose guard
+	for s in (-1, 1):
+		mid = -90 + s * 55
+		shell_arc(rx, ry, mid - 17, mid + 17, 0.0, 0.1, 0.018, bz("b"))  # cheek guards
+		a = math.radians(mid)
+		kit.rivet(((rx + 0.02) * math.cos(a), (ry + 0.02) * math.sin(a), 0.05), bz("dark"), r=0.011)
+	for k in range(10):
+		a = 2 * math.pi * (k + 0.5) / 10
+		kit.rivet((math.cos(a) * 0.136, math.sin(a) * 0.147, 0.1), bz("dark"), r=0.01)
+
+
+def mail_bronze():
+	kit.taper(0.34, 0.2, 0.42, 0.22, 0.4, (0, 0, 0.0), bz("a"), bevel=0.03)
+	knot_band(rrect_loop(0, 0, 0.178, 0.108, 0.04), 0.0, 0.06, variant="b")  # bottom rim
+	knot_band(rrect_loop(0, 0, 0.213, 0.118, 0.04), 0.345, 0.395, variant="b")  # neck rim
+	kit.tbox("leather", (0.36, 0.23, 0.045), (0, 0, 0.115), variant="dark", bevel=0.01)  # belt
+	kit.box((0.05, 0.02, 0.045), (0, -0.12, 0.115), bz("dark"), bevel=0.006, wobble=0)  # buckle
+	medallion((0, -0.128, 0.25), 0.082, 0.03)
+	for s in (-1, 1):
+		dome((s * 0.19, 0, 0.38), 0.11, 0.09, bz("c"))  # big domed shoulder plates
+		knot_band(ellipse_loop(s * 0.19, 0, 0.113, 0.11 * 1.08 + 0.003, n=24), 0.37, 0.405, thick=0.015, variant="c")
+		for dy in (-0.05, 0.05):
+			kit.rivet((s * 0.19, dy, 0.462), bz("dark"), r=0.011)
+
+
+def greaves_bronze():
+	kit.tbox("leather", (0.34, 0.16, 0.08), (0, 0, 0.36), variant="dark", bevel=0.015)
+	knot_band(rrect_loop(0, 0, 0.176, 0.086, 0.03), 0.335, 0.385, variant="a")  # knot band round the top
+	for s in (-1, 1):
+		x = s * 0.085
+		kit.cone(0.08, 0.065, 0.34, (x, 0, 0.17), kit.tex_mat("leather", "b"), verts=12, bevel=0.01)  # padded leg
+		knot_band(ellipse_loop(x, 0, 0.085, 0.085, n=20), 0.0, 0.04, thick=0.015, variant="a")  # ankle rim
+		shin = kit.cone(0.076, 0.07, 0.15, (x, -0.02, 0.115), bz("a"), verts=12, bevel=0.008)
+		shin.scale = (1, 0.7, 1)
+		thigh = kit.cone(0.072, 0.067, 0.07, (x, -0.02, 0.29), bz("b"), verts=12, bevel=0.008)
+		thigh.scale = (1, 0.7, 1)
+		front_dome((x, -0.062, 0.215), 0.05, 0.024, bz("c"))  # round knee cup
+		for sx in (-1, 1):
+			kit.rivet((x + sx * 0.03, -0.074, 0.15), bz("dark"), r=0.009)
+
+
+def boots_bronze():
+	for s in (-1, 1):
+		x, y = s * 0.056, s * 0.04  # pair stands together, one a little ahead (as the other boots)
+		kit.tbox("leather", (0.11, 0.232, 0.032), (x, y - 0.04, 0.016), variant="dark", bevel=0.008)  # thick sole
+		for k in range(4):  # tread ridges on the sole's sides
+			kit.tbox("leather", (0.116, 0.012, 0.014), (x, y - 0.13 + k * 0.06, 0.012), variant="dark", bevel=0.003)
+		kit.tbox("leather", (0.1, 0.22, 0.065), (x, y - 0.04, 0.062), variant="b", bevel=0.03)
+		kit.tcyl("leather", 0.055, 0.16, (x, y + 0.02, 0.17), verts=12)
+		kit.ring(0.058, 0.014, (x, y + 0.02, 0.25), kit.tex_mat("leather", "dark"), seg=14)
+		knot_band(ellipse_loop(x, y + 0.02, 0.059, 0.059, n=18), 0.1, 0.145, thick=0.012, variant="c")  # ankle band
+		front_dome((x, y - 0.13, 0.058), 0.054, 0.03, bz("b"))  # thick toe cap
+		kit.rivet((x, y - 0.158, 0.075), bz("dark"), r=0.01)
 
 
 def satchel():
@@ -229,9 +448,8 @@ BUILD = {
 	"plate_shell": lambda: chest_armor("shell"),
 	"trousers_leather": lambda: legs("leather"), "greaves_copper": lambda: legs("copper"), "greaves_shell": lambda: legs("shell"),
 	"boots_leather": lambda: boots("leather"), "boots_copper": lambda: boots("copper"), "boots_shell": lambda: boots("shell"),
-	# bronze = the copper pieces repainted (F697 step 4; own bronze models later)
-	"helm_bronze": lambda: helm("bronze"), "mail_bronze": lambda: chest_armor("bronze"),
-	"greaves_bronze": lambda: legs("bronze"), "boots_bronze": lambda: boots("bronze"),
+	# bronze has its own pieces (F697 step 7, Option B look)
+	"helm_bronze": helm_bronze, "mail_bronze": mail_bronze, "greaves_bronze": greaves_bronze, "boots_bronze": boots_bronze,
 }
 
 ids = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []

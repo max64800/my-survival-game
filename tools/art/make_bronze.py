@@ -6,7 +6,7 @@
                                                    (F894: silver made duller, darker and a little blue-grey)
 
 The Blender builds (items_tools.py, items_gear.py, items_materials.py) then paint "bronze" parts with the new textures.
-Later (plan step 7) bronze gets its own models; then this script is only for the textures.
+Plan step 7 (Nov 26): the 4 armour pieces have their own models now (items_gear.py helm_bronze etc.); the rest still come from here.
 """
 import sys
 from pathlib import Path
@@ -22,7 +22,8 @@ HUE_SHIFT = 12.0 / 360.0   # copper orange (~20 deg) -> bronze gold-brown (~32 d
 SAT = 0.95
 VAL = 0.9                  # a little darker than copper
 # copper icon -> bronze icon (same picture, the metal repainted)
-ICON_IDS = ["helm", "mail", "greaves", "boots", "shield", "crossbow", "spear", "axe", "sword", "mace",
+# (helm, mail, greaves, boots have their own painted icons now: tools/art/cut_bronze_armour_icons.py, F697 step 7)
+ICON_IDS = ["shield", "crossbow", "spear", "axe", "sword", "mace",
 	"axe_2h", "mace_2h", "pickaxe"]
 
 

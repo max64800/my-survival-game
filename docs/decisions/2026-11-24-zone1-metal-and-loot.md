@@ -119,4 +119,9 @@ Signposts are drawn from the world seed, so every player sees the same ones. Not
    Tests: test_dungeon_list (bronze order, every built dungeon teaches bronze), test_dungeon (the pickaxe page in the chest).
 6. **Skull signposts** (new model, art round, owner OK), with the recipe picture and the "learned" tick.
 7. **Own bronze models** (later, small batches).
+   Nov 26 (bronze models chat): owner's picks: first batch = the 4 armour pieces, BOTH the ground items and a
+   hand-built worn set on the dwarf; bronze = warmer gold + bold engraved knot patterns. Picture **Option B** chosen
+   (`assets/concepts/dwarf/dwarf_wearing_bronze_b.png`: tall ridged helm with cheek + nose guards, big domed shoulder
+   plates, ONE big knot medallion on the chest, knot bands only on rims, round knee cups, thick bronze toe caps).
+   Option A (`dwarf_wearing_bronze_a.png`, knot bands everywhere) not used.
 8. Add new ruins (F740) and move the doubled copper recipes onto them.
