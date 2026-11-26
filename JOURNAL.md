@@ -13967,3 +13967,11 @@ growth out with a test).
     WebGL pages.
   - The "Along the gallery" camera was too close at first (you couldn't see the gallery); pulled it back.
 - Next: the owner's OK on the shapes, then step 2, `_cliff_galleries()` in the blueprint library (new chat).
+
+
+## 2026-11-26: Ruin 13 Cliff Galleries turned to brick (F913)
+- The owner looked at the shape page and said "change wood to brick and build it". Every wooden part (upper storeys,
+  bridge, cliff stairs, gallery, tower top, shed top) is now Hearthbrick brick with clay tile roofs; only the hoist
+  arm stays timber. Page v2 at the same link; plan updated (`docs/design/ruin13/CLIFF-GALLERIES-PLAN.md`).
+- Noted in the plan: ruin 11 (Brickcrown) is stone + brick too, so this one must look different (cliff, ledges, galleries).
+- Building it (blueprint, tests, ruin page, ruin in the game) is a big multi-step job, so it goes to a new chat.
