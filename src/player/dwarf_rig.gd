@@ -1251,6 +1251,7 @@ const ARMOR := {
 ## The game's leather items use the look "leather": that is the Hide set (docs/design/armor.md).
 const ARMOR_FILES := {
 	"hide": "res://assets/characters/dwarf/armor_hide.glb", "leather": "res://assets/characters/dwarf/armor_hide.glb",
+	"copper": "res://assets/characters/dwarf/armor_copper.glb",  # (F914: the Hide set's shapes with copper plates)
 }
 var _bind_poses := []  ## every bone as the body was built (set by _wear_body)
 var _model_to_skel := Transform3D()

@@ -214,10 +214,17 @@ func test_hand_built_body_fits_the_skeleton() -> void:
 	holder.free()
 
 
-## The hand-built Hide armor (F55) goes on the body's skeleton: every bone it uses exists, all three pieces show, and
-## the helmet swaps in the hat-hair head (and gives the normal one back when taken off).
+## The hand-built armor sets (F55 Hide, F914 copper: every set made by the same recipe) go on the body's skeleton:
+## every bone they use exists, all three pieces show, and the helmet swaps in the hat-hair head (and gives the normal
+## one back when taken off).
 func test_hand_built_armor_fits_the_body() -> void:
-	if not ResourceLoader.exists(DwarfRig.BODY) or not ResourceLoader.exists(DwarfRig.ARMOR_FILES["hide"]):
+	for look: String in ["leather", "copper"]:
+		await _armor_set_fits(look)
+
+
+func _armor_set_fits(look: String) -> void:
+	if not ResourceLoader.exists(DwarfRig.BODY) or not ResourceLoader.exists(DwarfRig.ARMOR_FILES[look]):
+		check(look != "copper", "the copper set's file is there (tools/asset_forge/builds/dwarf_armor.py copper)")
 		return
 	var holder := Node3D.new()
 	tree.root.add_child(holder)
@@ -225,21 +232,25 @@ func test_hand_built_armor_fits_the_body() -> void:
 	rig.use_body = true
 	holder.add_child(rig)
 	rig.build(Color(0.6, 0.45, 0.3))
-	rig.set_wear(["armor_head_leather", "armor_chest_leather", "armor_feet_leather"])
+	rig.set_wear(["armor_head_%s" % look, "armor_chest_%s" % look, "armor_feet_%s" % look])
 	var pieces := {}
 	var bad := []
+	var parts := {}
 	for mi: MeshInstance3D in rig.skeleton.find_children("armor_*", "MeshInstance3D", true, false):
 		pieces[String(mi.name).split("_")[1]] = true
+		parts[String(mi.name).get_slice("_", 2)] = true
 		check(mi.skin != null, "%s has its bones" % mi.name)
 		for b in mi.skin.get_bind_count():
 			if rig.skeleton.find_bone(String(mi.skin.get_bind_name(b))) < 0:
 				bad.append(String(mi.skin.get_bind_name(b)))
-	check(pieces.has("head") and pieces.has("chest") and pieces.has("feet"), "helmet, jerkin and boots are worn (%s)" % [pieces.keys()])
-	check(bad.is_empty(), "every bone the armor uses exists in the game skeleton (missing: %s)" % [bad])
+	check(pieces.has("head") and pieces.has("chest") and pieces.has("feet"), "%s: helmet, chest and boots are worn (%s)" % [look, pieces.keys()])
+	if look == "copper":
+		check(parts.has("plate") and parts.has("leather"), "copper: metal plates over the leather (parts: %s)" % [parts.keys()])
+	check(bad.is_empty(), "%s: every bone the armor uses exists in the game skeleton (missing: %s)" % [look, bad])
 	var head := rig._body_head
 	check(head != null and not head.visible, "with the helmet on, the normal head is swapped for the hat-hair one")
 	check(rig._body_root.position.y * rig.scale.y > 0.01, "with boots on he stands on their soles (owner, Nov 18: feet sank into the ground)")
-	rig.set_wear(["armor_chest_leather"])
+	rig.set_wear(["armor_chest_%s" % look])
 	check(head != null and head.visible, "helmet off: the normal head (and his wild hair) is back")
 	check(is_zero_approx(rig._body_root.position.y), "boots off: his bare feet are back on the floor")
 	await frames(1)
