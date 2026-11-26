@@ -741,6 +741,9 @@ func start_game(p_seed: int, snap: Dictionary = {}, save: Dictionary = {}) -> vo
 		# The Mine-head Works (owner, Nov 25, F899), the same way. Robots: only with minecheck.
 		if not dungeon_test and (not _robot_run or OS.get_cmdline_user_args().has("minecheck")):
 			authority.world_state["minehead"] = "pending"
+		# The Cliff Galleries (owner, Nov 26, F913), the same way. Robots: only with cliffcheck.
+		if not dungeon_test and (not _robot_run or OS.get_cmdline_user_args().has("cliffcheck")):
+			authority.world_state["cliff_galleries"] = "pending"
 		if ruin_test == "tower":  # a ruin test world: only its ruin (RuinTests)
 			authority.add_child(RuinTower.new(authority))
 		elif ruin_test != "":
@@ -763,6 +766,8 @@ func start_game(p_seed: int, snap: Dictionary = {}, save: Dictionary = {}) -> vo
 		authority.add_child(RuinSmeltery.new(authority))
 	if authority.is_host() and authority.world_state.has("minehead"):
 		authority.add_child(RuinMinehead.new(authority))
+	if authority.is_host() and authority.world_state.has("cliff_galleries"):
+		authority.add_child(RuinCliffGalleries.new(authority))
 	if _jungle_kit:
 		# Test kit: what you'd have after beating Orrumhal and Brask.
 		var kit := authority.get_player(me).inventory

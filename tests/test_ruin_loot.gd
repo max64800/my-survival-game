@@ -32,7 +32,8 @@ func test_each_ruin_page_lands_in_a_chest_that_spawns() -> void:
 	# The ruins the game builds (main.gd), by the name each one saves as (RuinTower.ruin_name).
 	var built := {tower = RuinTower.PLAN, outpost = RuinOutpost.OUTPOST_PLAN, brewhall = RuinBrewhall.PLAN_PATH,
 		spire = RuinSpire.PLAN_PATH, manor = RuinManor.PLAN_PATH, prow_hall = RuinProwHall.PLAN_PATH, twin_gate = RuinTwinGate.PLAN_PATH, smeltery = RuinSmeltery.PLAN_PATH,
-		minehead = RuinMinehead.PLAN_PATH}
+		minehead = RuinMinehead.PLAN_PATH,
+		cliff_galleries = RuinCliffGalleries.PLAN_PATH}
 	for ruin in Recipes.RUIN_COPPER:
 		if Recipes.RUIN_COPPER[ruin].is_empty():
 			continue

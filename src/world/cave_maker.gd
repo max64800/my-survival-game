@@ -303,6 +303,7 @@ var prow_hall_spot := {}  ## where the Prow Hall goes (F656 + F657; the same)
 var twin_gate_spot := {}  ## where the Twin Gate goes (F479 + F656 + F657; the same)
 var smeltery_spot := {}  ## where the Smeltery Terraces go (F845; the same)
 var minehead_spot := {}  ## where the Mine-head Works go (F899; the same)
+var cliff_galleries_spot := {}  ## where the Cliff Galleries go (F913; the same)
 var reserved: Array[Dictionary] = []  ## {pos, r, h}: a circle of ground (r wide), from pos.y up to pos.y + h
 var dungeons: Array[Dictionary] = []  ## layout 14: the dungeons dug into the rock (DungeonMap.place)
 
@@ -556,6 +557,17 @@ func _reserve_tower() -> void:
 					_cols[i] = Vector4(1.0e7, 1.0e7, _cols[i].z, _cols[i].w)
 		if not minehead_spot.is_empty():
 			reserve(minehead_spot.pos - Vector3(0, 9.5, 0), RuinMinehead.REACH + 3.0, RuinMinehead.HEIGHT + 11.5)  # (its shaft goes 8 m down)
+	# The Cliff Galleries (owner, Nov 26, F913): up a tall cavern's wall (after the Mine-head, whose cavern it leaves
+	# alone). No spot clear of the columns: like the Twin Gate.
+	if not RuinTower.load_plan(RuinCliffGalleries.PLAN_PATH).is_empty():
+		cliff_galleries_spot = RuinCliffGalleries.pick(self)
+		if cliff_galleries_spot.is_empty():
+			cliff_galleries_spot = RuinCliffGalleries.pick(self, true)
+			if not cliff_galleries_spot.is_empty():
+				for i in RuinCliffGalleries.columns_in(self, cliff_galleries_spot):
+					_cols[i] = Vector4(1.0e7, 1.0e7, _cols[i].z, _cols[i].w)
+		if not cliff_galleries_spot.is_empty():
+			reserve(cliff_galleries_spot.pos - Vector3(0, 6.5, 0), RuinCliffGalleries.REACH + 3.0, RuinCliffGalleries.HEIGHT + 6.5)  # (its crack goes 4.75 m down)
 
 
 ## Layout 8 (owner, Nov 17): 1 or 2 smaller stone columns (5 to 11 m wide) in the plain big caverns, the same kind as

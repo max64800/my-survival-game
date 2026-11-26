@@ -56,7 +56,8 @@ const RUIN_PLANS := {"tower": RuinTower.PLAN, "outpost": RuinOutpost.OUTPOST_PLA
 	"spire": RuinSpire.PLAN_PATH, "kiln": "res://blueprints/ruins/kiln_ruin.json",
 	"manor": RuinManor.PLAN_PATH, "prow_hall": RuinProwHall.PLAN_PATH,
 	"twin_gate": RuinTwinGate.PLAN_PATH, "smeltery": RuinSmeltery.PLAN_PATH,
-	"minehead": RuinMinehead.PLAN_PATH}
+	"minehead": RuinMinehead.PLAN_PATH,
+	"cliff_galleries": RuinCliffGalleries.PLAN_PATH}
 
 var auth: GameAuthority
 var props := {}          ## key -> {model, xform: Transform3D, label, node: StaticBody3D, inst: Node3D, looted: bool}

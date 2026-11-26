@@ -3830,6 +3830,9 @@ func _cg_cliff_stairs() -> void:
 	_wall_z("wall", 5, -10, 7.75, B)
 	_add("stairs", B, Vector3(6, 9.75, -10), 1)
 	_add("sloped_wall", B, Vector3(6, 9.75, -9), 2)
+	_add("sloped_wall", B, Vector3(8, 7.75, -11), 2)                       # the cliff side closed too (rule 1.13)
+	_wall_x("wall", 6, -11, 7.75, B)
+	_add("sloped_wall", B, Vector3(6, 9.75, -11), 2)
 	# --- the Hanging Gallery (11.75): x -7..5 along the face, railed, on brick posts on the hall's roof
 	for x in range(-6, 5, 2):
 		_add("floor", B, Vector3(x, 11.5, -10), 0)

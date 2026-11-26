@@ -304,6 +304,7 @@ const RUIN_COPPER := {
 	smeltery = [],
 	brickcrown = [],
 	minehead = [],
+	cliff_galleries = [],
 }
 
 
