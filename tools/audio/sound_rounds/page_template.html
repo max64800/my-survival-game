@@ -1,0 +1,85 @@
+<title>Dwarf Game Sound Candidates: Round 10</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alegreya+Sans+SC:wght@700;800&family=Inter:wght@400;500;600&display=swap">
+<style>
+/* Layout: one column of stone "drawers" per category; each sound is a card with play chips + vote buttons. Single deliberate dark cave look. */
+:root{--bg:#17140f;--panel:#221d16;--line:#3a3226;--fg:#efe6d6;--muted:#a99c86;--ember:#e89a3c;--like:#6fbf73;--nope:#d9604c;--maybe:#c9b25a;
+--display:"Alegreya Sans SC",Georgia,serif;--body:Inter,system-ui,sans-serif;color-scheme:dark}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);line-height:1.5}
+.wrap{max-width:980px;margin:0 auto;padding-block:28px 60px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+h1{font-family:var(--display);font-size:2.4rem;margin:0;letter-spacing:.02em;color:var(--ember);text-wrap:balance}
+h2{font-family:var(--display);font-size:1.5rem;margin:34px 0 12px;letter-spacing:.04em;text-wrap:balance}
+.lead{color:var(--muted);max-width:62ch;margin:6px 0 0}
+.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);border-bottom:1px solid var(--line);padding:12px 0;margin-top:18px;display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+.tally{display:flex;gap:14px;font-variant-numeric:tabular-nums;font-weight:600}
+.tally .l{color:var(--like)}.tally .n{color:var(--nope)}.tally .m{color:var(--maybe)}.tally .u{color:var(--muted)}
+.spacer{flex:1}
+button{font:inherit;cursor:pointer;border-radius:8px;border:1px solid var(--line);background:var(--panel);color:var(--fg);padding:6px 12px}
+button:hover{border-color:var(--ember)}
+button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--ember);outline-offset:2px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.card[data-v="like"]{border-color:var(--like)}.card[data-v="nope"]{border-color:var(--nope)}.card[data-v="maybe"]{border-color:var(--maybe)}
+.card h3{margin:0;font-size:.95rem;overflow-wrap:anywhere}
+.plays{display:flex;flex-wrap:wrap;gap:6px}
+.plays button.on{background:var(--ember);color:#1a130a;border-color:var(--ember)}
+.votes{display:flex;gap:6px}.votes button{flex:1;padding:6px 4px;font-size:.9rem}
+.votes button.like.sel{background:var(--like);color:#0f1a10;border-color:var(--like)}
+.votes button.maybe.sel{background:var(--maybe);color:#1a170a;border-color:var(--maybe)}
+.votes button.nope.sel{background:var(--nope);color:#1d0d0a;border-color:var(--nope)}
+input[type=text]{font:inherit;font-size:.88rem;background:var(--bg);color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:6px 8px;width:100%;box-sizing:border-box}
+textarea{width:100%;box-sizing:border-box;min-height:180px;background:var(--panel);color:var(--fg);border:1px solid var(--line);border-radius:10px;padding:12px;font-family:ui-monospace,monospace;font-size:.85rem}
+.copyrow{display:flex;gap:10px;align-items:center;margin-top:8px}#copied{color:var(--like);font-size:.9rem}
+.by{color:var(--muted);font-size:.8rem;margin:-6px 0 0}a{color:var(--ember)}
+.slothead{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:28px 0 4px}.slothead h2{margin:0;font-size:1.3rem}
+.cat{color:var(--ember);border-top:1px solid var(--line);padding-top:18px}
+.why{color:var(--muted);margin:4px 0 12px;max-width:70ch}
+</style>
+<div class="wrap">
+  <h1>Dwarf Game Sound Candidates: Round 10</h1>
+  <p class="lead">Round 10: 9 tries for the level-up sound in a new style: things from the mine (treasure chest, pickaxe, a key) and tiny tunes (flute, lute). I can cut any of them shorter in the game (say so in the note).</p>
+  <div class="bar"><div class="tally"><span class="l" id="tl">0 love</span><span class="m" id="tm">0 maybe</span><span class="n" id="tn">0 no</span><span class="u" id="tu">0 left</span></div>
+    <span class="spacer"></span><button id="filter" type="button">Show only unmarked</button></div>
+  <div id="cats"></div>
+  <h2>Your picks</h2>
+  <textarea id="out" readonly aria-label="Your picks as text"></textarea>
+  <div class="copyrow"><button id="copy" type="button">Copy my picks</button><span id="copied" hidden>Copied. Paste it to Claude.</span></div>
+</div>
+<script>
+const DATA=[{"id": "level_up", "cat": "Dwarf", "name": "Level up: mine sounds + tiny tunes", "when": "a skill goes up: coins, a treasure chest, a stone thunk, or a 1-2 s tune on a lute, flute or fiddle", "old": null, "cands": [{"id": "448458", "user": "Ninad_P", "title": "bansuri_flute_rag_jog.wav", "page": "https://freesound.org/people/Ninad_P/sounds/448458/", "file": "cand/r10/level_up/448458.mp3"}, {"id": "169447", "user": "Zajo", "title": "LifeSlipsAway.ogg", "page": "https://freesound.org/people/Zajo/sounds/169447/", "file": "cand/r10/level_up/169447.mp3"}, {"id": "130105", "user": "iut_Paris8", "title": "SimonLeNestour_2012_01.wav", "page": "https://freesound.org/people/iut_Paris8/sounds/130105/", "file": "cand/r10/level_up/130105.mp3"}, {"id": "771164", "user": "steprock", "title": "Treasure Chest Open", "page": "https://freesound.org/people/steprock/sounds/771164/", "file": "cand/r10/level_up/771164.mp3"}, {"id": "760567", "user": "NoisyRedFox", "title": "Pickaxe3", "page": "https://freesound.org/people/NoisyRedFox/sounds/760567/", "file": "cand/r10/level_up/760567.mp3"}, {"id": "245371", "user": "Zajo", "title": "when_my_work_is_finished_2.ogg", "page": "https://freesound.org/people/Zajo/sounds/245371/", "file": "cand/r10/level_up/245371.mp3"}, {"id": "202092", "user": "spookymodem", "title": "Chest Opening.wav", "page": "https://freesound.org/people/spookymodem/sounds/202092/", "file": "cand/r10/level_up/202092.mp3"}, {"id": "878615", "user": "Qvantor", "title": "Treasure Chest Reveal", "page": "https://freesound.org/people/Qvantor/sounds/878615/", "file": "cand/r10/level_up/878615.mp3"}, {"id": "459694", "user": "LilMati", "title": "Key Pickup", "page": "https://freesound.org/people/LilMati/sounds/459694/", "file": "cand/r10/level_up/459694.mp3"}]}];const KEY='dwarf-sound-cands-v10';
+let picks={};try{picks=JSON.parse(localStorage.getItem(KEY)||'{}')}catch(e){}
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(picks))}catch(e){}};
+const pk=(s,c)=>s.id+':'+c.id;
+let onlyOpen=false,audio=null,playingBtn=null;
+function stopAll(){if(audio)audio.pause();if(playingBtn)playingBtn.classList.remove('on')}
+function play(src,b){stopAll();audio=new Audio(src);playingBtn=b;b.classList.add('on');audio.onended=()=>b.classList.remove('on');audio.play().catch(()=>b.classList.remove('on'))}
+function btn(t,label,src){const b=document.createElement('button');b.type='button';b.textContent=t;b.setAttribute('aria-label',label);b.onclick=()=>play(src,b);return b}
+function render(){cats.innerHTML='';let last='';
+ DATA.forEach(s=>{const shown=s.cands.filter(c=>!onlyOpen||!(picks[pk(s,c)]&&picks[pk(s,c)].v));if(!shown.length)return;
+  if(s.cat!==last){last=s.cat;const h=document.createElement('h2');h.className='cat';h.textContent=s.cat;cats.appendChild(h)}
+  const sh=document.createElement('div');sh.className='slothead';const h=document.createElement('h2');h.textContent=s.name;sh.appendChild(h);
+  if(s.old)sh.appendChild(btn('▶ Old','Play the old '+s.name+' sound',s.old));else{const sp=document.createElement('span');sp.className='by';sp.textContent='(new: no sound today)';sh.appendChild(sp)}
+  cats.appendChild(sh);const w=document.createElement('p');w.className='why';w.textContent=s.when;cats.appendChild(w);
+  const g=document.createElement('div');g.className='grid';cats.appendChild(g);
+  shown.forEach(c=>{const key=pk(s,c),p=picks[key]||{};const el=document.createElement('div');el.className='card';if(p.v)el.dataset.v=p.v;
+   el.innerHTML='<h3></h3><p class="by"></p><div class="plays"></div><div class="votes"><button type="button" class="like">Love it</button><button type="button" class="maybe">Maybe</button><button type="button" class="nope">No</button></div><input type="text" placeholder="Note (optional): e.g. too long, use for the rat">';
+   el.querySelector('h3').textContent=c.title;const by=el.querySelector('.by');by.textContent='by '+c.user+' · ';
+   const a=document.createElement('a');a.href=c.page;a.target='_blank';a.rel='noopener';a.textContent='Freesound #'+c.id;by.appendChild(a);
+   el.querySelector('.plays').appendChild(btn('▶ Play','Play '+c.title,c.file));
+   el.querySelectorAll('.votes button').forEach(b=>{const v=b.className;if(p.v===v)b.classList.add('sel');
+    b.onclick=()=>{const cur=picks[key]||{};cur.v=cur.v===v?undefined:v;picks[key]=cur;save();render()}});
+   const n=el.querySelector('input');n.id='note-'+key.replace(':','-');n.setAttribute('aria-label','Note for '+c.title);n.value=p.note||'';
+   n.oninput=()=>{const cur=picks[key]||{};cur.note=n.value;picks[key]=cur;save();summary()};g.appendChild(el)})});
+ summary()}
+function summary(){const cnt={like:0,maybe:0,nope:0};let left=0;
+ DATA.forEach(s=>s.cands.forEach(c=>{const v=(picks[pk(s,c)]||{}).v;if(v)cnt[v]++;else left++}));
+ tl.textContent=cnt.like+' love';tm.textContent=cnt.maybe+' maybe';tn.textContent=cnt.nope+' no';tu.textContent=left+' left';
+ const lab={like:'LOVE',maybe:'MAYBE',nope:'NO'};const lines=['Sound candidate picks ROUND 10 (owner):'];
+ DATA.forEach(s=>{const l=s.cands.filter(c=>{const p=picks[pk(s,c)];return p&&(p.v||p.note)});if(!l.length)return;lines.push('',s.name+' ('+s.id+'):');
+  l.forEach(c=>{const p=picks[pk(s,c)];const note=(p.note||'').trim();lines.push(`- ${lab[p.v]||'NOTE'}: ${c.title} (freesound ${c.id})${note?': '+note:''}`)})});
+ out.value=lines.length>1?lines.join('\n'):'Mark some sounds above and your picks show up here.'}
+filter.onclick=()=>{onlyOpen=!onlyOpen;filter.textContent=onlyOpen?'Show all':'Show only unmarked';render()};
+copy.onclick=()=>{const ok=()=>{copied.hidden=false;setTimeout(()=>copied.hidden=true,2500)};navigator.clipboard.writeText(out.value).then(ok).catch(()=>{out.focus();out.select()})};
+render();
+</script>
