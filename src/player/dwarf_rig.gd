@@ -362,6 +362,8 @@ func _wear_body(path: String) -> void:
 		_bind_to_skeleton(mi)
 		if mi.name.begins_with("body_head"):
 			_body_head = mi
+		elif mi.name.begins_with("body_hand"):
+			_body_hands.append(mi)
 	src.free()
 	var head := skeleton.find_bone(_even.get("Head", "Head"))  # (the hair follows the unskewed head)
 	var heights := {}
@@ -1222,6 +1224,13 @@ func set_wear(ids: Array) -> void:
 		_cap.visible = not armored_head
 	if is_instance_valid(_body_head):
 		_body_head.visible = not hat_hair
+	# Hand-built gauntlets cover his whole hand: hide the bare hands under them (owner, Nov 26: "cover his hands").
+	var gloved := false
+	for id in _worn:
+		gloved = gloved or (is_instance_valid(_worn[id]) and _worn[id].has_meta("gauntlets"))
+	for hand: MeshInstance3D in _body_hands:
+		if is_instance_valid(hand):
+			hand.visible = not gloved
 	# Hand-built boots have soles under his feet: stand him on them (owner, Nov 18: "feet go deep into the ground").
 	var sole := 0.0
 	for id in _worn:
@@ -1256,6 +1265,7 @@ const ARMOR_FILES := {
 var _bind_poses := []  ## every bone as the body was built (set by _wear_body)
 var _model_to_skel := Transform3D()
 var _body_head: MeshInstance3D
+var _body_hands: Array[MeshInstance3D] = []
 var _body_root: Node3D  ## the whole visible dwarf (lifted onto boot soles)
 var _sole_y := 0.0      ## how far the boot soles lift him (in our own units)
 var _roll_lift := 0.0   ## how far he is lifted mid-roll (in our own units): see _lift_roll
@@ -1329,6 +1339,8 @@ func _wear_built_armor(slot: String, path: String) -> Node3D:
 	for mi: MeshInstance3D in found:
 		var hair := String(mi.name).begins_with("armor_head_hair")
 		_bind_to_skeleton(mi)
+		if String(mi.name).contains("gauntlet"):
+			holder.set_meta("gauntlets", true)
 		if hair:
 			holder.set_meta("hat_hair", true)
 			if is_instance_valid(_body_head):  # (painted with the normal head's pictures: same picture map)
