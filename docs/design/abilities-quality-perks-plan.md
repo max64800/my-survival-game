@@ -37,8 +37,8 @@ Build list for the PC. Every choice below is the owner's. Do the steps in this o
 - Main stat = damage (weapons), armor (armor), dig / chop power (tools).
 - **Crafting decides the starting colour, no luck:** Crafting 0-19 grey, 20-39 green, 40-59 blue, 60-79 purple,
   80+ gold. The crafter is whoever presses Craft (so a clan smith can make gold gear for friends).
-  **Open (ask the owner):** Crafting ★100 says "best quality possible on anything" and each Crafting level says
-  "better quality odds"; with no luck, Crafting 80 already gives gold, so both need new text.
+  **Crafting ★100 (owner, Nov 27): crafted gear comes out already fully upgraded (+3).** The per-level
+  "better quality odds" text in `Progression.SKILLS` changes to "closer to the next colour".
 - **Reforging (the other way up, for non-crafters):** upgrade an item to **+3**, then at the Anvil use **boss trophies**
   to reforge it: it goes back to **+0 and one colour higher**. Cost: grey→green 1 trophy, green→blue 2,
   blue→purple 3, purple→gold 4 (10 for a full climb). Any boss trophy counts.
