@@ -2,7 +2,7 @@
 #
 #   blender --background --factory-startup --python tools/asset_forge/builds/dwarf_armor.py -- <set> <out.glb> [fast] [review=<pic.png>]
 #
-# <set>: hide or copper (the SETS recipe below; docs/design/armor.md).
+# <set>: hide, copper or bronze (the SETS recipe below; docs/design/armor.md).
 #
 # ONE recipe for every metal set (F914, owner Nov 26: "we cannot do armor one by one"): a metal set is the hide set
 # with metal plates riveted on top of the leather (plate_shell: plates follow the leather, with gaps between them, a
@@ -358,6 +358,15 @@ SETS = {
 		# (round 4: the cloth and leather under the plates dark, so the gaps between plates read as deep shadow)
 		under=dict(base=(0.2, 0.12, 0.08), dark=(0.08, 0.045, 0.03), light=(0.3, 0.19, 0.12), strokes=0.1)),
 }
+# bronze (F914, Nov 27): the copper set's shapes, gold-brown bronze, finer hammering, dark green patina edges
+# (owner's picks; the helmet + chest + gauntlets come from copper_plate_armor.py metal=bronze, this file gives the legs
+# and boots). polish is a multiplier on the plate colour: ~patina / bronze.
+SETS["bronze"] = dict(SETS["copper"],
+	plate=dict(base=(0.85, 0.62, 0.32), dark=(0.4, 0.27, 0.11), light=(0.98, 0.82, 0.55), strokes=0.04,
+		picture=["textures/kit/bronze_a.png", 10.0], amount=0.15, metal=0.78, rough=0.22,
+		polish=(0.08, 0.22, 0.22), face=0.95),
+	rivet=dict(base=(0.06, 0.15, 0.1), dark=(0.03, 0.07, 0.05), light=(0.12, 0.25, 0.18), strokes=0.05,
+		picture=["textures/kit/bronze_a.png", 18.0], amount=0.2, metal=0.4, rough=0.55))
 if SET not in SETS:
 	raise SystemExit(f"ARMOR: no '{SET}' set (sets: {', '.join(SETS)})")
 RC = SETS[SET]

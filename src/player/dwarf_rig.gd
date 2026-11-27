@@ -1265,6 +1265,7 @@ const ARMOR := {
 const ARMOR_FILES := {
 	"hide": "res://assets/characters/dwarf/armor_hide.glb", "leather": "res://assets/characters/dwarf/armor_hide.glb",
 	"copper": "res://assets/characters/dwarf/armor_copper.glb",  # (F914: the Hide set's shapes with copper plates)
+	"bronze": "res://assets/characters/dwarf/armor_bronze.glb",  # (F914 bronze, Nov 27: same recipe, bronze colours)
 }
 ## F914 (Nov 26): which copper helmet + chest he wears. "plate" = the new hand-built hard plates
 ## (tools/asset_forge/builds/copper_plate_armor.py, with its gauntlets since Nov 27), "old" = the first hand-built set.
@@ -1272,6 +1273,9 @@ const ARMOR_FILES := {
 ## (The picture-to-3D test look was removed Nov 27 when the owner OK'd the plate set: its licence can't ship.)
 static var armor_look := "plate"
 const ARMOR_PLATE := "res://assets/characters/dwarf/armor_copper_plate.glb"
+## Every metal's hand-built plate helmet + chest (+ gauntlets): copper_plate_armor.py metal=<metal> (bronze Nov 27:
+## same shapes, smooth bronze, green patina edges, engraved bands). Legs and boots come from ARMOR_FILES.
+const ARMOR_PLATES := {"copper": ARMOR_PLATE, "bronze": "res://assets/characters/dwarf/armor_bronze_plate.glb"}
 var _bind_poses := []  ## every bone as the body was built (set by _wear_body)
 var _model_to_skel := Transform3D()
 var _body_head: MeshInstance3D
@@ -1295,8 +1299,8 @@ func _wear_armor(id: String) -> Node3D:
 		return null
 	if not _bind_poses.is_empty() and ARMOR_FILES.has(parts[2]) and ResourceLoader.exists(ARMOR_FILES[parts[2]]):
 		var made: Node3D = null
-		var look_file: String = {"plate": ARMOR_PLATE}.get(armor_look, "")
-		if look_file != "" and parts[2] == "copper" and parts[1] in ["head", "chest"] and ResourceLoader.exists(look_file):
+		var look_file: String = ARMOR_PLATES.get(parts[2], "") if armor_look == "plate" else ""
+		if look_file != "" and parts[1] in ["head", "chest"] and ResourceLoader.exists(look_file):
 			made = _wear_built_armor(parts[1], look_file)  # (the chest brings its gauntlets: armor_chest_gauntlet_*, Nov 27)
 		if not made:
 			made = _wear_built_armor(parts[1], ARMOR_FILES[parts[2]])

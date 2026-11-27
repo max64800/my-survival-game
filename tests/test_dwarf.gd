@@ -218,7 +218,7 @@ func test_hand_built_body_fits_the_skeleton() -> void:
 ## every bone they use exists, all three pieces show, and the helmet swaps in the hat-hair head (and gives the normal
 ## one back when taken off).
 func test_hand_built_armor_fits_the_body() -> void:
-	for look: String in ["leather", "copper"]:
+	for look: String in ["leather", "copper", "bronze"]:
 		await _armor_set_fits(look)
 
 
@@ -244,8 +244,8 @@ func _armor_set_fits(look: String) -> void:
 			if rig.skeleton.find_bone(String(mi.skin.get_bind_name(b))) < 0:
 				bad.append(String(mi.skin.get_bind_name(b)))
 	check(pieces.has("head") and pieces.has("chest") and pieces.has("feet"), "%s: helmet, chest and boots are worn (%s)" % [look, pieces.keys()])
-	if look == "copper":
-		check(parts.has("plate") and parts.has("leather"), "copper: metal plates over the leather (parts: %s)" % [parts.keys()])
+	if look in ["copper", "bronze"]:
+		check(parts.has("plate") and parts.has("leather"), "%s: metal plates over the leather (parts: %s)" % [look, parts.keys()])
 	check(bad.is_empty(), "%s: every bone the armor uses exists in the game skeleton (missing: %s)" % [look, bad])
 	var head := rig._body_head
 	check(head != null and not head.visible, "with the helmet on, the normal head is swapped for the hat-hair one")

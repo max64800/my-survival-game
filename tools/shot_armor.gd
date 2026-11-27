@@ -1,15 +1,14 @@
 extends SceneTree
-## Photographs the hand-built copper set (F914). Usage:
+## Photographs the hand-built plate sets (F914). Usage:
 ## godot --audio-driver Dummy --path . -s tools/shot_armor.gd -- claude=armor3d out=<file.png> [back=1] [side=1] [hand=1]
-
-const WEAR := ["armor_head_copper", "armor_chest_copper", "armor_legs_copper", "armor_feet_copper"]
+##     [metal=copper|bronze|both]  (both: copper on the left, bronze on the right)
 
 
 func _init() -> void:
 	_run.call_deferred()
 
 
-func _dwarf(x: float, look: String, turn: float) -> void:
+func _dwarf(x: float, look: String, turn: float, metal := "copper") -> void:
 	var holder := Node3D.new()
 	root.add_child(holder)
 	holder.position = Vector3(x, 0, 0)
@@ -19,7 +18,10 @@ func _dwarf(x: float, look: String, turn: float) -> void:
 	holder.add_child(rig)
 	rig.build(Color(0.6, 0.45, 0.3))
 	DwarfRig.armor_look = look
-	rig.set_wear(WEAR)
+	var wear: Array = []
+	for slot in ["head", "chest", "legs", "feet"]:
+		wear.append("armor_%s_%s" % [slot, metal])
+	rig.set_wear(wear)
 
 
 func _run() -> void:
@@ -27,12 +29,15 @@ func _run() -> void:
 	var back := false
 	var side := false  # (side=1: from his left, to see under the arms)
 	var hand := false  # (hand=1: close on his left hand and forearm, the gauntlet)
+	var metal := "copper"
 	for a in OS.get_cmdline_user_args():
 		if a.begins_with("out="):
 			out = a.trim_prefix("out=")
 		back = back or a == "back=1"
 		side = side or a == "side=1"
 		hand = hand or a == "hand=1"
+		if a.begins_with("metal="):
+			metal = a.trim_prefix("metal=")
 	root.size = Vector2i(1400, 1000)
 	var env := WorldEnvironment.new()
 	env.environment = Environment.new()
@@ -48,11 +53,16 @@ func _run() -> void:
 	var turn := 0.35 if back else PI + 0.35  # (he faces -Z)
 	if side:
 		turn = PI * 0.5
-	_dwarf(0.0, "plate", turn)  # (the picture-to-3D test that stood beside it was removed Nov 27)
 	var cam := Camera3D.new()
 	cam.fov = 30
 	root.add_child(cam)
-	cam.look_at_from_position(Vector3(0, 0.85, 3.0), Vector3(0, 0.72, 0))
+	if metal == "both":
+		_dwarf(-0.45, "plate", turn, "copper")
+		_dwarf(0.45, "plate", turn, "bronze")
+		cam.look_at_from_position(Vector3(0, 0.85, 3.6), Vector3(0, 0.72, 0))
+	else:
+		_dwarf(0.0, "plate", turn, metal)  # (the picture-to-3D test that stood beside it was removed Nov 27)
+		cam.look_at_from_position(Vector3(0, 0.85, 3.0), Vector3(0, 0.72, 0))
 	if hand:
 		cam.look_at_from_position(Vector3(0.75, 0.75, 1.3), Vector3(0.28, 0.5, 0))
 	for i in 40:

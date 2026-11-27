@@ -4,7 +4,12 @@
 # shows under the armpits and at the neck; the shoulders, helmet and back need a way better texture".
 #
 #   blender --background --factory-startup --python tools/asset_forge/builds/copper_plate_armor.py -- <out.glb>
-#       [review=<pic.png>] [angle=55]
+#       [review=<pic.png>] [angle=55] [metal=copper|bronze] [trim=black|gold]
+#
+# ONE recipe for every plate set (F914): metal=bronze (Nov 27, owner's picks) builds the SAME shapes with smooth
+# bronze (tools/art/make_bronze_plate.py: finer, half-deep dents, more shine), dark green patina edges, bands and
+# rivets, and engravings: a chain-of-diamonds band just inside every big plate's raised edge, round the collar, the
+# helmet's brow band, the forearm bands and the helmet's skirt (ENGRAVE below). Out: armor_bronze_plate.glb.
 #
 # How it is built (no clay/voxel shapes: rounds 1-4 of the old way looked "like Play-Doh"):
 #   * every plate is a thin sheet laid on him like a stiff sheet of metal: rays from inside him find his surface,
@@ -44,6 +49,11 @@ ARGS = sys.argv[sys.argv.index("--") + 1:]
 OUT = ARGS[0]
 OPT = dict(a.split("=", 1) for a in ARGS[1:] if "=" in a)
 ANGLE = float(OPT.get("angle", 55))
+METAL = OPT.get("metal", "copper")
+BRONZE = METAL == "bronze"
+ENGRAVE = BRONZE  # (engraved bands: bronze only; copper stays exactly as OK'd)
+ENG_W, ENG_GAP = 0.022, 0.004  # engraved band width, gap inside the raised edge (metres)
+ENG_BAND_MAX = 0.034  # (the tallest engraved strip on a band: collar, brow band, forearm bands)
 BODY = ROOT / "assets" / "characters" / "dwarf" / "dwarf_body.glb"
 TEXD = ROOT / "assets" / "textures" / "armor"
 TILE = 0.22  # metres of armour one hammered picture covers (~1.1 cm dents; round 14, owner picked "fine dents"
@@ -155,21 +165,21 @@ def image(name, path, colour=True):
 	return img
 
 
-HAM_COL = image("copper_hammered_col", TEXD / "copper_hammered_col.png")
-DARK = 0.8  # (round 12, owner: "make the entire texture a little bit darker")
+HAM_COL = image(f"{METAL}_hammered_col", TEXD / ("bronze_smooth_col.png" if BRONZE else "copper_hammered_col.png"))
+DARK = 0.8 if not BRONZE else 1.0  # (round 12, owner: "make the entire texture a little bit darker")
 _px = np.empty(len(HAM_COL.pixels), np.float32)
 HAM_COL.pixels.foreach_get(_px)
 _px = _px.reshape(-1, 4)
 _px[:, :3] *= DARK
 # (round 14, owner picked: a few green patina specks in the deepest dents, like the picture)
 _lum = _px[:, :3].mean(1)
-_pat = (_lum < np.percentile(_lum, 5)) & (np.random.default_rng(14).random(len(_lum)) < 0.55)
+_pat = (_lum < np.percentile(_lum, 5)) & (np.random.default_rng(14).random(len(_lum)) < (0.3 if BRONZE else 0.55))
 _px[_pat, :3] = _px[_pat, :3] * 0.45 + np.array([0.09, 0.2, 0.14]) * 0.55
 HAM_COL.pixels.foreach_set(_px.ravel())
-HAM_COL.filepath_raw = str(Path(tempfile.gettempdir()) / "copper_hammered_col.png")
+HAM_COL.filepath_raw = str(Path(tempfile.gettempdir()) / f"{METAL}_hammered_col.png")
 HAM_COL.file_format = "PNG"
 HAM_COL.save()
-HAM_NRM = image("copper_hammered_nrm", TEXD / "copper_hammered_nrm.png", False)
+HAM_NRM = image(f"{METAL}_hammered_nrm", TEXD / ("bronze_smooth_nrm.png" if BRONZE else "copper_hammered_nrm.png"), False)
 
 
 def material(name, rgb, metal, rough, col_img=None, nrm_img=None, nrm=1.0):
@@ -195,16 +205,35 @@ def material(name, rgb, metal, rough, col_img=None, nrm_img=None, nrm=1.0):
 	return m
 
 
-M_HAM = material("copper_hammered", (0.75, 0.38, 0.2), 0.72, 0.24, HAM_COL, HAM_NRM, 0.55)  # (round 14, owner: the picture
+M_HAM = (material("bronze_smooth", (0.86, 0.62, 0.32), 0.7, 0.22, HAM_COL, HAM_NRM, 0.45) if BRONZE else  # (bronze:
+	# owner picked "smoother, a bit more shine")
+	material("copper_hammered", (0.75, 0.38, 0.2), 0.72, 0.24, HAM_COL, HAM_NRM, 0.55))  # (round 14, owner: the picture
 # "definitely has a shine": smoother (rough 0.36 -> 0.24), shallower dents (normal 0.9 -> 0.55); metal 0.72 keeps the
 # copper colour: at 0.85 + rough 0.2 it mirrored the dark room and turned grey)
 TRIM, TRIM_MET, TRIM_ROUGH = {"black": ((0.035, 0.022, 0.015), 0.35, 0.8),
-	"gold": ((0.5, 0.33, 0.06), 0.6, 0.5)}[OPT.get("trim", "black")]  # (round 17: trim=black|gold for the page;
+	"gold": ((0.5, 0.33, 0.06), 0.6, 0.5),
+	"patina": ((0.012, 0.034, 0.022), 0.2, 0.85)}[OPT.get("trim", "patina" if BRONZE else "black")]  # (bronze, Nov 27,
+# owner picked "dark green patina" for the edges, bands and rivets)  # (round 17: trim=black|gold for the page;
 # owner picked black. Gold round 2: (0.17, 0.085, 0.016) fully matte was "too brown", so yellower with a soft sheen)
-M_POL = material("copper_trim_dark", TRIM, TRIM_MET, TRIM_ROUGH)  # (the raised borders, edges and bands; round 16,
+M_POL = material(f"{METAL}_trim_dark", TRIM, TRIM_MET, TRIM_ROUGH)  # (the raised borders, edges and bands; round 16,
 # owner: "make them darker, not as shiny, matte, maybe even black": near-black matte; was rubbed-bright copper)
 # (round 6 had (0.86, 0.47, 0.27), metal 0.9: in the game it mirrored the grey room and showed silver; the picture's are copper)
-M_RIV = material("copper_rivet", (0.7, 0.3, 0.13), 0.72, 0.2)
+M_RIV = (material("bronze_rivet", (0.02, 0.055, 0.036), 0.3, 0.7) if BRONZE else  # (patina, a little lighter + shinier
+	# than the edges so the domes still catch the light)
+	material("copper_rivet", (0.7, 0.3, 0.13), 0.72, 0.2))
+# the engraved bands (bronze): the strip picture (grooves with green patina in them) along each band, index ENG
+ENG = 3
+M_ENG = (material("bronze_engraved", (0.86, 0.62, 0.32), 0.6, 0.3, image("bronze_engrave_col", TEXD / "bronze_engrave_col.png"),
+	image("bronze_engrave_nrm", TEXD / "bronze_engrave_nrm.png", False), 0.9) if ENGRAVE else None)
+
+
+def mats(*ms):
+	"""A mesh's materials, with the engraved one at index ENG (slots in between repeat the edge colour, so the
+	solidify rims, which take the next slot, stay edge-coloured)."""
+	ms = list(ms)
+	if ENGRAVE:
+		ms += [M_POL] * (ENG - len(ms)) + [M_ENG]
+	return ms
 QUILT = TEXD / "hide2_quilted.png"
 M_LEA = material("leather_dark", (0.03, 0.018, 0.011), 0.0, 1.0)  # (linear colour: 0.17 showed light grey-brown)  # (plain: his shirt's picture layout made blotches)
 BELT = TEXD / "hide2_belt.png"
@@ -228,8 +257,30 @@ PARTS = {}  # object name -> list of (points, faces, uvs, material per face)
 RIVETS = {}  # object name -> list of (point, outward)
 
 
-def add(group, P, F, UV, MI):
-	PARTS.setdefault(group, []).append((np.asarray(P, float), F, np.asarray(UV, float), MI))
+def add(group, P, F, UV, MI, FUV=None):
+	"""FUV: {face number: [uv per corner]} for faces whose picture runs its own way (the engraved strips)."""
+	PARTS.setdefault(group, []).append((np.asarray(P, float), F, np.asarray(UV, float), MI, FUV or {}))
+
+
+def strip_uv(P0, P1, closed, K=None):
+	"""Corner UVs for a strip of quads between two rows of points (P0 inner/lower row, P1 outer/upper row, same
+	length): u runs along it (one strip picture per 4 band widths, a whole number of repeats round a closed loop),
+	v = 0 on row 0, 1 on row 1. Returns {j: 4 corner uvs} for the quad (j, j+1, j+1 on row 1, j on row 1)."""
+	mid = (P0 + P1) / 2
+	width = float(np.median(np.linalg.norm(P1 - P0, axis=-1)))
+	seg = np.linalg.norm(np.roll(mid, -1, 0) - mid, axis=-1)
+	if not closed:
+		seg = seg[:-1]
+	s_ = np.concatenate([[0.0], np.cumsum(seg)])
+	L = s_[-1]
+	rep = 4 * max(width, 1e-4)
+	k = max(1, round(L / rep)) if closed else L / rep
+	u = s_ / max(L, 1e-9) * k
+	out = {}
+	for j in range(len(P0) if closed else len(P0) - 1):
+		a, b = u[j], u[j + 1]
+		out[j] = [(a, 0.0), (b, 0.0), (b, 1.0), (a, 1.0)]
+	return out
 
 
 def lay(origins, dirs, target, off, far=0.45, fill=None):
@@ -266,7 +317,7 @@ def stiffen(D, ring=True, passes=(3, 8), lift=0.0015):
 
 def plate(group, ray, hw, hh, *, off=0.016, border=0.011, step=0.0035, dome=0.002, pexp=5.0, point=0.0,
 		target=None, flat=None, rivets=(45, 135, 225, 315), riv_size=0.0055, hole=0.0, keep_min=None, stiff=(3, 8), rigid=False, top_wide=0.0,
-		nsp=64):
+		nsp=64, engrave=True):
 	"""One plate: a rounded rectangle hw x hh (half sizes, metres) laid on target along ray(U, V) -> (origin, dir).
 	point: how far its bottom edge dips in the middle (a pointed lower edge, like the picture's breastplate and skirt).
 	flat: (z_top, flare) for skirt plates: one straight cone (doesn't follow his legs), flaring out going down.
@@ -280,8 +331,21 @@ def plate(group, ray, hw, hh, *, off=0.016, border=0.011, step=0.0035, dome=0.00
 	NSP = nsp  # (points round the edge; the gauntlets' small finger plates use fewer)
 	psi =np.linspace(0, 2 * np.pi, NSP, endpoint=False)
 	rb = 1 / ((np.abs(np.cos(psi)) / hw) ** pexp + (np.abs(np.sin(psi)) / hh) ** pexp) ** (1 / pexp)
-	U = T[:, None] * rb * np.cos(psi)
-	V = T[:, None] * rb * np.sin(psi)
+	TM = T[:, None] * np.ones((1, NSP))  # (each ring's size, per point round it)
+	eng_row = None
+	if ENGRAVE and engrave and nsp >= 32 and not hole:
+		# (bronze: an engraved band just inside the raised edge, the same width all the way round)
+		ta = ts - 0.006 - ENG_GAP / rb
+		tb = ta - ENG_W / rb
+		if tb.min() > 0.35:
+			low = [t for t in T if t < tb.min() - 0.03]
+			high = [t for t in T if t >= ts - 0.005]
+			TM = np.vstack([np.array(low)[:, None] * np.ones((1, NSP)), tb[None], ta[None],
+				np.array(high)[:, None] * np.ones((1, NSP))])
+			eng_row = len(low)
+			T = TM.min(1)
+	U = TM * rb * np.cos(psi)
+	V = TM * rb * np.sin(psi)
 	if point:
 		V = V - point * np.clip(1 - np.abs(U) / hw, 0, 1) * np.clip(-V / hh, 0, 1)
 	U = U * (1 + top_wide * np.clip(V / hh, 0, 1) ** 2)
@@ -305,7 +369,7 @@ def plate(group, ray, hw, hh, *, off=0.016, border=0.011, step=0.0035, dome=0.00
 		D = stiffen(D, passes=stiff)
 	if keep_min is not None:
 		D = np.maximum(D, keep_min)
-	t = T[:, None] * np.ones((1, NSP))
+	t = TM
 	h = dome * (1 - t * t) + np.where(t >= ts, step, 0.0)
 	P = O + Dr * (D + off + h)[..., None]
 	uo = rng.uniform(0, TILE, 2)
@@ -316,11 +380,16 @@ def plate(group, ray, hw, hh, *, off=0.016, border=0.011, step=0.0035, dome=0.00
 		F += [(0, NSP + (j + 1) % NSP, NSP + j) for j in range(NSP)]
 		MI += [0] * NSP
 		start = 1
+	FUV = {}
 	for i in range(start, len(T) - 1):
 		pol = 1 if T[i] >= ts - 0.005 else 0
+		if i == eng_row:
+			pol = ENG
+			for j, uv in strip_uv(P[i], P[i + 1], True).items():
+				FUV[len(F) + j] = uv
 		F += [(i * NSP + j, i * NSP + (j + 1) % NSP, (i + 1) * NSP + (j + 1) % NSP, (i + 1) * NSP + j) for j in range(NSP)]
 		MI += [pol] * NSP
-	add(group, P.reshape(-1, 3), F, UVs.reshape(-1, 2), MI)
+	add(group, P.reshape(-1, 3), F, UVs.reshape(-1, 2), MI, FUV)
 	if rivets:
 		tr = 1.0 - border * 0.5 / min(hw, hh)
 		for a in rivets:
@@ -342,12 +411,16 @@ def plate(group, ray, hw, hh, *, off=0.016, border=0.011, step=0.0035, dome=0.00
 
 
 def band(group, ray, length, hh, *, n=120, off=0.016, border=0.008, step=0.003, target=None, mat_mid=0, rivet_every=0.0,
-		riv_size=0.0055, fixed=None, closed=True, extra=None, roundness=0.0):
+		riv_size=0.0055, fixed=None, closed=True, extra=None, roundness=0.0, engrave=False):
 	"""A strip all round something (belt, collar, helmet bands): ray(S, V) with S = 0..length along it.
 	roundness: 0..1 how much each ring is pushed out to its widest point (1 = a perfect ring, like a gauntlet's cuff);
 	extra(S, V): more stand-off on top (a cuff's flare)."""
 	ts = 1.0 - border / hh
 	T = np.array(sorted(set([-1.0, -(ts + 1) / 2, -ts - 0.004, -ts + 0.004, -0.5, 0.0, 0.5, ts - 0.004, ts + 0.004, (ts + 1) / 2, 1.0])))
+	e = ts - 0.004
+	if ENGRAVE and engrave and 2 * hh * e > ENG_BAND_MAX:  # (a tall band: the engraved strip only in its middle,
+		e = ENG_BAND_MAX / 2 / hh  # at most ENG_BAND_MAX high; round 1's 6 cm diamonds on the forearms were too big)
+		T = np.array(sorted(set(list(T) + [-e, e])))
 	S = np.linspace(0, length, n, endpoint=not closed)
 	Sg, Tg = np.meshgrid(S, T)
 	V = Tg * hh
@@ -361,14 +434,24 @@ def band(group, ray, length, hh, *, n=120, off=0.016, border=0.008, step=0.003, 
 	P = O + Dr * (D + off + h)[..., None]
 	uo = rng.uniform(0, TILE, 2)
 	UVs = np.stack([(Sg + uo[0]) / TILE, (V + uo[1]) / TILE], -1)
-	F, MI = [], []
+	F, MI, FUV = [], [], {}
 	m = n if closed else n - 1
+	eng = ENGRAVE and engrave
+	if eng:  # (bronze: the band's middle is one engraved strip from its lower raised edge to its upper one)
+		i0, i1 = list(T).index(-e), list(T).index(e)
+		euv = strip_uv(P[i0], P[i1], closed)
 	for i in range(len(T) - 1):
 		pol = 1 if (abs(T[i]) >= ts - 0.005 and abs(T[i + 1]) >= ts - 0.005) or mat_mid == 1 else mat_mid
 		pol = 1 if abs(T[i]) >= ts - 0.005 or abs(T[i + 1]) >= ts + 0.003 else mat_mid
+		if eng and i0 <= i < i1:
+			pol = ENG
+			v0, v1 = (T[i] - T[i0]) / (T[i1] - T[i0]), (T[i + 1] - T[i0]) / (T[i1] - T[i0])
+			for j in range(m):
+				(a, _), (b, _), _, _ = euv[j]
+				FUV[len(F) + j] = [(a, v0), (b, v0), (b, v1), (a, v1)]
 		F += [(i * n + j, i * n + (j + 1) % n, (i + 1) * n + (j + 1) % n, (i + 1) * n + j) for j in range(m)]
 		MI += [pol] * m
-	add(group, P.reshape(-1, 3), F, UVs.reshape(-1, 2), MI)
+	add(group, P.reshape(-1, 3), F, UVs.reshape(-1, 2), MI, FUV)
 	if rivet_every:
 		mid = list(T).index(0.0)
 		k = max(3, int(length / rivet_every))
@@ -440,7 +523,7 @@ def neck_ray(S, V):
 	return o, d
 
 
-band("chest_plate", neck_ray, 2 * math.pi, NECK[1], off=0.012, border=0.008, rivet_every=0.9)
+band("chest_plate", neck_ray, 2 * math.pi, NECK[1], off=0.012, border=0.008, rivet_every=0.9, engrave=True)
 log("collar")
 # shoulders: a big cap over each shoulder, three lames down the upper arm (the upper always outside)
 for side in (1, -1):
@@ -511,9 +594,11 @@ def press_under_beard(P):
 # ================================================================ object making
 def make(name, group, mats, thick=0.0038, bevel=0.0011, beard=False):
 	P, F, UV, MI, off = [], [], [], [], 0
-	for p, f, uv, mi in PARTS[group]:
+	FUV = {}
+	for p, f, uv, mi, fuv in PARTS[group]:
 		P.append(p)
 		UV.append(uv)
+		FUV.update({k + len(F): v for k, v in fuv.items()})
 		F += [tuple(i + off for i in q) for q in f]
 		MI += mi
 		off += len(p)
@@ -524,6 +609,9 @@ def make(name, group, mats, thick=0.0038, bevel=0.0011, beard=False):
 	loops = np.empty(len(me.loops), int)
 	me.loops.foreach_get("vertex_index", loops)
 	uvl.data.foreach_set("uv", UV[loops].ravel())
+	for fi, uvs in FUV.items():  # (the engraved strips' own picture layout)
+		for li, uv in zip(me.polygons[fi].loop_indices, uvs):
+			uvl.data[li].uv = uv
 	for m in mats:
 		me.materials.append(m)
 	me.polygons.foreach_set("material_index", MI)
@@ -596,13 +684,14 @@ def fix_normals(o):
 def orient_sheets(group, centre_of):
 	"""Before thickness: flip any sheet whose faces look inward (towards centre_of(point))."""
 	out = []
-	for p, f, uv, mi in PARTS[group]:
+	for p, f, uv, mi, fuv in PARTS[group]:
 		q = p[list(f[len(f) // 2])]
 		n = np.cross(q[1] - q[0], q[2] - q[0])
 		c = q.mean(0)
 		if np.dot(n, c - centre_of(c)) < 0:
 			f = [tuple(reversed(x)) for x in f]
-		out.append((p, f, uv, mi))
+			fuv = {k: list(reversed(v)) for k, v in fuv.items()}
+		out.append((p, f, uv, mi, fuv))
 	PARTS[group] = out
 
 
@@ -612,7 +701,7 @@ def torso_centre(c):
 
 orient_sheets("chest_plate", torso_centre)
 orient_sheets("chest_belt", torso_centre)
-CP = make("armor_chest_plate", "chest_plate", [M_HAM, M_POL], beard=True)
+CP = make("armor_chest_plate", "chest_plate", mats(M_HAM, M_POL), beard=True)
 CB = make("armor_chest_belt", "chest_belt", [M_BELT, M_POL, M_BELT], thick=0.006, beard=True)
 CR = rivets("armor_chest_rivet", RIVETS.get("chest_plate", []) + RIVETS.get("chest_belt", []))
 co = verts(CR)[0]
@@ -766,6 +855,9 @@ phis = np.unique(np.round(phis, 6))
 zs = np.unique(np.round(np.concatenate([np.linspace(H["bot"], H["top"], 70), [H["eye"][0], H["eye"][1], H["face_top"],
 	H["nasal_low"], H["brow"][0], H["brow"][1], H["eq"] - 0.004, H["cheek_top"]]]), 6))
 zs = zs[zs < H["top"] - 0.002]
+SKIRT_ENG = (1.036, 1.066)  # (bronze: an engraved band round the helmet's skirt, cheek guard to cheek guard round the back)
+if ENGRAVE:
+	zs = np.unique(np.concatenate([zs[(zs < SKIRT_ENG[0] - 0.002) | (zs > SKIRT_ENG[1] + 0.002)], SKIRT_ENG]))
 PH, ZZ = np.meshgrid(phis, zs)
 # the nasal narrows to a point at its bottom, like the picture's: its points below the eye frame move in toward the
 # middle (the faces are still picked on the straight grid, so the cut edges stay clean)
@@ -775,7 +867,7 @@ _tap = np.clip((ZZ - H["nasal_low"]) / (H["face_top"] - H["nasal_low"]), 0, 1) *
 PHM = np.where(_nas, math.pi + _off * _tap, PH)
 HP = helm_point(PHM, ZZ)
 n_p, n_z = len(phis), len(zs)
-F, MI = [], []
+F, MI, FIDX = [], [], {}
 for i in range(n_z - 1):
 	for j in range(n_p):
 		pc = ((phis[j] + phis[(j + 1) % n_p] + (2 * np.pi if j == n_p - 1 else 0)) / 2)
@@ -784,6 +876,7 @@ for i in range(n_z - 1):
 		if pf < fp and zc < H["face_top"] and not (pf < H["nasal"] / 2 and zc > H["nasal_low"]):
 			continue  # the face opening (the nasal bar stays)
 		eye = H["eye_phi"][0] < pf < H["eye_phi"][1] and H["eye"][0] < zc < H["eye"][1]
+		FIDX[(i, j)] = len(F)
 		F.append((i * n_p + j, i * n_p + (j + 1) % n_p, (i + 1) * n_p + (j + 1) % n_p, (i + 1) * n_p + j))
 		guard = (pf < H["frame_phi"] and H["face_top"] < zc < H["eq"] - 0.004) or (pf < H["nasal"] / 2 and zc > H["nasal_low"])
 		cheek = H["guard_phi"] < pf < H["cheek_phi"] and zc < H["cheek_top"]
@@ -794,11 +887,21 @@ F += [((n_z - 1) * n_p + j, (n_z - 1) * n_p + (j + 1) % n_p, top_i) for j in ran
 MI += [0] * n_p
 UVH = np.stack([PH * 0.15 / TILE, ZZ / TILE], -1).reshape(-1, 2)
 UVH = np.vstack([UVH, [[0, H["top"] / TILE]]])
-add("helm", PTS, F, UVH, MI)
+HFUV = {}
+if ENGRAVE:
+	ie = list(zs).index(SKIRT_ENG[0])
+	pfs = np.abs(((phis - math.pi + np.pi) % (2 * np.pi)) - np.pi)
+	js = [j for j in range(n_p - 1) if pfs[j] > H["cheek_phi"] + 0.05 and pfs[j + 1] > H["cheek_phi"] + 0.05]
+	js = js + [js[-1] + 1]
+	for k, uv in strip_uv(HP[ie, js], HP[ie + 1, js], False).items():
+		fi = FIDX[(ie, js[k])]
+		MI[fi] = ENG
+		HFUV[fi] = uv
+add("helm", PTS, F, UVH, MI, HFUV)
 orient_sheets("helm", lambda c: np.array([0, SC[1], min(c[2], SC[2])]))
 M_SLIT = material("helm_slit_dark", (0.012, 0.008, 0.006), 0.0, 0.9)
 # (round 17, owner: the face frame and cheek guards get the edges' matte colour too; round 16 kept them bright copper)
-HM = make("armor_head_plate", "helm", [M_HAM, M_POL, M_SLIT], thick=0.005, bevel=0.0013)
+HM = make("armor_head_plate", "helm", mats(M_HAM, M_POL, M_SLIT), thick=0.005, bevel=0.0013)
 HBV = BVHTree.FromObject(HM, bpy.context.evaluated_depsgraph_get())
 log("helmet shell", len(HM.data.polygons))
 
@@ -813,7 +916,7 @@ def round_ray(z0):
 # brow band all the way round, riveted; a band round the bottom edge
 bz = (H["brow"][0] + H["brow"][1]) / 2
 band("helm_band", round_ray(bz), 2 * math.pi, (H["brow"][1] - H["brow"][0]) / 2 + 0.006, off=0.003, border=0.008,
-	step=0.003, target=HBV, rivet_every=0.45, riv_size=0.011)  # (round 7: the picture's thick brow band, big rivets)
+	step=0.003, target=HBV, rivet_every=0.45, riv_size=0.011, engrave=True)  # (round 7: the picture's thick brow band, big rivets)
 
 
 def bottom_ray(S, V):
@@ -839,7 +942,7 @@ def ridge_ray(U, V):
 
 
 # (front end stops on the brow band: further down, over the eye holes, round 7's first try hung out like a visor)
-plate("helm_band", ridge_ray, 0.04, 0.29, target=HBV, off=0.002, border=0.006, pexp=8, rivets=(), stiff=(1, 3))
+plate("helm_band", ridge_ray, 0.04, 0.29, target=HBV, off=0.002, border=0.006, pexp=8, rivets=(), stiff=(1, 3), engrave=False)
 # (the row of big rivets down the middle is put on the finished strip below: on the shell they sank under it)
 
 
@@ -852,7 +955,7 @@ def face_ray(U, V):
 
 log("helmet bands")
 orient_sheets("helm_band", lambda c: np.array([0, SC[1], min(c[2], SC[2])]))
-HBD = make("armor_head_band", "helm_band", [M_POL, M_POL], thick=0.004)
+HBD = make("armor_head_band", "helm_band", mats(M_POL, M_POL), thick=0.004)
 BBV = BVHTree.FromObject(HBD, bpy.context.evaluated_depsgraph_get())
 for th in np.linspace(-1.08, 1.7, 7):  # (the picture's row of big rivets down the middle, sitting ON the strip)
 	d = np.array([0, math.sin(th), math.cos(th)])
@@ -1049,7 +1152,7 @@ for s in "lr":
 			(0.112, 0.208, 0.01, 0.032, f"lowerarm_{s}")):
 		ac, hh = (a0 + a1) / 2, (a1 - a0) / 2
 		band(piece(bone, E, AX), line_ray(E, AX, UP, 0.05, ac), 2 * math.pi * 0.05, hh, n=72, off=o0, border=0.0075,
-			step=0.0028, target=FOREARM, roundness=0.55, rivet_every=0.06, riv_size=0.0045,  # (S in metres round the arm:
+			step=0.0028, target=FOREARM, roundness=0.55, rivet_every=0.06, riv_size=0.0045, engrave=True,  # (S in metres round the arm:
 			# in angles the copper picture came out stretched into stripes)
 			extra=lambda S, V, hh=hh, fl=fl: fl * np.clip((V + hh) / (2 * hh), 0, 1) ** 1.6)
 	# elbow cop: a round domed plate over the point of the elbow (his back, +y, with the arms out)
@@ -1133,7 +1236,7 @@ for bone in sorted(set(GB.values())):
 	key = "gb_" + bone
 	PARTS[key] = [p for g in gs for p in PARTS[g]]
 	small = bone.split("_")[0] in FINGERS5
-	o = make("_g_" + bone, key, [M_HAM, M_POL], thick=0.0022 if small else 0.0034, bevel=0.0007 if small else 0.001)
+	o = make("_g_" + bone, key, mats(M_HAM, M_POL), thick=0.0022 if small else 0.0034, bevel=0.0007 if small else 0.001)
 	bind_gauntlet(o, bone)
 	gp.append(o)
 	rv = [r for g in gs for r in RIVETS.get(g, [])]
