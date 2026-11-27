@@ -25,6 +25,7 @@ var amount := 1
 var _amount_row: HBoxContainer
 var _amount_slider: HSlider
 var _amount_label: Label
+var _amount_for := ""  ## the recipe the amount slider was set for (F920: a new pick resets it to ×1)
 ## Recipe cards (owner F187): click a card, it shows big at the bottom with one Craft button.
 const CARD := 86
 const CARD_INSET := 11  ## F923: how far in from the card's edge its picture and name stay (clear of the frame)
@@ -114,6 +115,7 @@ func _ready() -> void:
 	_amount_slider.name = "AmountSlider"
 	_amount_slider.min_value = 1
 	_amount_slider.step = 1
+	_amount_slider.scrollable = false  # F920: the mouse wheel scrolls the list, never changes the amount
 	_amount_slider.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_amount_slider.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	_amount_slider.value_changed.connect(func(v): amount = int(v); _amount_label.text = "×%d" % amount)
@@ -382,6 +384,7 @@ func _process(delta: float) -> void:
 		_making = {}
 		_bar.modulate.a = 0.0
 		_status.text = ""
+		reset_amount()  # F920: after a batch the amount goes back to ×1
 		for i in count:  # the whole amount at once (F555); the host checks each one, so a short bag just stops
 			_finish(id)
 
@@ -624,6 +627,9 @@ func _show_detail(inv: Inventory) -> void:
 		UiKit.label(_detail_needs, "needs level %d" % int(r.level), 14, UiKit.MISSING)
 		_detail_needs.add_child(Control.new())
 	_craft_button.disabled = not _ready_to_make(_picked, inv) or not _making.is_empty()
+	if _picked != _amount_for:  # F920 (owner, Nov 27): a new pick starts at ×1 (6 maces were made by a left-over amount)
+		_amount_for = _picked
+		reset_amount()
 	_amount_slider.max_value = maxi(1, can_make_count(_picked, inv))  # the slider never goes past what you can make
 	_amount_slider.editable = _amount_slider.max_value > 1
 

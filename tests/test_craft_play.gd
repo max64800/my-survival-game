@@ -73,6 +73,14 @@ func test_craft_the_whole_amount_in_one_go() -> void:
 	check(made_at > 0.0 and made_at < 4.5, "the whole batch finished in one bar (%.1f s)" % made_at)
 	check_eq(ps.inventory.count_of("plank_root"), 20, "all 10 made at once: 20 planks")
 	check_eq(ps.inventory.count_of("rootwood"), 2, "10 rootwood used, 2 left")
+	check_eq(panel.amount, 1, "F920: after the batch the amount is back to ×1")
+	panel.amount = 5
+	panel._picked = "plank_root"
+	panel._amount_for = "plank_root"
+	panel._picked = "torch"
+	panel.refresh()
+	check_eq(panel.amount, 1, "F920: picking something else starts at ×1 again")
+	check(not panel._amount_slider.scrollable, "F920: the mouse wheel never moves the amount")
 	panel.amount = 50
 	panel.start_making("plank_root")
 	check_eq(panel._making.get("count", 0), 2, "asking for more than you can make: only what the bag allows")
