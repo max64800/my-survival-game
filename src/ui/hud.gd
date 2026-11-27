@@ -153,11 +153,11 @@ func _build() -> void:
 	aim_row.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_aim_box.add_child(aim_row)
 	_aim_key = PanelContainer.new()
-	_aim_key.add_theme_stylebox_override("panel", UiKit.style("slot", 2.0, 9.0))
+	_aim_key.add_theme_stylebox_override("panel", UiKit.style("slot", 0.0, 0.0))
 	_aim_key.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_aim_key.custom_minimum_size = Vector2(34, 34)
+	_aim_key.custom_minimum_size = Vector2(44, 44)  # roomy: the stone frame reaches 14 px in
 	aim_row.add_child(_aim_key)
-	var cap := UiKit.label(_aim_key, Controls.key_name("interact"), 17, UiKit.AMBER)
+	var cap := UiKit.label(_aim_key, Controls.key_name("interact"), 20, UiKit.AMBER)
 	cap.add_theme_font_override("font", UiKit.heading_font())
 	cap.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	cap.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
