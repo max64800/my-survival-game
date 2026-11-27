@@ -42,6 +42,7 @@ var cave_life: CaveLife  ## grass, ferns, small roots... (only looks, but they b
 var curtains: RootCurtains  ## root curtains in tunnel mouths (break for fiber)
 var clutter: Clutter  ## pebbles, dripstone, the big hanging roots (those break for wood)
 var removed_strands: Array[int] = []  ## root-curtain strands broken so far (saved)
+var strand_regrow := {}  ## picked strand id -> seconds until it hangs there again (F930, saved)
 var removed_hroots: Array[String] = []  ## big hanging roots broken so far (saved)
 var pillars: RootPillars  ## giant root pillars (chop for wood)
 var pillar_chops := {}  ## pillar id -> how much wood it has given (saved)
@@ -742,6 +743,7 @@ func request_break_hanging(peer_id: int, kind: String, id: String) -> void:
 		var bunch := curtains.bunch_of(int(id), 0.12)  # just the strand you hit (owner, Nov 18: the whole bunch vanishing looked odd)
 		for s in bunch:
 			removed_strands.append(s)
+			strand_regrow[s] = REGROW_TIME
 		_ev_break_hanging.rpc("strand", ",".join(Array(bunch).map(func(x): return str(x))))
 		spawn_drop(CaveLife.FIBER_DROP, CaveLife.FIBER_PER_VINE, _chest(ps) + Vector3.UP * 0.3)
 	elif kind == "hroot" and clutter:
@@ -3089,6 +3091,19 @@ func _tick_regrow(delta: float) -> void:
 			continue  # the rock it grew from was dug away
 		removed_plants.erase(id)
 		_ev_restore_plant.rpc(id)
+	var back := PackedInt32Array()
+	for id in strand_regrow.keys():
+		strand_regrow[id] -= delta
+		if strand_regrow[id] > 0.0:
+			continue
+		strand_regrow.erase(id)
+		var top := curtains.home_of(id) if curtains else Vector3.INF
+		if top == Vector3.INF or world.sdf_at(top + Vector3.UP * 0.3) >= 0.0:
+			continue  # the ceiling it hung from was dug away
+		removed_strands.erase(id)
+		back.append(id)
+	if not back.is_empty():
+		_ev_restore_strands.rpc(",".join(Array(back).map(func(x): return str(x))))
 	for id in regrow.keys():
 		regrow[id] -= delta
 		if regrow[id] > 0.0:
@@ -3106,6 +3121,16 @@ func _ev_restore_glow(glow_id: int) -> void:
 	removed_glow.erase(glow_id)
 	if glow:
 		glow.restore_spot(glow_id)
+
+
+@rpc("authority", "call_local", "reliable")
+func _ev_restore_strands(ids: String) -> void:
+	var list := PackedInt32Array()
+	for x in ids.split(","):
+		list.append(int(x))
+		removed_strands.erase(int(x))
+	if curtains:
+		curtains.restore_strands(list)
 
 
 @rpc("authority", "call_local", "reliable")
@@ -3324,7 +3349,7 @@ func snapshot() -> Dictionary:
 				chops[id] = glow._spots[id].chops
 	return {boulder_hits = boulder_hits.duplicate(), boulder_back = boulder_back.duplicate(),
 		tree_regrow = tree_regrow.duplicate(),
-		strands = removed_strands.duplicate(), hroots = removed_hroots.duplicate(), pillar_chops = pillar_chops.duplicate(),
+		strands = removed_strands.duplicate(), strand_regrow = strand_regrow.duplicate(), hroots = removed_hroots.duplicate(), pillar_chops = pillar_chops.duplicate(),
 		grove_chops = grove_chops.duplicate(), grove_regrow = grove_regrow.duplicate(),
 		planted = planted.duplicate(true),
 		edits = edit_log.duplicate(), glow = removed_glow.duplicate(), plants = removed_plants.duplicate(), drops = drops, next_drop = _next_drop_id,
@@ -3365,6 +3390,11 @@ func load_snapshot(snap: Dictionary) -> void:
 		removed_strands.append(int(id))
 	if curtains and not removed_strands.is_empty():
 		curtains.hide_strands(PackedInt32Array(removed_strands))
+	for id in snap.get("strand_regrow", {}):
+		strand_regrow[int(id)] = float(snap.strand_regrow[id])
+	for id in removed_strands:  # (strands picked in older saves start growing back now)
+		if not strand_regrow.has(id):
+			strand_regrow[id] = REGROW_TIME
 	for id in snap.get("hroots", []):
 		removed_hroots.append(String(id))
 		if clutter:

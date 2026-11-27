@@ -992,3 +992,30 @@ func test_tanning_rack_gives_leather() -> void:
 		check(made[0].freeze, "it lies still instead of bouncing away")
 		check(made[0].global_position.distance_to(GameAuthority.ready_spot(st)) < 0.05, "it waits on top of the rack")
 	_teardown()
+
+
+## F930 (owner, Nov 27): the coloured vines you pick for fibre must grow back too.
+func test_picked_vines_grow_back() -> void:
+	await _setup(42)
+	var rc := RootCurtains.new()
+	auth.get_parent().add_child(rc)
+	rc.build(world.maker, world, true)
+	auth.curtains = rc
+	check(auth.curtains != null and not auth.curtains._home.is_empty(), "the cave has vine curtains")
+	if auth.curtains == null or auth.curtains._home.is_empty():
+		_teardown()
+		return
+	var id: int = auth.curtains._home.keys()[0]
+	var top: Vector3 = auth.curtains.home_of(id)
+	player.global_position = top + Vector3.DOWN * 1.8
+	auth.request_break_hanging(1, "strand", str(id))
+	check(id in auth.removed_strands, "picked")
+	check_eq(auth.curtains.top_of(id), Vector3.INF, "it's gone")
+	check(auth.strand_regrow.has(id), "it starts growing back")
+	for s in auth.strand_regrow:
+		auth.strand_regrow[s] = 0.01
+	auth._tick_regrow(0.1)
+	check(not id in auth.removed_strands, "it grew back")
+	check_eq(auth.curtains.top_of(id), top, "hanging where it was")
+	check(auth.snapshot().has("strand_regrow"), "growing vines are saved")
+	_teardown()

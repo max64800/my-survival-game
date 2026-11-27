@@ -13,6 +13,7 @@ var walkers: Node3D  ## main's Players
 var _mat: ShaderMaterial
 var _cells := {}  ## Vector2i -> {mmi, tops, bots: PackedVector3Array, ids: PackedInt32Array (index in plan())}
 var _where := {}  ## strand id -> [cell key, index in that cell]
+var _home := {}  ## strand id -> its Transform3D when whole (F930: picked strands grow back)
 ## Every curtain glows (owner, Nov 17, round 2: "all of the vines should be glowing... from green to gray to white to
 ## bluish, very light colours, like the green"): pale green, grey, white, light blue, pale teal.
 ## Round 3 (owner, Nov 18: "I only see white and sometimes green, make new colours"): no white or grey any more.
@@ -80,6 +81,7 @@ func _finish(items: Array) -> void:
 			bots.append(xf.origin - xf.basis.y)
 			ids.append(list[i][2])
 			_where[list[i][2]] = [k, i]
+			_home[list[i][2]] = xf
 		var mmi := MultiMeshInstance3D.new()
 		mmi.multimesh = mm
 		mmi.material_override = _mat
@@ -343,6 +345,29 @@ func hide_strands(ids: PackedInt32Array) -> void:
 		var mm: MultiMesh = (cell.mmi as MultiMeshInstance3D).multimesh
 		mm.set_instance_transform(i, Transform3D(Basis().scaled(Vector3.ZERO), cell.tops[i]))
 		cell.tops[i] = Vector3.INF
+
+
+## Where strand `id` hangs from when whole (Vector3.INF if there's no such strand).
+func home_of(id: int) -> Vector3:
+	return (_home[id] as Transform3D).origin if _home.has(id) else Vector3.INF
+
+
+## Grown back (F930, owner Nov 27: "the vines you pick for fibre must regrow too").
+func restore_strands(ids: PackedInt32Array) -> void:
+	if not _built:
+		for id in ids:
+			var at := _pending_hide.find(id)
+			if at >= 0:
+				_pending_hide.remove_at(at)
+		return
+	for id in ids:
+		if not _where.has(id):
+			continue
+		var cell: Dictionary = _cells[_where[id][0]]
+		var i: int = _where[id][1]
+		var xf: Transform3D = _home[id]
+		(cell.mmi as MultiMeshInstance3D).multimesh.set_instance_transform(i, xf)
+		cell.tops[i] = xf.origin
 
 
 ## Rock dug away near a strand's top: the strand falls with it (it disappears).
