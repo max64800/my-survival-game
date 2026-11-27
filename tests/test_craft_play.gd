@@ -162,3 +162,12 @@ func test_stone_gear_upgrades_at_a_plain_workbench() -> void:
 	check(card != null and card.find_child("Upgrade", true, false) is Button, "F918: and an Upgrade button")
 	check(not pick.contains("must be level"), "and needs no higher station level")
 	auth.get_parent().queue_free()
+
+
+## F935 (owner, Nov 27): you couldn't tell which stations are upgrades of another and which are their own.
+func test_station_cards_say_upgrade_or_own_station() -> void:
+	check(CraftPanel.station_role("cooking_pot").begins_with("Upgrade for the Campfire"), "the pot is a campfire upgrade")
+	check(CraftPanel.station_role("tool_rack").begins_with("Upgrade for the Workbench"), "the tool rack is a workbench upgrade")
+	check(CraftPanel.station_role("kiln").begins_with("Its own station"), "the Charcoal Kiln is its own station")
+	check(CraftPanel.station_role("workbench").contains("Tool Rack"), "the workbench names its upgrades")
+	check_eq(CraftPanel.station_role("stone"), "", "stone is no station")

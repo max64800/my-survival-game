@@ -619,6 +619,18 @@ func _card(recipe_id: String, inv: Inventory) -> Control:
 	b.mouse_entered.connect(func(): name_l.add_theme_color_override("font_color", UiKit.AMBER))
 	b.mouse_exited.connect(func(): name_l.add_theme_color_override("font_color", UiKit.TEXT))
 	b.tooltip_text = Items.display_name(r.output)
+	if station_role(r.output).begins_with("Upgrade"):  # F935: a gold "UP" tag on station upgrades
+		var tag := UiKit.label(b, "UP", 10, UiKit.DARK_TEXT)
+		tag.name = "UpgradeTag"
+		tag.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		tag.add_theme_font_override("font", UiKit.heading_font())
+		var tsb := StyleBoxFlat.new()
+		tsb.bg_color = UiKit.AMBER
+		tsb.set_corner_radius_all(3)
+		tsb.content_margin_left = 3
+		tsb.content_margin_right = 3
+		tag.add_theme_stylebox_override("normal", tsb)
+		tag.position = Vector2(CARD - CARD_INSET - 22, CARD_INSET - 2)
 	var picked := recipe_id == _picked
 	var normal := UiKit.style("slot_selected" if picked else "card", 6)
 	for st in ["normal", "pressed", "focus"]:
@@ -786,8 +798,25 @@ func _rune_slab(ps: GameAuthority.PlayerState, auth: GameAuthority) -> void:
 
 
 ## A food's effects under its ingredients: "Healing" with half hearts (hover = the exact speed), then bullets.
+## F935 (owner, Nov 27: at the Stove Oven "I couldn't tell if the Charcoal Kiln was an upgrade or not"): is this
+## station an upgrade for another one (Station.EXTRAS), or a station of its own? "" for things that aren't stations.
+static func station_role(item: String) -> String:
+	for main: String in Station.EXTRAS:
+		if item in Station.EXTRAS[main]:
+			var where := "set it on a %s" % Items.display_name(main) if Station.EXTRA_REACH.has(item) 				else "place it within %d m of a %s" % [int(Station.EXTRA_RANGE), Items.display_name(main)]
+			return "Upgrade for the %s: %s to raise its level." % [Items.display_name(main), where]
+	if Items.kind(item) == "station" and item in Station.EXTRAS:
+		return "Its own station. Upgrades raise its level: %s." % ", ".join(Station.EXTRAS[item].map(func(x): return Items.display_name(x)))
+	if Items.kind(item) == "station":
+		return "Its own station (not an upgrade)."
+	return ""
+
+
 func _food_lines(item: String) -> void:
 	UiKit.clear(_detail_food)
+	var role := station_role(item)
+	if role != "":
+		UiKit.label(_detail_food, "•  " + role, 14, UiKit.AMBER).autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	var hits := Combat.damage_text({id = item})  # (owner F571: weapons show their damage)
 	if hits != "":
 		UiKit.label(_detail_food, "•  " + hits, 15, UiKit.AMBER)
