@@ -1019,3 +1019,24 @@ func test_picked_vines_grow_back() -> void:
 	check_eq(auth.curtains.top_of(id), top, "hanging where it was")
 	check(auth.snapshot().has("strand_regrow"), "growing vines are saved")
 	_teardown()
+
+
+## F924 (owner, Nov 27): walking up to the first tower gives the first perk point (level 2), once.
+func test_first_tower_gives_the_first_perk_point() -> void:
+	var a := GameAuthority.new()
+	var me := Node3D.new()
+	tree.root.add_child(a)
+	tree.root.add_child(me)
+	var p := a.add_player(1, me)
+	a.world_state["ruins"] = {"5": {origin = Vector3(100, 0, 0), name = "tower"}, "6": {origin = Vector3.ZERO, name = "outpost"}}
+	me.global_position = Vector3(60, 0, 0)
+	a._first_tower_point()
+	check_eq(p.progress.level, 1, "far from the tower: still level 1")
+	me.global_position = Vector3(88, 1, 0)
+	a._first_tower_point()
+	check_eq(p.progress.level, 2, "near the tower: level 2")
+	check_eq(p.progress.points_free(), 1, "one perk point to spend")
+	a._first_tower_point()
+	check_eq(p.progress.level, 2, "only once")
+	me.free()
+	a.free()

@@ -290,6 +290,7 @@ func _process(delta: float) -> void:
 		var feed_now := _auto_timer <= 0.0
 		if feed_now:
 			_auto_timer = 1.0
+			_first_tower_point()
 		for st in stations.values():
 			for done in st.tick(delta):
 				var left: int = done[1]
@@ -3681,6 +3682,24 @@ func give_xp(peer_id: int, amount: int, skill: String = "") -> void:
 			if pid != peer_id and n > 0 and players[pid].node.global_position.distance_to(ps.node.global_position) <= 20.0:
 				players[pid].progress.add_xp(n, skill)
 				_progress_dirty[pid] = true
+
+
+## F924 (owner, Nov 27): the first perk point comes as soon as you walk up to the first tower (the old watchtower by
+## the first cavern): a level-1 dwarf this close gets just enough XP for level 2, so the usual "Level 2! +1 perk point
+## (K)" notice pops up on the right. A dwarf already past level 1 gets nothing. Host, once a second.
+const FIRST_TOWER_REACH := 20.0
+
+func _first_tower_point() -> void:
+	var tower := Vector3.INF
+	for r in world_state.get("ruins", {}).values():
+		if String(r.get("name", "")) == "tower" and r.get("origin") is Vector3:
+			tower = r.origin
+	if tower == Vector3.INF:
+		return
+	for pid in players:
+		var ps: PlayerState = players[pid]
+		if ps.progress.level == 1 and is_instance_valid(ps.node) and ps.node.global_position.distance_to(tower) < FIRST_TOWER_REACH:
+			give_xp(pid, Progression.xp_to_next(1) - ps.progress.xp)
 
 
 func _peer_of(ps: PlayerState) -> int:

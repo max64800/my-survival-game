@@ -99,7 +99,6 @@ Fixed items get ~~crossed out~~, never deleted, so we can see the whole history.
 ## Open (still to do)
 
 **Nov 27 play session (big list):**
-- [ ] **F924. The first perk point: you get it as soon as you come near the first tower, with a 'level up / perk point' notice on the right-hand side.** *From: you (PC, Nov 27, play session). Said: 1×* 🛠 in progress (Nov 27 list, Nov 27)
 - [ ] **F925. Getting hit by a bat sounds like a 'ding'. It shouldn't.** *From: you (PC, Nov 27, play session). Said: 1×* 🛠 code done Nov 27, waiting for your round 12 sound picks (the page is open)
 - [ ] **F927. Aiming and looking up shows the back of the dwarf: the aim camera needs a new framing.** *From: you (PC, Nov 27, play session). Said: 1×*
 - [ ] **F928. Read a blueprint you find straight from the chest (without taking it out first).** *From: you (PC, Nov 27, play session). Said: 1×*
