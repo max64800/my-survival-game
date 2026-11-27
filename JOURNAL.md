@@ -15208,3 +15208,10 @@ related to F417 (9 FPS), or just other chats' Blender/Godot runs on the same PC.
 - My first straight-road test failed. The new roads were only 10 m per straight piece, because a 1.2 m floor bump limit stopped most straight pieces. I counted why each straight piece failed, then loosened the limit to 2 m. The road is still dropped onto the real floor anyway, and big drops are still skipped.
 - **Real bug found on the way:** after the road moved, crystals and roots grew on it. The game saves where plants and crystals go (PlanCache) and only re-plans when certain files change. The road file wasn't on that list, so the old plans (made for the old road) were reused. The road file is now on the list. That would have hit real players too.
 - Some failing checks belong to other chats' unsaved work: test_dwarf, test_skeleton_miners, test_ruin_tower chest, test_pois columns, test_item_sources. I left them alone.
+
+
+## 2026-11-27: A real nose guard on both helmets (F914)
+
+**What we did:** The owner circled the nose guard on the helmet. It was just a thin, flat, dark strip, so from the side it looked like one black line. They wanted it bigger and not flat, on copper and bronze. I built a new solid bar on top of the old strip. It starts under the brow band and slopes out like a nose. It is about 5 cm wide at the top, narrows to a rounded tip 2.5 cm lower than before, and stands out up to 3 cm. The front is hammered metal with a ridge down the middle, and the edges and sides are dark trim, so it is no longer all black. The fit test passes. Page v49.
+
+**Hurdle:** A search for where the game loads the horn part looked through the whole folder (videos included) and hung, so I stopped it. The new part is named `armor_head_nasal`, so the game picks it up with the rest of the helmet anyway.
