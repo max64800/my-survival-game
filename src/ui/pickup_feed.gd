@@ -3,7 +3,8 @@ extends VBoxContainer
 ## F885 (owner, Nov 25: "every resource you pick up should pop up on the left: its picture and the amount"): a short
 ## list on the left of the screen. Each thing your bag gains shows as a row ("+5 Stone" with its picture); more of the
 ## same tops up its row; a row fades after SHOW seconds. The HUD calls watch() with your bag each time it changes.
-## Quiet while the bag or a chest is open (moving things around there isn't picking up).
+## Quiet while only the bag is open (moving things around there isn't picking up). With a chest open it shows what
+## you take out (F911, owner Nov 26).
 
 const SHOW := 3.0
 const FADE := 0.5
@@ -20,8 +21,19 @@ func _ready() -> void:
 	add_theme_constant_override("separation", 6)
 
 
-## The bag changed: anything it has more of now pops up (unless `quiet`).
-func watch(inv: Inventory, quiet: bool) -> void:
+## Should the feed keep quiet? Only while the bag is open on its own (sorting it); with a chest open, what you take
+## out pops up (F911).
+static func quiet_for(bag_open: bool, chest_open: bool) -> bool:
+	return bag_open and not chest_open
+
+
+## What you spend that shows too, while you hold this (F933, owner Nov 27: flattening "when you lose stone it should
+## show the same way as when you add stone"): the Mason's Shovel's fill and raise use up dirt and stone.
+const SPEND_SHOWN := {"masons_shovel": ["stone", "dirt"]}
+
+
+## The bag changed: anything it has more of now pops up (unless `quiet`); so does less of what `held` spends.
+func watch(inv: Inventory, quiet: bool, held := "") -> void:
 	var now := {}
 	for s: Dictionary in inv.slots:
 		if not s.is_empty():
@@ -31,16 +43,22 @@ func watch(inv: Inventory, quiet: bool) -> void:
 			var more: int = now[id] - int(_last.get(id, 0))
 			if more > 0:
 				add(id, more)
+		for id in SPEND_SHOWN.get(held, []):
+			var less: int = int(_last.get(id, 0)) - int(now.get(id, 0))
+			if less > 0:
+				add(id, -less)
 	_last = now
 	_started = true
 
 
+## n < 0: spent (a "-3  Stone" row in red, its own row next to the "+" one).
 func add(id: String, n: int) -> void:
-	if _rows.has(id):
-		var r: Dictionary = _rows[id]
+	var key := id if n > 0 else "-" + id
+	if _rows.has(key):
+		var r: Dictionary = _rows[key]
 		r.count += n
 		r.left = SHOW
-		(r.label as Label).text = "+%d  %s" % [r.count, Items.display_name(id)]
+		(r.label as Label).text = _text(id, r.count)
 		(r.node as Control).modulate.a = 1.0
 		move_child(r.node, get_child_count() - 1)  # the newest at the bottom
 		return
@@ -75,12 +93,16 @@ func add(id: String, n: int) -> void:
 	pic.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	pic.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	h.add_child(pic)
-	var l := UiKit.label(h, "+%d  %s" % [n, Items.display_name(id)], 19, UiKit.TEXT)
+	var l := UiKit.label(h, _text(id, n), 19, UiKit.TEXT if n > 0 else Color(1.0, 0.55, 0.45))
 	l.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	l.add_theme_color_override("font_outline_color", Color.BLACK)
 	l.add_theme_constant_override("outline_size", 4)
 	add_child(row)
-	_rows[id] = {node = row, count = n, label = l, left = SHOW}
+	_rows[key] = {node = row, count = n, label = l, left = SHOW}
+
+
+static func _text(id: String, n: int) -> String:
+	return "%s%d  %s" % ["+" if n > 0 else "-", absi(n), Items.display_name(id)]
 
 
 func _process(delta: float) -> void:

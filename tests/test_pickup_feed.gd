@@ -29,3 +29,50 @@ func test_pickups_pop_up() -> void:
 	feed._process(PickupFeed.SHOW + 0.1)
 	check_eq(feed.shown(), 0, "they go after a few seconds")
 	feed.queue_free()
+
+
+## F911 (owner, Nov 26): taking things out of a chest pops up too; sorting your own bag doesn't.
+func test_chest_takes_pop_up() -> void:
+	check(not PickupFeed.quiet_for(false, true), "a chest open: not quiet")
+	check(not PickupFeed.quiet_for(true, true), "bag and chest open: not quiet")
+	check(PickupFeed.quiet_for(true, false), "only the bag open: quiet")
+	check(not PickupFeed.quiet_for(false, false), "nothing open: not quiet")
+	var feed := PickupFeed.new()
+	tree.root.add_child(feed)
+	var bag := Inventory.new(Inventory.PLAYER_SIZE)
+	var chest := Inventory.new(8)
+	chest.add("copper_ore", 4)
+	chest.add("rootwood", 6)
+	bag.add("stone", 2)
+	feed.watch(bag, false)
+	bag.changed.connect(func(): feed.watch(bag, PickupFeed.quiet_for(true, true)))
+	Storage._move_slot(chest, 0, bag)  # the way the host moves a stack you take out
+	check_eq(feed.shown(), 1, "a stack taken from the chest pops up")
+	check(feed._rows.has("copper_ore") and feed._rows.copper_ore.label.text.begins_with("+4"), "it says +4 copper ore")
+	var stone_i := -1
+	for i in bag.slots.size():
+		if bag.slots[i].get("id", "") == "stone":
+			stone_i = i
+	Storage._move_slot(bag, stone_i, chest)
+	check_eq(feed.shown(), 1, "putting things into the chest doesn't pop up")
+	feed.queue_free()
+
+
+## F933 (owner, Nov 27): flattening or raising with the Mason's Shovel, the stone you lose shows like stone you get.
+func test_shovel_shows_stone_spent() -> void:
+	var feed := PickupFeed.new()
+	tree.root.add_child(feed)
+	var bag := Inventory.new(Inventory.PLAYER_SIZE)
+	bag.add("stone", 10)
+	feed.watch(bag, false, "masons_shovel")
+	bag.remove("stone", 3)
+	feed.watch(bag, false, "masons_shovel")
+	check(feed._rows.has("-stone"), "spent stone pops up")
+	check(feed._rows["-stone"].label.text.begins_with("-3"), "it says -3 (%s)" % feed._rows["-stone"].label.text)
+	bag.remove("stone", 1)
+	feed.watch(bag, false, "masons_shovel")
+	check(feed._rows["-stone"].label.text.begins_with("-4"), "more spent tops up the row")
+	bag.remove("stone", 2)
+	feed.watch(bag, false, "pickaxe_stone")
+	check(feed._rows["-stone"].label.text.begins_with("-4"), "crafting with other things in hand stays quiet")
+	feed.queue_free()

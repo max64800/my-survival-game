@@ -107,7 +107,9 @@ func _ready() -> void:
 		var ps := auth.get_player(peer_id)
 		if ps:
 			ps.inventory.changed.connect(_refresh_slots)
-			ps.inventory.changed.connect(func(): pickup_feed.watch(ps.inventory, _bag_panel.visible or box_panel.visible))
+			# F911 (owner, Nov 26): taking things out of a chest pops up too; only the bag on its own stays quiet.
+			ps.inventory.changed.connect(func(): pickup_feed.watch(ps.inventory, PickupFeed.quiet_for(_bag_panel.visible, box_panel.visible),
+				str(ps.inventory.get_slot(ps.selected_slot).get("id", ""))))
 			pickup_feed.watch(ps.inventory, true)
 	_refresh_slots()
 
