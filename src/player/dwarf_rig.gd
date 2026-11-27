@@ -1267,7 +1267,8 @@ const ARMOR_FILES := {
 	"copper": "res://assets/characters/dwarf/armor_copper.glb",  # (F914: the Hide set's shapes with copper plates)
 }
 ## F914 (Nov 26): which copper helmet + chest he wears. "plate" = the new hand-built hard plates
-## (tools/asset_forge/builds/copper_plate_armor.py), "old" = the first hand-built set. Gauntlets and boots stay hand-built.
+## (tools/asset_forge/builds/copper_plate_armor.py, with its gauntlets since Nov 27), "old" = the first hand-built set.
+## Legs and boots stay from the first hand-built set.
 ## (The picture-to-3D test look was removed Nov 27 when the owner OK'd the plate set: its licence can't ship.)
 static var armor_look := "plate"
 const ARMOR_PLATE := "res://assets/characters/dwarf/armor_copper_plate.glb"
@@ -1296,10 +1297,7 @@ func _wear_armor(id: String) -> Node3D:
 		var made: Node3D = null
 		var look_file: String = {"plate": ARMOR_PLATE}.get(armor_look, "")
 		if look_file != "" and parts[2] == "copper" and parts[1] in ["head", "chest"] and ResourceLoader.exists(look_file):
-			made = _wear_built_armor(parts[1], look_file)
-			if made and parts[1] == "chest":  # (the hand-built gauntlets go with it)
-				for pat in ["armor_chest_gauntlet*"]:
-					_add_built_meshes(made, ARMOR_FILES["copper"], pat)
+			made = _wear_built_armor(parts[1], look_file)  # (the chest brings its gauntlets: armor_chest_gauntlet_*, Nov 27)
 		if not made:
 			made = _wear_built_armor(parts[1], ARMOR_FILES[parts[2]])
 		if made:
@@ -1365,17 +1363,6 @@ func _wear_built_armor(slot: String, path: String) -> Node3D:
 		holder.tree_exiting.connect(mi.queue_free)
 	src.free()
 	return holder
-
-
-## Adds the meshes of another set file matching pattern to a worn armor holder (freed with it).
-func _add_built_meshes(holder: Node3D, path: String, pattern: String) -> void:
-	var src: Node = (load(path) as PackedScene).instantiate()
-	for mi: MeshInstance3D in src.find_children(pattern, "MeshInstance3D", true, false):
-		_bind_to_skeleton(mi)
-		if String(mi.name).contains("gauntlet"):
-			holder.set_meta("gauntlets", true)
-		holder.tree_exiting.connect(mi.queue_free)
-	src.free()
 
 
 func _helmet_shape(att: Node3D, tier: String, col: Color, surf: String) -> void:

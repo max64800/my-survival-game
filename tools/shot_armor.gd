@@ -1,6 +1,6 @@
 extends SceneTree
-## Photographs the copper set side by side: left the picture-to-3D test, right the new hand-built plates (F914). Usage:
-## godot --audio-driver Dummy --path . -s tools/shot_armor.gd -- claude=armor3d out=<file.png> [back=1] [side=1]
+## Photographs the hand-built copper set (F914). Usage:
+## godot --audio-driver Dummy --path . -s tools/shot_armor.gd -- claude=armor3d out=<file.png> [back=1] [side=1] [hand=1]
 
 const WEAR := ["armor_head_copper", "armor_chest_copper", "armor_legs_copper", "armor_feet_copper"]
 
@@ -26,11 +26,13 @@ func _run() -> void:
 	var out := "user://armor3d.png"
 	var back := false
 	var side := false  # (side=1: from his left, to see under the arms)
+	var hand := false  # (hand=1: close on his left hand and forearm, the gauntlet)
 	for a in OS.get_cmdline_user_args():
 		if a.begins_with("out="):
 			out = a.trim_prefix("out=")
 		back = back or a == "back=1"
 		side = side or a == "side=1"
+		hand = hand or a == "hand=1"
 	root.size = Vector2i(1400, 1000)
 	var env := WorldEnvironment.new()
 	env.environment = Environment.new()
@@ -51,6 +53,8 @@ func _run() -> void:
 	cam.fov = 30
 	root.add_child(cam)
 	cam.look_at_from_position(Vector3(0, 0.85, 3.0), Vector3(0, 0.72, 0))
+	if hand:
+		cam.look_at_from_position(Vector3(0.75, 0.75, 1.3), Vector3(0.28, 0.5, 0))
 	for i in 40:
 		await process_frame
 	root.get_texture().get_image().save_png(out)

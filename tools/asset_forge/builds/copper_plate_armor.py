@@ -20,7 +20,10 @@
 #     riveted brow band. On the Head bone, with the hat-hair head from the hand-built set.
 #   * the chest is built with his arms bent down (angle), like the pictures, then bent back to arms-out (the game
 #     binds there); each point copies the bones of the body points under it (skirt plates follow the hips and hem).
-# Legs, boots and gauntlets stay from the hand-built set (armor_copper.glb, dwarf_armor.py; owner liked them).
+#   * gauntlets (Nov 27): three flared riveted forearm bands, an elbow cop, back-of-hand + knuckle plates and a small
+#     plate on every finger joint, over a leather glove + sleeve (copies of the hand and forearm skin pushed out).
+#     Built in rest pose after the helmet so the helmet and chest stay exactly as OK'd.
+# Legs and boots stay from the hand-built set (armor_copper.glb, dwarf_armor.py; owner liked them).
 import math
 import sys
 import tempfile
@@ -262,7 +265,8 @@ def stiffen(D, ring=True, passes=(3, 8), lift=0.0015):
 
 
 def plate(group, ray, hw, hh, *, off=0.016, border=0.011, step=0.0035, dome=0.002, pexp=5.0, point=0.0,
-		target=None, flat=None, rivets=(45, 135, 225, 315), riv_size=0.0055, hole=0.0, keep_min=None, stiff=(3, 8), rigid=False, top_wide=0.0):
+		target=None, flat=None, rivets=(45, 135, 225, 315), riv_size=0.0055, hole=0.0, keep_min=None, stiff=(3, 8), rigid=False, top_wide=0.0,
+		nsp=64):
 	"""One plate: a rounded rectangle hw x hh (half sizes, metres) laid on target along ray(U, V) -> (origin, dir).
 	point: how far its bottom edge dips in the middle (a pointed lower edge, like the picture's breastplate and skirt).
 	flat: (z_top, flare) for skirt plates: one straight cone (doesn't follow his legs), flaring out going down.
@@ -270,9 +274,11 @@ def plate(group, ray, hw, hh, *, off=0.016, border=0.011, step=0.0035, dome=0.00
 	Returns the plate's top-surface points function for extra parts."""
 	ts = 1.0 - border / min(hw, hh)
 	T = sorted(set([0.0, 0.18, 0.34, 0.48, 0.6, 0.7, 0.78, ts - 0.05, ts - 0.004, ts + 0.004, (ts + 1) / 2, 1.0]))
+	if nsp < 32:  # (small plates (gauntlet fingers): fewer rings, same raised border)
+		T = sorted(set([0.0, 0.45, 0.75, ts - 0.004, ts + 0.004, 1.0]))
 	T = np.array([t for t in T if t >= hole])
-	NSP = 64
-	psi = np.linspace(0, 2 * np.pi, NSP, endpoint=False)
+	NSP = nsp  # (points round the edge; the gauntlets' small finger plates use fewer)
+	psi =np.linspace(0, 2 * np.pi, NSP, endpoint=False)
 	rb = 1 / ((np.abs(np.cos(psi)) / hw) ** pexp + (np.abs(np.sin(psi)) / hh) ** pexp) ** (1 / pexp)
 	U = T[:, None] * rb * np.cos(psi)
 	V = T[:, None] * rb * np.sin(psi)
@@ -336,8 +342,10 @@ def plate(group, ray, hw, hh, *, off=0.016, border=0.011, step=0.0035, dome=0.00
 
 
 def band(group, ray, length, hh, *, n=120, off=0.016, border=0.008, step=0.003, target=None, mat_mid=0, rivet_every=0.0,
-		riv_size=0.0055, fixed=None, closed=True):
-	"""A strip all round something (belt, collar, helmet bands): ray(S, V) with S = 0..length along it."""
+		riv_size=0.0055, fixed=None, closed=True, extra=None, roundness=0.0):
+	"""A strip all round something (belt, collar, helmet bands): ray(S, V) with S = 0..length along it.
+	roundness: 0..1 how much each ring is pushed out to its widest point (1 = a perfect ring, like a gauntlet's cuff);
+	extra(S, V): more stand-off on top (a cuff's flare)."""
 	ts = 1.0 - border / hh
 	T = np.array(sorted(set([-1.0, -(ts + 1) / 2, -ts - 0.004, -ts + 0.004, -0.5, 0.0, 0.5, ts - 0.004, ts + 0.004, (ts + 1) / 2, 1.0])))
 	S = np.linspace(0, length, n, endpoint=not closed)
@@ -345,6 +353,10 @@ def band(group, ray, length, hh, *, n=120, off=0.016, border=0.008, step=0.003, 
 	V = Tg * hh
 	O, Dr = ray(Sg, V)
 	D = fixed if fixed is not None else stiffen(lay(O, Dr, target or TORSO, off), passes=(2, 6))
+	if roundness:
+		D = D * (1 - roundness) + D.max(1, keepdims=True) * roundness
+	if extra is not None:
+		D = D + extra(Sg, V)
 	h = np.where(np.abs(Tg) >= ts, step, 0.0)
 	P = O + Dr * (D + off + h)[..., None]
 	uo = rng.uniform(0, TILE, 2)
@@ -954,7 +966,213 @@ for o in (HM, HBD, HR):
 	o.vertex_groups.new(name="Head").add(list(range(len(o.data.vertices))), 1.0, "REPLACE")
 log("helmet on the Head bone")
 
-ALL = [CP, CB, CR, LE, HM, HBD, HR, HAIR]
+# ================================================================ THE GAUNTLETS (rest pose: arms straight out)
+# (F914, Nov 27: the owner OK'd the helmet + chest; the gauntlets are made the same way, like the picture: a riveted
+# elbow cop, the forearm in lames each one's wrist edge flaring out over the next, ending in a bell cuff over the wrist,
+# a domed plate over the back of the hand, a knuckle plate, and every finger joint its own little plate over a dark
+# leather glove (a copy of his hand, 1.5 mm out: the game hides his bare hands under it, so the palm is leather).
+# Each piece is on ONE bone (finger plates on their finger bone, so they curl with it); only the elbow pieces copy the
+# arm's own blended bones so they bend at the elbow. Built after the helmet so the helmet's random picture spots stay.)
+REST = {n: verts(BODYM[n], bpy.context.evaluated_depsgraph_get()) for n in ("body_hand_l", "body_hand_r", "body_torso")}
+FINGERS5 = ("thumb", "index", "middle", "ring", "pinky")
+
+
+def rest_bvh(n, keep):
+	co, polys = REST[n]
+	return BVHTree.FromPolygons([Vector(p) for p in co], [f for f in polys if keep(list(f))])
+
+
+def owner_of(o):
+	"""Each point's main bone's first word (thumb/index/.../hand/lowerarm)."""
+	gn = {vg.index: vg.name for vg in o.vertex_groups}
+	return np.array([gn[max(v.groups, key=lambda q: q.weight).group].split("_")[0] if v.groups else "" for v in o.data.vertices])
+
+
+tco, tpolys = REST["body_torso"]
+FOREARM = BVHTree.FromPolygons([Vector(p) for p in np.vstack([tco, REST["body_hand_l"][0], REST["body_hand_r"][0]])],
+	[f for f in tpolys if np.abs(tco[list(f), 0]).min() > 0.45] +
+	[tuple(i + len(tco) for i in f) for f in REST["body_hand_l"][1]] +
+	[tuple(i + len(tco) + len(REST["body_hand_l"][0]) for i in f) for f in REST["body_hand_r"][1]])
+HANDT, FINGT = {}, {}
+for s in "lr":
+	own = owner_of(BODYM[f"body_hand_{s}"])
+	HANDT[s] = rest_bvh(f"body_hand_{s}", lambda f, own=own: (own[f] == "hand").mean() > 0.5)
+	for fn in FINGERS5:  # (one target per finger: a ray must never land on the finger next to it)
+		FINGT[s, fn] = rest_bvh(f"body_hand_{s}", lambda f, own=own, fn=fn: (own[f] == fn).mean() > 0.5)
+
+
+def bone_pts(name):
+	b = ARM.data.bones[name]
+	return np.array(W @ b.head_local), np.array(W @ b.tail_local)
+
+
+def unit(v):
+	v = np.asarray(v, float)
+	return v / np.linalg.norm(v)
+
+
+def perp(v, ax):
+	v = np.asarray(v, float)
+	return unit(v - ax * np.dot(v, ax))
+
+
+def line_ray(A, ax, e0, rr, v0=0.0, drop=0.0):
+	"""Rays out from a line (A, along ax): U = metres round it (rr = radius it's measured at), V = metres along it from v0;
+	U = 0 points along e0. drop: the line sits that far behind e0 (flatter fans, for the back of the hand)."""
+	e1 = np.cross(ax, e0)
+
+	def ray(U, V):
+		ang = U / rr
+		o = (A - e0 * drop) + ax * (v0 + V)[..., None]
+		d = np.cos(ang)[..., None] * e0 + np.sin(ang)[..., None] * e1
+		return o, d
+	return ray
+
+
+GB, GC = {}, {}  # gauntlet piece group -> bone ("elbow_<s>" = copies the arm's blended bones), centre line
+
+
+def piece(bone, A, ax, drop_e0=None):
+	g = "gt%d" % len(GB)
+	GB[g] = bone
+	A0 = A - drop_e0 if drop_e0 is not None else A
+	GC[g] = lambda c, A0=A0, ax=ax: A0 + ax * np.dot(c - A0, ax)
+	return g
+
+
+for s in "lr":
+	E, WR = bone_pts(f"lowerarm_{s}")
+	AX = unit(WR - E)
+	UP, BK = perp((0, 0, 1), AX), perp((0, 1, 0), AX)
+	# forearm: three lames (elbow, forearm, bell cuff over the wrist), each one's top tucked 5+ mm inside the one above
+	for a0, a1, o0, fl, bone in ((-0.03, 0.045, 0.011, 0.007, f"elbow_{s}"), (0.035, 0.125, 0.008, 0.014, f"lowerarm_{s}"),
+			(0.112, 0.208, 0.01, 0.032, f"lowerarm_{s}")):
+		ac, hh = (a0 + a1) / 2, (a1 - a0) / 2
+		band(piece(bone, E, AX), line_ray(E, AX, UP, 0.05, ac), 2 * math.pi * 0.05, hh, n=72, off=o0, border=0.0075,
+			step=0.0028, target=FOREARM, roundness=0.55, rivet_every=0.06, riv_size=0.0045,  # (S in metres round the arm:
+			# in angles the copper picture came out stretched into stripes)
+			extra=lambda S, V, hh=hh, fl=fl: fl * np.clip((V + hh) / (2 * hh), 0, 1) ** 1.6)
+	# elbow cop: a round domed plate over the point of the elbow (his back, +y, with the arms out)
+	plate(piece(f"elbow_{s}", E, AX), line_ray(E, AX, BK, 0.045, 0.004), 0.042, 0.042, off=0.032, target=FOREARM, pexp=2.3,
+		dome=0.012, border=0.008, rivets=(0, 90, 180, 270), riv_size=0.0042, nsp=40)
+	# the back of the hand: a domed plate from under the cuff to the knuckles, then a knuckle plate standing over its edge
+	K = np.mean([bone_pts(f"{f}_01_{s}")[0] for f in FINGERS5[1:]], 0)
+	HX, HL = unit(K - WR), float(np.linalg.norm(K - WR))
+	HU = perp((0, 0, 1), HX)
+	plate(piece(f"hand_{s}", WR, HX, HU * 0.03), line_ray(WR, HX, HU, 0.05, HL * 0.46, drop=0.03), 0.047, HL * 0.43,
+		off=0.011, target=HANDT[s], pexp=4, dome=0.006, border=0.0075, step=0.003, rivets=(35, 145, 215, 325),
+		riv_size=0.0038, nsp=40)
+	plate(piece(f"hand_{s}", WR, HX, HU * 0.03), line_ray(WR, HX, HU, 0.05, HL + 0.002, drop=0.03), 0.052, 0.014,
+		off=0.024, target=HANDT[s], pexp=5, dome=0.004, border=0.005, step=0.002, rivets=(0, 180), riv_size=0.0036, nsp=40)
+	# fingers: a little plate over each joint (dark glove in the gaps, like the picture), the last one to the tip
+	for fn in FINGERS5:
+		for i, seg in enumerate(("01", "02", "03")):
+			bn = f"{fn}_{seg}_{s}"
+			h, t = bone_pts(bn)
+			if seg == "03":
+				t = bone_pts(f"{fn}_04_leaf_{s}")[1]
+			fx, fl = unit(t - h), float(np.linalg.norm(t - h))
+			if seg == "03":
+				fl -= 0.006  # (stops short of the tip: the glove rounds it off)
+			fu = perp((0, -0.75, 0.66) if fn == "thumb" else (0, 0, 1), fx)  # (the thumbnail faces forward and up)
+			g0 = 0.004 if seg == "01" and fn != "thumb" else 0.0025  # (gap at each joint: room to bend)
+			plate(piece(bn, h, fx), line_ray(h, fx, fu, 0.011, g0 + (fl - g0 - 0.0025) / 2), 0.019 if fn == "thumb" else 0.0175,
+				(fl - g0 - 0.0025) / 2, off=0.0095, target=FINGT[s, fn], pexp=4, dome=0.003, border=0.004, step=0.0018,
+				rivets=(), nsp=20, stiff=(2, 4))  # (round 2: chunkier, like the picture's big gloved hands)
+log("gauntlet pieces", len(GB))
+
+for g in GB:
+	orient_sheets(g, GC[g])
+# rest-pose arm skin points with their bones, for the elbow pieces (bend with the elbow like his arm does)
+apts, aws = [], []
+for n in ("body_torso",):
+	o = BODYM[n]
+	gn = {vg.index: vg.name for vg in o.vertex_groups}
+	for v, p in zip(o.data.vertices, REST[n][0]):
+		if abs(p[0]) > 0.42:
+			apts.append(p)
+			aws.append({gn[q.group]: q.weight for q in v.groups if q.weight > 0.0})
+AKD = kdtree.KDTree(len(apts))
+for i, p in enumerate(apts):
+	AKD.insert(Vector(p), i)
+AKD.balance()
+
+
+def bind_gauntlet(o, bone):
+	if not bone.startswith("elbow_"):
+		o.vertex_groups.new(name=bone).add(list(range(len(o.data.vertices))), 1.0, "REPLACE")
+		return
+	groups = {}
+	for i, p in enumerate(verts(o)[0]):
+		acc = {}
+		for _, j, dist in AKD.find_n(Vector(p), 10):
+			for b, w in aws[j].items():
+				acc[b] = acc.get(b, 0.0) + w / (dist + 0.01)
+		top = sorted(acc.items(), key=lambda kv: -kv[1])[:3]
+		tot = sum(w for _, w in top) or 1.0
+		for b, w in top:
+			if b not in groups:
+				groups[b] = o.vertex_groups.new(name=b)
+			groups[b].add([i], w / tot, "REPLACE")
+
+
+def join(objs, name):
+	bpy.ops.object.select_all(action="DESELECT")
+	for o in objs:
+		o.select_set(True)
+	bpy.context.view_layer.objects.active = objs[0]
+	bpy.ops.object.join()
+	o = objs[0]
+	o.name = o.data.name = name
+	return o
+
+
+gp, gr = [], []
+for bone in sorted(set(GB.values())):
+	gs = [g for g in GB if GB[g] == bone]
+	key = "gb_" + bone
+	PARTS[key] = [p for g in gs for p in PARTS[g]]
+	small = bone.split("_")[0] in FINGERS5
+	o = make("_g_" + bone, key, [M_HAM, M_POL], thick=0.0022 if small else 0.0034, bevel=0.0007 if small else 0.001)
+	bind_gauntlet(o, bone)
+	gp.append(o)
+	rv = [r for g in gs for r in RIVETS.get(g, [])]
+	if rv:
+		r = rivets("_gr_" + bone, rv)
+		bind_gauntlet(r, bone)
+		gr.append(r)
+GP = join(gp, "armor_chest_gauntlet_plate")
+GR = join(gr, "armor_chest_gauntlet_rivet")
+# the glove: his own hands (same points, same bones), 4 mm out (a puffy padded glove), dark leather; and a leather
+# sleeve: his forearm skin from the shirt's sleeve to the wrist, 3 mm out (round 1 showed bare skin inside the elbow)
+gl = []
+for nm, push, keep in (("body_hand_l", 0.004, None), ("body_hand_r", 0.004, None),
+		("body_torso", 0.003, lambda p: 0.405 < abs(p[0]) < 0.73)):
+	src = BODYM[nm]
+	o = src.copy()
+	o.data = src.data.copy()
+	bpy.context.scene.collection.objects.link(o)
+	for m in list(o.modifiers):
+		o.modifiers.remove(m)
+	bm = bmesh.new()
+	bm.from_mesh(o.data)
+	if keep:
+		mw = o.matrix_world
+		bmesh.ops.delete(bm, geom=[v for v in bm.verts if not keep(mw @ v.co)], context="VERTS")
+	bm.normal_update()
+	for v in bm.verts:
+		v.co += v.normal * push
+	bm.to_mesh(o.data)
+	bm.free()
+	for a in list(o.data.color_attributes):
+		o.data.color_attributes.remove(a)
+	o.data.materials.clear()
+	o.data.materials.append(M_LEA)
+	gl.append(o)
+GG = join(gl, "armor_chest_gauntlet_glove")
+log("gauntlets", [(o.name, len(o.data.polygons)) for o in (GP, GR, GG)])
+
+ALL = [CP, CB, CR, LE, HM, HBD, HR, HAIR, GP, GR, GG]
 for o in ALL:
 	o.parent = ARM
 	o.parent_type = "OBJECT"
@@ -969,6 +1187,7 @@ if REVIEW:
 	scene = bpy.context.scene
 	BODYM["body_head"].hide_render = True
 	BODYM["body_shirt"].hide_render = True
+	BODYM["body_hand_l"].hide_render = BODYM["body_hand_r"].hide_render = True  # (the game hides them under the gloves)
 	scene.render.engine = "BLENDER_WORKBENCH"
 	scene.display.shading.light = "STUDIO"
 	scene.display.shading.color_type = "TEXTURE"
@@ -979,10 +1198,12 @@ if REVIEW:
 	scene.camera = cam
 	shots = []
 	for tag, loc, aim, scale in (("front", (0, -4, 0.66), 0.66, 1.0), ("side", (-4, 0, 0.66), 0.66, 1.0),
-			("back", (0, 4, 0.66), 0.66, 1.0), ("head", (1.4, -3.0, 1.12), 1.1, 0.62)):
-		cam.location = Vector(loc)
+			("back", (0, 4, 0.66), 0.66, 1.0), ("head", (1.4, -3.0, 1.12), 1.1, 0.62),
+			("hand", (2.2, -3.0, 0.5), (0.5, 0, 0.42), 0.42), ("handback", (2.4, 2.6, 0.6), (0.5, 0, 0.42), 0.42)):
+		aim = Vector(aim) if isinstance(aim, tuple) else Vector((0, 0, aim))
+		cam.location = Vector(loc) + (aim - Vector((0, 0, aim.z)))
 		cam.data.ortho_scale = scale
-		cam.rotation_euler = (Vector((0, 0, aim)) - cam.location).to_track_quat("-Z", "Y").to_euler()
+		cam.rotation_euler = (aim - cam.location).to_track_quat("-Z", "Y").to_euler()
 		path = str(Path(REVIEW).with_name(Path(REVIEW).stem + f"_{tag}.png"))
 		scene.render.filepath = path
 		bpy.ops.render.render(write_still=True)
