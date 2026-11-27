@@ -444,8 +444,9 @@ for side in (1, -1):
 
 	for k in range(3):
 		along = 0.055 + 0.045 * k  # (round 8b: up under the roof's edge)
-		plate("chest_plate", arm_ray(along), 0.13 - 0.008 * k, 0.042, target=ARMS, off=0.034 - 0.007 * k, pexp=6,
-			point=0.0, dome=0.01, rivets=(160, 20), rigid=True)  # (round 14, owner picked "puffy layered shoulders":
+		plate("chest_plate", arm_ray(along), 0.12 - 0.008 * k, 0.036, target=ARMS, off=0.017 - 0.004 * k, pexp=6,
+			point=0.0, dome=0.006, rivets=(160, 20), rigid=True)  # (round 15, owner: the bigger ones "stick out so much",
+		# 3.4 cm off; now 1.7 cm down to 0.9 cm)  # (round 14, owner picked "puffy layered shoulders":
 		# bigger, rounder, each one standing further out than the one below, like roof tiles)  # (round 8: stiff rings round the arm, stepping down)
 
 	def cap_ray(U, V, S0=S0):
@@ -697,8 +698,10 @@ CLEAR = 0.03  # (the hat hair lies within ~1.8 cm of the egg; the helmet's insid
 # (round 13, owner chose a NECK GUARD: the hair squeezed out under the high back edge looked smeared, so the back edge
 # comes down to 0.9 m, over the collar and the back plate's top, and the back hair is hidden inside.)
 H = dict(top=1.275, eq=1.125, bot=0.965, back_bot=0.9, flare=0.034, waist=0.012, guard=0.014, guard_phi=0.85,
-	eye=(1.06, 1.094), eye_phi=(0.12, 0.62), face_top=1.0, face_phi=0.98, nasal=0.2, nasal_low=0.94, brow=(1.1, 1.15),
-	cheek=0.016, cheek_phi=1.45, cheek_top=1.085, eye_deep=0.003)  # (round 14, owner picked "solid helmet face": the face plate reaches 3.5 cm further down
+	eye=(1.06, 1.094), eye_phi=(0.12, 0.62), face_top=1.035, face_phi=0.98, nasal=0.2, nasal_low=0.95, frame_phi=0.74, brow=(1.1, 1.15),
+	cheek=0.016, cheek_phi=1.45, cheek_top=1.085, eye_deep=0.003)  # (round 15, owner: "too plain, the entire thing blocked, so much dead space under the eyes",
+# picture: a shaped eye frame: only a thin edge under the eyes (face_top back up to 1.035; at 1.047 his bare nose showed), the raised frame ends past
+# the eyes (frame_phi) so the temples step back, and the nasal narrows to a point (NASAL_PT below))  # (round 14, owner picked "solid helmet face": the face plate reaches 3.5 cm further down
 # (face_top 1.035 -> 1.0) so it is one plate with two eye holes, not bars; it stands 1.4 cm out instead of 3 so the
 # brow band hugs the helmet instead of sticking out like a hat brim; bigger eye holes, a longer nasal)  # (round 10: cheek guards, shorter edge; round 13, owner: eye holes "too deep", was 1.2 cm; round 14: flat dark slits 3 mm into the guard)
 RX, RY = 0.172, 0.17  # (round 11, owner: "the helmet is way too big"; was 0.2)
@@ -722,7 +725,7 @@ def helm_r(phi, z):
 	low = np.clip((H["eq"] - z) / (H["eq"] - H["bot"]), 0, 1)
 	pf = np.abs(((phi - math.pi + np.pi) % (2 * np.pi)) - np.pi)  # (angle from his front)
 	eyes = (pf > H["eye_phi"][0] - 1e-6) & (pf < H["eye_phi"][1] + 1e-6) & (z > H["eye"][0] - 1e-6) & (z < H["eye"][1] + 1e-6)
-	guard = H["guard"] * (((pf < H["guard_phi"] + 1e-6) & (z < H["eq"] - 0.004) & (z > H["face_top"] - 1e-6) |
+	guard = H["guard"] * (((pf < H["frame_phi"] + 1e-6) & (z < H["eq"] - 0.004) & (z > H["face_top"] - 1e-6) |
 		(pf < H["nasal"] / 2 + 1e-6) & (z > H["nasal_low"] - 1e-6) & (z < H["eq"])))  # (round 14: the eyes sit IN
 	# the raised guard, only eye_deep lower; before they dropped to the shell behind it, 3 cm deep, owner: "you can see they're deep")
 	cheek = H["cheek"] * ((pf > H["guard_phi"] - 1e-6) & (pf < H["cheek_phi"] + 1e-6) & (z < H["cheek_top"] + 1e-6))
@@ -739,14 +742,20 @@ def helm_point(phi, z, extra=0.0):
 # grid lines on every cut edge, so the openings come out with straight clean edges
 fp = H["face_phi"]
 phis = sorted(set(list(np.linspace(-np.pi, np.pi, 97)[:-1]) +
-	[math.pi + s * a for s in (1, -1) for a in (H["nasal"] / 2, H["eye_phi"][0], H["eye_phi"][1], fp, H["guard_phi"], H["cheek_phi"])]))
+	[math.pi + s * a for s in (1, -1) for a in (H["nasal"] / 2, H["eye_phi"][0], H["eye_phi"][1], fp, H["guard_phi"], H["cheek_phi"], H["frame_phi"])]))
 phis = np.array([((p + np.pi) % (2 * np.pi)) - np.pi for p in phis])
 phis = np.unique(np.round(phis, 6))
 zs = np.unique(np.round(np.concatenate([np.linspace(H["bot"], H["top"], 70), [H["eye"][0], H["eye"][1], H["face_top"],
 	H["nasal_low"], H["brow"][0], H["brow"][1], H["eq"] - 0.004, H["cheek_top"]]]), 6))
 zs = zs[zs < H["top"] - 0.002]
 PH, ZZ = np.meshgrid(phis, zs)
-HP = helm_point(PH, ZZ)
+# the nasal narrows to a point at its bottom, like the picture's: its points below the eye frame move in toward the
+# middle (the faces are still picked on the straight grid, so the cut edges stay clean)
+_off = ((PH - math.pi + np.pi) % (2 * np.pi)) - np.pi  # (signed angle from his front)
+_nas = (np.abs(_off) < H["nasal"] / 2 + 1e-6) & (ZZ < H["face_top"] + 1e-6)
+_tap = np.clip((ZZ - H["nasal_low"]) / (H["face_top"] - H["nasal_low"]), 0, 1) ** 0.8 * 0.85 + 0.15
+PHM = np.where(_nas, math.pi + _off * _tap, PH)
+HP = helm_point(PHM, ZZ)
 n_p, n_z = len(phis), len(zs)
 F, MI = [], []
 for i in range(n_z - 1):
@@ -758,7 +767,7 @@ for i in range(n_z - 1):
 			continue  # the face opening (the nasal bar stays)
 		eye = H["eye_phi"][0] < pf < H["eye_phi"][1] and H["eye"][0] < zc < H["eye"][1]
 		F.append((i * n_p + j, i * n_p + (j + 1) % n_p, (i + 1) * n_p + (j + 1) % n_p, (i + 1) * n_p + j))
-		guard = (pf < H["guard_phi"] and H["face_top"] < zc < H["eq"] - 0.004) or (pf < H["nasal"] / 2 and zc > H["nasal_low"])
+		guard = (pf < H["frame_phi"] and H["face_top"] < zc < H["eq"] - 0.004) or (pf < H["nasal"] / 2 and zc > H["nasal_low"])
 		cheek = H["guard_phi"] < pf < H["cheek_phi"] and zc < H["cheek_top"]
 		MI.append(2 if eye else 1 if (guard or cheek) and zc < H["eq"] else 0)  # (round 8b: the face guard polished, its own plate)  # (round 7: dark eye slits like the picture's; open ones showed his skin, bright)
 top_i = len(HP.reshape(-1, 3))
