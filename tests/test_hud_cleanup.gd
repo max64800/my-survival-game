@@ -22,7 +22,7 @@ func test_controls_are_in_the_settings_page() -> void:
 	check("refill the lantern" in keys and "skills" in keys and "map" in keys, "it lists the main keys")
 	panel.free()
 	check_eq(Controls.key_name("refill_lantern"), OS.get_keycode_string(Controls.KEYS.refill_lantern[0]), "the refill key comes from the key list")
-	check_eq(Controls.key_name("refill_lantern"), "R", "refill is R (L puts the lantern away)")
+	check_eq(Controls.key_name("refill_lantern"), "L", "refill is hold L (a tap puts the lantern away)")
 
 
 ## F880 (owner, Nov 25): a skill pops up (with its picture) only when it LEVELS UP, not on every bit of XP; a level up shows too.
