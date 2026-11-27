@@ -43,7 +43,8 @@ OPT = dict(a.split("=", 1) for a in ARGS[1:] if "=" in a)
 ANGLE = float(OPT.get("angle", 55))
 BODY = ROOT / "assets" / "characters" / "dwarf" / "dwarf_body.glb"
 TEXD = ROOT / "assets" / "textures" / "armor"
-TILE = 0.32  # metres of armour one hammered picture covers (its real size: ~1.6 cm dents)
+TILE = 0.22  # metres of armour one hammered picture covers (~1.1 cm dents; round 14, owner picked "fine dents"
+# like the picture: 0.32 = 1.6 cm dents read as snake scales)
 rng = np.random.default_rng(914)
 
 
@@ -157,6 +158,10 @@ _px = np.empty(len(HAM_COL.pixels), np.float32)
 HAM_COL.pixels.foreach_get(_px)
 _px = _px.reshape(-1, 4)
 _px[:, :3] *= DARK
+# (round 14, owner picked: a few green patina specks in the deepest dents, like the picture)
+_lum = _px[:, :3].mean(1)
+_pat = (_lum < np.percentile(_lum, 5)) & (np.random.default_rng(14).random(len(_lum)) < 0.55)
+_px[_pat, :3] = _px[_pat, :3] * 0.45 + np.array([0.09, 0.2, 0.14]) * 0.55
 HAM_COL.pixels.foreach_set(_px.ravel())
 HAM_COL.filepath_raw = str(Path(tempfile.gettempdir()) / "copper_hammered_col.png")
 HAM_COL.file_format = "PNG"
@@ -187,10 +192,12 @@ def material(name, rgb, metal, rough, col_img=None, nrm_img=None, nrm=1.0):
 	return m
 
 
-M_HAM = material("copper_hammered", (0.75, 0.38, 0.2), 0.8, 0.36, HAM_COL, HAM_NRM, 0.9)
-M_POL = material("copper_polished", (0.8 * DARK, 0.33 * DARK, 0.14 * DARK), 0.78, 0.3)  # (the raised borders and edges, rubbed bright)
+M_HAM = material("copper_hammered", (0.75, 0.38, 0.2), 0.72, 0.24, HAM_COL, HAM_NRM, 0.55)  # (round 14, owner: the picture
+# "definitely has a shine": smoother (rough 0.36 -> 0.24), shallower dents (normal 0.9 -> 0.55); metal 0.72 keeps the
+# copper colour: at 0.85 + rough 0.2 it mirrored the dark room and turned grey)
+M_POL = material("copper_polished", (0.8 * DARK, 0.33 * DARK, 0.14 * DARK), 0.72, 0.18)  # (the raised borders and edges, rubbed bright)
 # (round 6 had (0.86, 0.47, 0.27), metal 0.9: in the game it mirrored the grey room and showed silver; the picture's are copper)
-M_RIV = material("copper_rivet", (0.7, 0.3, 0.13), 0.8, 0.3)
+M_RIV = material("copper_rivet", (0.7, 0.3, 0.13), 0.72, 0.2)
 QUILT = TEXD / "hide2_quilted.png"
 M_LEA = material("leather_dark", (0.03, 0.018, 0.011), 0.0, 1.0)  # (linear colour: 0.17 showed light grey-brown)  # (plain: his shirt's picture layout made blotches)
 BELT = TEXD / "hide2_belt.png"
@@ -250,7 +257,7 @@ def stiffen(D, ring=True, passes=(3, 8), lift=0.0015):
 	return D
 
 
-def plate(group, ray, hw, hh, *, off=0.016, border=0.009, step=0.0022, dome=0.002, pexp=5.0, point=0.0,
+def plate(group, ray, hw, hh, *, off=0.016, border=0.011, step=0.0035, dome=0.002, pexp=5.0, point=0.0,
 		target=None, flat=None, rivets=(45, 135, 225, 315), riv_size=0.0055, hole=0.0, keep_min=None, stiff=(3, 8), rigid=False, top_wide=0.0):
 	"""One plate: a rounded rectangle hw x hh (half sizes, metres) laid on target along ray(U, V) -> (origin, dir).
 	point: how far its bottom edge dips in the middle (a pointed lower edge, like the picture's breastplate and skirt).
@@ -324,7 +331,7 @@ def plate(group, ray, hw, hh, *, off=0.016, border=0.009, step=0.0022, dome=0.00
 	return P
 
 
-def band(group, ray, length, hh, *, n=120, off=0.016, border=0.007, step=0.002, target=None, mat_mid=0, rivet_every=0.0,
+def band(group, ray, length, hh, *, n=120, off=0.016, border=0.008, step=0.003, target=None, mat_mid=0, rivet_every=0.0,
 		riv_size=0.0055, fixed=None, closed=True):
 	"""A strip all round something (belt, collar, helmet bands): ray(S, V) with S = 0..length along it."""
 	ts = 1.0 - border / hh
@@ -386,11 +393,11 @@ for phic, zc, hw, hh, pt, off, dm in ((FRONT, 0.735, 0.26, 0.172, 0.03, 0.018, 0
 log("cuirass")
 # belt: dark leather with a copper buckle in front, riveted
 ref = ref_at(BACK, 0.56)
-band("chest_belt", lambda S, V: torso_ray(0.0, 0.56, 1.0)(S / 1.0 * 1.0, V), 2 * math.pi, 0.036, off=0.03, border=0.004,
+band("chest_belt", lambda S, V: torso_ray(0.0, 0.56, 1.0)(S / 1.0 * 1.0, V), 2 * math.pi, 0.05, off=0.03, border=0.005,
 	step=0.0012, mat_mid=2, rivet_every=0.6)
 # (the ray above takes S as an angle: length 2 pi = all the way round)
 bk = ref_at(FRONT, 0.56)
-plate("chest_plate", torso_ray(FRONT, 0.56, bk + 0.04), 0.04, 0.034, off=0.04, border=0.012, step=0.0, pexp=4, hole=0.55,
+plate("chest_plate", torso_ray(FRONT, 0.56, bk + 0.04), 0.062, 0.056, off=0.04, border=0.014, step=0.0, pexp=8, hole=0.6,
 	rivets=())
 log("belt + buckle")
 # skirt: three rows of tablets round his hips, each row outside the one below (roof tiles), flaring out
@@ -437,8 +444,9 @@ for side in (1, -1):
 
 	for k in range(3):
 		along = 0.055 + 0.045 * k  # (round 8b: up under the roof's edge)
-		plate("chest_plate", arm_ray(along), 0.12 - 0.008 * k, 0.034, target=ARMS, off=0.024 - 0.005 * k, pexp=6,
-			point=0.0, dome=0.004, rivets=(160, 20), rigid=True)  # (round 8: stiff rings round the arm, stepping down)
+		plate("chest_plate", arm_ray(along), 0.13 - 0.008 * k, 0.042, target=ARMS, off=0.034 - 0.007 * k, pexp=6,
+			point=0.0, dome=0.01, rivets=(160, 20), rigid=True)  # (round 14, owner picked "puffy layered shoulders":
+		# bigger, rounder, each one standing further out than the one below, like roof tiles)  # (round 8: stiff rings round the arm, stepping down)
 
 	def cap_ray(U, V, S0=S0):
 		# (round 8: the picture's shoulder plate: a curved roof over the shoulder, from the collar out over the arm;
@@ -448,7 +456,8 @@ for side in (1, -1):
 		o = np.stack([np.full_like(U, S0[0] - side * 0.03), S0[1] - U, np.full_like(U, S0[2] - 0.02)], -1)
 		return o, d
 
-	plate("chest_plate", cap_ray, 0.125, 0.1, target=ARMS, off=0.014, pexp=4, dome=0.008, rigid=True,
+	plate("chest_plate", cap_ray, 0.125, 0.1, target=ARMS, off=0.016, pexp=4, dome=0.018, rigid=True,  # (round 14: rounder;
+		# a bigger cap (0.14 x 0.115) stood 9 cm off like a wing)
 		rivets=(25, 155, 205, 335, 90))
 log("shoulders")
 
@@ -687,9 +696,11 @@ CLEAR = 0.03  # (the hat hair lies within ~1.8 cm of the egg; the helmet's insid
 # hair comes out under it (round 7's neck guard down at 0.875 m cut through the hair).
 # (round 13, owner chose a NECK GUARD: the hair squeezed out under the high back edge looked smeared, so the back edge
 # comes down to 0.9 m, over the collar and the back plate's top, and the back hair is hidden inside.)
-H = dict(top=1.275, eq=1.125, bot=0.965, back_bot=0.9, flare=0.034, waist=0.012, guard=0.03, guard_phi=0.85,
-	eye=(1.068, 1.09), eye_phi=(0.14, 0.6), face_top=1.035, face_phi=0.98, nasal=0.2, nasal_low=0.975, brow=(1.1, 1.15),
-	cheek=0.016, cheek_phi=1.45, cheek_top=1.085, eye_deep=0.003)  # (round 10: cheek guards, shorter edge; round 13, owner: eye holes "too deep", was 1.2 cm; round 14: flat dark slits 3 mm into the guard)
+H = dict(top=1.275, eq=1.125, bot=0.965, back_bot=0.9, flare=0.034, waist=0.012, guard=0.014, guard_phi=0.85,
+	eye=(1.06, 1.094), eye_phi=(0.12, 0.62), face_top=1.0, face_phi=0.98, nasal=0.2, nasal_low=0.94, brow=(1.1, 1.15),
+	cheek=0.016, cheek_phi=1.45, cheek_top=1.085, eye_deep=0.003)  # (round 14, owner picked "solid helmet face": the face plate reaches 3.5 cm further down
+# (face_top 1.035 -> 1.0) so it is one plate with two eye holes, not bars; it stands 1.4 cm out instead of 3 so the
+# brow band hugs the helmet instead of sticking out like a hat brim; bigger eye holes, a longer nasal)  # (round 10: cheek guards, shorter edge; round 13, owner: eye holes "too deep", was 1.2 cm; round 14: flat dark slits 3 mm into the guard)
 RX, RY = 0.172, 0.17  # (round 11, owner: "the helmet is way too big"; was 0.2)
 
 
@@ -773,8 +784,8 @@ def round_ray(z0):
 
 # brow band all the way round, riveted; a band round the bottom edge
 bz = (H["brow"][0] + H["brow"][1]) / 2
-band("helm_band", round_ray(bz), 2 * math.pi, (H["brow"][1] - H["brow"][0]) / 2 + 0.006, off=0.008, border=0.008,
-	step=0.004, target=HBV, rivet_every=0.45, riv_size=0.011)  # (round 7: the picture's thick brow band, big rivets)
+band("helm_band", round_ray(bz), 2 * math.pi, (H["brow"][1] - H["brow"][0]) / 2 + 0.006, off=0.003, border=0.008,
+	step=0.003, target=HBV, rivet_every=0.45, riv_size=0.011)  # (round 7: the picture's thick brow band, big rivets)
 
 
 def bottom_ray(S, V):

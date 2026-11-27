@@ -1558,7 +1558,8 @@ def build_legs():
 		ring = lambda a0, a1: np.minimum((phi - a0) * r_, (a1 - phi) * r_)
 		u, w = phi * r_, g.Z - 0.268
 		hexd = np.maximum(np.abs(u) * 0.866 + np.abs(w) * 0.5, np.abs(w))  # (a six-sided outline, flat top and bottom)
-		cop_in = 0.047 - hexd - GAP  # (round 4: bigger and standing out more, owner: "the knee cop clearer")
+		cop_in = 0.056 - hexd - GAP  # (round 4: bigger and standing out more, owner: "the knee cop clearer"; F914 round 14,
+		# owner picked bigger six-sided knee plates like the picture: 4.7 -> 5.6 cm)
 		lames = (  # (how far inside the plate, extra stand-off at its lower edge, from z, plate id)
 			(np.minimum.reduce([g.Z - 0.292, 0.395 - g.Z, ring(-0.9, 2.4)]), 0.006, 0.292, 0.395, 0),
 			(np.minimum.reduce([g.Z - 0.24, 0.302 - g.Z, ring(-2.3, 2.3)]), 0.004, 0.24, 0.302, 1),
@@ -1570,7 +1571,7 @@ def build_legs():
 			inn = inn - GAP
 			lift = fl_ * np.clip((zhi - g.Z) / (zhi - zlo), 0, 1)
 			parts.append((hard_plate(surf, inn, bulk=0.0075, lift=lift), inn, pid + 16 * (side == "r")))
-		parts.append((hard_plate(surf, cop_in, bulk=0.0075, lift=0.015), cop_in, 4 + 16 * (side == "r")))
+		parts.append((hard_plate(surf, cop_in, bulk=0.0075, lift=0.02), cop_in, 4 + 16 * (side == "r")))
 		P, E, I = union_parts(parts)
 		P = np.maximum(P, 0.003 - d)
 		o = g.mesh(f"_legs_{side}", MAT["plate"], P)
