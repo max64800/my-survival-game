@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://bksh24pefqfon"
-path="res://.godot/imported/bronze_engrave_nrm.png-594a4e54a43e0304f12d04e4c62d3ae9.ctex"
+uid="uid://wx0v28tn3u8"
+path="res://.godot/imported/bronze_knot_height.png-6fbd51b2bdcf848f2aad7d501cb5c0f6.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/textures/armor/bronze_engrave_nrm.png"
-dest_files=["res://.godot/imported/bronze_engrave_nrm.png-594a4e54a43e0304f12d04e4c62d3ae9.ctex"]
+source_file="res://tools/art/heights/bronze_knot_height.png"
+dest_files=["res://.godot/imported/bronze_knot_height.png-6fbd51b2bdcf848f2aad7d501cb5c0f6.ctex"]
 
 [params]
 

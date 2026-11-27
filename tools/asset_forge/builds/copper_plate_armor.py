@@ -52,7 +52,7 @@ ANGLE = float(OPT.get("angle", 55))
 METAL = OPT.get("metal", "copper")
 BRONZE = METAL == "bronze"
 ENGRAVE = BRONZE  # (engraved bands: bronze only; copper stays exactly as OK'd)
-ENG_W, ENG_GAP = 0.022, 0.004  # engraved band width, gap inside the raised edge (metres)
+ENG_W, ENG_GAP = 0.026, 0.004  # carved band width, gap inside the raised edge (metres; round 3: 2.2 -> 2.6 cm, bolder)
 ENG_BAND_MAX = 0.034  # (the tallest engraved strip on a band: collar, brow band, forearm bands)
 BODY = ROOT / "assets" / "characters" / "dwarf" / "dwarf_body.glb"
 TEXD = ROOT / "assets" / "textures" / "armor"
@@ -165,7 +165,8 @@ def image(name, path, colour=True):
 	return img
 
 
-HAM_COL = image(f"{METAL}_hammered_col", TEXD / ("bronze_smooth_col.png" if BRONZE else "copper_hammered_col.png"))
+HAM_COL = image(f"{METAL}_hammered_col", TEXD / f"{METAL}_hammered_col.png")  # (bronze round 3, owner: "way too
+# smooth": copper's deep dents in bronze colours, tools/art/make_bronze_plate.py)
 DARK = 0.8 if not BRONZE else 1.0  # (round 12, owner: "make the entire texture a little bit darker")
 _px = np.empty(len(HAM_COL.pixels), np.float32)
 HAM_COL.pixels.foreach_get(_px)
@@ -179,7 +180,7 @@ HAM_COL.pixels.foreach_set(_px.ravel())
 HAM_COL.filepath_raw = str(Path(tempfile.gettempdir()) / f"{METAL}_hammered_col.png")
 HAM_COL.file_format = "PNG"
 HAM_COL.save()
-HAM_NRM = image(f"{METAL}_hammered_nrm", TEXD / ("bronze_smooth_nrm.png" if BRONZE else "copper_hammered_nrm.png"), False)
+HAM_NRM = image(f"{METAL}_hammered_nrm", TEXD / f"{METAL}_hammered_nrm.png", False)
 
 
 def material(name, rgb, metal, rough, col_img=None, nrm_img=None, nrm=1.0):
@@ -205,8 +206,8 @@ def material(name, rgb, metal, rough, col_img=None, nrm_img=None, nrm=1.0):
 	return m
 
 
-M_HAM = (material("bronze_smooth", (0.86, 0.62, 0.32), 0.7, 0.22, HAM_COL, HAM_NRM, 0.45) if BRONZE else  # (bronze:
-	# owner picked "smoother, a bit more shine")
+M_HAM = (material("bronze_hammered", (0.86, 0.62, 0.32), 0.72, 0.24, HAM_COL, HAM_NRM, 0.55) if BRONZE else  # (bronze
+	# round 3: hammered like the copper; round 2's smooth 0.45 was "way too smooth")
 	material("copper_hammered", (0.75, 0.38, 0.2), 0.72, 0.24, HAM_COL, HAM_NRM, 0.55))  # (round 14, owner: the picture
 # "definitely has a shine": smoother (rough 0.36 -> 0.24), shallower dents (normal 0.9 -> 0.55); metal 0.72 keeps the
 # copper colour: at 0.85 + rough 0.2 it mirrored the dark room and turned grey)
@@ -221,10 +222,167 @@ M_POL = material(f"{METAL}_trim_dark", TRIM, TRIM_MET, TRIM_ROUGH)  # (the raise
 M_RIV = (material("bronze_rivet", (0.02, 0.055, 0.036), 0.3, 0.7) if BRONZE else  # (patina, a little lighter + shinier
 	# than the edges so the domes still catch the light)
 	material("copper_rivet", (0.7, 0.3, 0.13), 0.72, 0.2))
-# the engraved bands (bronze): the strip picture (grooves with green patina in them) along each band, index ENG
+# the carved bands (bronze round 3, owner: "it needs engravings like dwarven ruins", like the Nov 26 picture): REAL
+# raised metal, a three-strand plait standing up to 5.7 mm off the plate with dark patina deep in the cuts, laid as its
+# own strip just inside every big plate's raised edge and along the collar, brow, helmet skirt and forearm bands; and
+# two knot medallions on the breastplate (beside the beard, owner's pick) + one on the back plate. The shapes come
+# from the height pictures in tools/art/heights (make_bronze_plate.py), the paint from the matching colour pictures.
 ENG = 3
-M_ENG = (material("bronze_engraved", (0.86, 0.62, 0.32), 0.6, 0.3, image("bronze_engrave_col", TEXD / "bronze_engrave_col.png"),
-	image("bronze_engrave_nrm", TEXD / "bronze_engrave_nrm.png", False), 0.9) if ENGRAVE else None)
+M_ENG = (material("bronze_knot", (0.86, 0.62, 0.32), 0.7, 0.3, image("bronze_knot_col", TEXD / "bronze_knot_col.png"),
+	image("bronze_knot_nrm", TEXD / "bronze_knot_nrm.png", False), 1.0) if ENGRAVE else None)
+M_MED = (material("bronze_medal", (0.86, 0.62, 0.32), 0.7, 0.3, image("bronze_medal_col", TEXD / "bronze_medal_col.png"),
+	image("bronze_medal_nrm", TEXD / "bronze_medal_nrm.png", False), 1.0) if ENGRAVE else None)
+
+
+def height_map(name):
+	img = image(name, ROOT / "tools" / "art" / "heights" / f"{name}.png", False)
+	a = np.empty(len(img.pixels), np.float32)
+	img.pixels.foreach_get(a)
+	return a.reshape(img.size[1], img.size[0], 4)[::-1, :, 0].copy()  # (row 0 = top of the picture)
+
+
+KNOT_H = height_map("bronze_knot_height") if ENGRAVE else None
+MEDAL_H = height_map("bronze_medal_height") if ENGRAVE else None
+KNOT_LIFT, KNOT_DEPTH, KNOT_THICK = 0.0012, 0.0045, 0.0038  # (cuts 1.2 mm off the plate, strand tops 5.7 mm; the
+# strip's underside 2.6 mm inside the plate: no two surfaces in one place)
+MED_LIFT, MED_DEPTH = 0.0015, 0.006
+
+
+def sample(Hm, u, v, wrap_u=True):
+	"""Bilinear height at picture coords u (0..1 across, repeats if wrap_u), v (0..1, 0 = top row)."""
+	h, w = Hm.shape
+	x = (u % 1.0 if wrap_u else np.clip(u, 0, 1)) * w - 0.5
+	y = np.clip(v, 0, 1) * (h - 1)
+	x0 = np.floor(x).astype(int)
+	y0 = np.clip(np.floor(y).astype(int), 0, h - 2)
+	fx, fy = x - x0, y - y0
+	x1 = (x0 + 1) % w if wrap_u else np.clip(x0 + 1, 0, w - 1)
+	x0 = x0 % w if wrap_u else np.clip(x0, 0, w - 1)
+	a = Hm[y0, x0] * (1 - fx) + Hm[y0, x1] * fx
+	b = Hm[y0 + 1, x0] * (1 - fx) + Hm[y0 + 1, x1] * fx
+	return a * (1 - fy) + b * fy
+
+
+RELIEF = {}  # object group -> list of (points R x C x 3, corner uvs R x (C+1) x 2, closed, material 0 knot / 1 medal)
+
+
+def knot_strip(group, rows, dirs, tv, closed, step=0.0038, nv=12):
+	"""A raised knot strip over the rows of a sheet (rows K x C x 3 at across-positions tv, K >= 2; dirs = outward):
+	fine points every ~4 mm along and nv across, pushed out by the knot height picture (one picture = 4 widths)."""
+	rows, dirs = np.asarray(rows, float), np.asarray(dirs, float)
+	dirs = dirs / np.linalg.norm(dirs, axis=-1)[..., None]
+	tv = np.asarray(tv, float)
+	K, C = rows.shape[:2]
+	mid = rows[K // 2] if K > 2 else rows.mean(0)
+	seg = np.linalg.norm(np.roll(mid, -1, 0) - mid, axis=-1) if closed else np.linalg.norm(mid[1:] - mid[:-1], axis=-1)
+	sub = np.maximum(1, np.ceil(seg / step).astype(int))
+	cols = np.concatenate([j + np.arange(m) / m for j, m in enumerate(sub)] + ([] if closed else [[C - 1.0]]))
+	j0 = np.floor(cols).astype(int) % C
+	j1 = (j0 + 1) % C if closed else np.minimum(j0 + 1, C - 1)
+	f = (cols - np.floor(cols))[None, :, None]
+	R_ = rows[:, j0] * (1 - f) + rows[:, j1] * f
+	D_ = dirs[:, j0] * (1 - f) + dirs[:, j1] * f
+	vs = np.linspace(tv[0], tv[-1], nv)
+	ii = np.clip(np.searchsorted(tv, vs, side="right") - 1, 0, K - 2)
+	w = ((vs - tv[ii]) / (tv[ii + 1] - tv[ii]))[:, None, None]
+	Pf = R_[ii] * (1 - w) + R_[ii + 1] * w
+	Df = D_[ii] * (1 - w) + D_[ii + 1] * w
+	Df /= np.linalg.norm(Df, axis=-1)[..., None]
+	width = float(np.median(np.linalg.norm(rows[-1] - rows[0], axis=-1)))
+	m = Pf[nv // 2]
+	L = np.concatenate([[0.0], np.cumsum(np.linalg.norm(np.diff(m, axis=0), axis=-1))])
+	if closed:
+		L = np.concatenate([L, [L[-1] + np.linalg.norm(m[0] - m[-1])]])
+	k = max(1, round(L[-1] / (4 * max(width, 1e-4)))) if closed else L[-1] / (4 * max(width, 1e-4))
+	u = L / max(L[-1], 1e-9) * k  # (in pictures; round a loop the last value closes it on a whole repeat)
+	v = (vs - tv[0]) / (tv[-1] - tv[0])
+	nc = len(cols)
+	h = sample(KNOT_H, np.broadcast_to(u[None, :nc], (nv, nc)), np.broadcast_to(v[:, None], (nv, nc)))
+	P = Pf + Df * (KNOT_LIFT + KNOT_DEPTH * h)[..., None]
+	UV = np.stack(np.broadcast_arrays(u[None, :], 1 - v[:, None]), -1)
+	RELIEF.setdefault(group, []).append((P, UV, closed, 0))
+
+
+def medallion(group, ray, sheet, c, rad, nr=30, na=100):
+	"""A round knot medallion of radius rad (metres) centred at c = (U, V) on a plate: laid on sheet (the plate's
+	outer surface) along the plate's own rays, pushed out by the medallion height picture."""
+	r = np.linspace(0.0, rad, nr + 1)[1:]
+	a = np.linspace(0, 2 * np.pi, na, endpoint=False)
+	Rg, Ag = np.meshgrid(r, a, indexing="ij")
+	x, y = Rg * np.cos(Ag), Rg * np.sin(Ag)
+	O, Dr = ray(c[0] + x, c[1] + y)
+	D = lay(O, Dr, sheet, 0.0)
+	h = sample(MEDAL_H, (x / rad + 1) / 2, (1 - y / rad) / 2, wrap_u=False)
+	h = np.where(Rg > rad * 0.995, 0.0, h)
+	P = O + Dr * (D + MED_LIFT + MED_DEPTH * h)[..., None]
+	uv = np.stack([(x / rad + 1) / 2, (y / rad + 1) / 2], -1)
+	UV = np.concatenate([uv, uv[:, :1]], 1)
+	oc, dc = ray(np.array([[c[0]]]), np.array([[c[1]]]))
+	h0 = float(sample(MEDAL_H, np.array(0.5), np.array(0.5), False))
+	pc = oc[0, 0] + dc[0, 0] * (lay(oc, dc, sheet, 0.0)[0, 0] + MED_LIFT + MED_DEPTH * h0)
+	RELIEF.setdefault(group, []).append((P, UV, True, 1, pc))
+
+
+def sheet_bvh(P):
+	"""BVH of a plate sheet (rings x points round, closed rings, as plate() builds them)."""
+	K, C = P.shape[:2]
+	F = [(i * C + j, i * C + (j + 1) % C, (i + 1) * C + (j + 1) % C, (i + 1) * C + j) for i in range(K - 1) for j in range(C)]
+	return BVHTree.FromPolygons([Vector(p) for p in P.reshape(-1, 3)], F)
+
+
+def relief_object(name, group, outward):
+	"""The raised strips + medallions of a group as one mesh, faces looking outward (outward(point) -> a direction away
+	from him there); its open edges get walls KNOT_THICK down into the plate (no underside: nobody can see it)."""
+	V, F, UVL, MIs = [], [], [], []
+	for item in RELIEF[group]:
+		P, UV, closed, mi = item[:4]
+		R, C = P.shape[:2]
+		base = len(V)
+		V += list(P.reshape(-1, 3))
+		q = [base + (R // 2) * C + C // 2, base + (R // 2) * C + (C // 2 + 1) % C, base + (R // 2 + 1) * C + (C // 2 + 1) % C]
+		nq = np.cross(V[q[1]] - V[q[0]], V[q[2]] - V[q[0]])
+		flip = np.dot(nq, outward(V[q[0]])) < 0
+		faces, uvs = [], []
+		for i in range(R - 1):
+			for j in range(C if closed else C - 1):
+				jn = (j + 1) % C
+				faces.append((base + i * C + j, base + i * C + jn, base + (i + 1) * C + jn, base + (i + 1) * C + j))
+				uvs.append((UV[i, j], UV[i, j + 1], UV[i + 1, j + 1], UV[i + 1, j]))
+		if len(item) > 4:  # (medallion: close its middle with a small fan)
+			ci = len(V)
+			V.append(item[4])
+			for j in range(C):
+				faces.append((ci, base + j, base + (j + 1) % C))
+				uvs.append(((0.5, 0.5), UV[0, j], UV[0, j + 1]))
+		if flip:
+			faces = [tuple(reversed(f_)) for f_ in faces]
+			uvs = [tuple(reversed(u_)) for u_ in uvs]
+		F += faces
+		UVL += uvs
+		MIs += [mi] * len(faces)
+	V = np.asarray(V)
+	me = bpy.data.meshes.new(name)
+	me.from_pydata([tuple(p) for p in V], [], F)
+	uvl = me.uv_layers.new(name="UVMap")
+	uvl.data.foreach_set("uv", np.array([c for f in UVL for c in f], float).ravel())
+	me.materials.append(M_ENG)
+	me.materials.append(M_MED)
+	me.polygons.foreach_set("material_index", MIs)
+	o = bpy.data.objects.new(name, me)
+	bpy.context.scene.collection.objects.link(o)
+	bm = bmesh.new()
+	bm.from_mesh(me)
+	bm.normal_update()
+	rim = [e for e in bm.edges if e.is_boundary]
+	down = {v: v.normal.copy() for e in rim for v in e.verts}
+	new = bmesh.ops.extrude_edge_only(bm, edges=rim)["geom"]
+	for v in new:
+		if isinstance(v, bmesh.types.BMVert):
+			e_ = next(x for x in v.link_edges if x.other_vert(v) in down)
+			v.co -= down[e_.other_vert(v)] * KNOT_THICK
+	bm.to_mesh(me)
+	bm.free()
+	return o
 
 
 def mats(*ms):
@@ -317,7 +475,7 @@ def stiffen(D, ring=True, passes=(3, 8), lift=0.0015):
 
 def plate(group, ray, hw, hh, *, off=0.016, border=0.011, step=0.0035, dome=0.002, pexp=5.0, point=0.0,
 		target=None, flat=None, rivets=(45, 135, 225, 315), riv_size=0.0055, hole=0.0, keep_min=None, stiff=(3, 8), rigid=False, top_wide=0.0,
-		nsp=64, engrave=True):
+		nsp=64, engrave=True, medals=()):
 	"""One plate: a rounded rectangle hw x hh (half sizes, metres) laid on target along ray(U, V) -> (origin, dir).
 	point: how far its bottom edge dips in the middle (a pointed lower edge, like the picture's breastplate and skirt).
 	flat: (z_top, flare) for skirt plates: one straight cone (doesn't follow his legs), flaring out going down.
@@ -384,12 +542,15 @@ def plate(group, ray, hw, hh, *, off=0.016, border=0.011, step=0.0035, dome=0.00
 	for i in range(start, len(T) - 1):
 		pol = 1 if T[i] >= ts - 0.005 else 0
 		if i == eng_row:
-			pol = ENG
-			for j, uv in strip_uv(P[i], P[i + 1], True).items():
-				FUV[len(F) + j] = uv
+			pol = 0  # (round 3: a raised knot strip stands on this row instead of a flat picture)
+			knot_strip(group, P[i:i + 2], Dr[i:i + 2], [0.0, 1.0], True)
 		F += [(i * NSP + j, i * NSP + (j + 1) % NSP, (i + 1) * NSP + (j + 1) % NSP, (i + 1) * NSP + j) for j in range(NSP)]
 		MI += [pol] * NSP
 	add(group, P.reshape(-1, 3), F, UVs.reshape(-1, 2), MI, FUV)
+	if medals and ENGRAVE:
+		sb = sheet_bvh(P)
+		for c, rad in medals:
+			medallion(group, ray, sb, c, rad)
 	if rivets:
 		tr = 1.0 - border * 0.5 / min(hw, hh)
 		for a in rivets:
@@ -439,16 +600,12 @@ def band(group, ray, length, hh, *, n=120, off=0.016, border=0.008, step=0.003, 
 	eng = ENGRAVE and engrave
 	if eng:  # (bronze: the band's middle is one engraved strip from its lower raised edge to its upper one)
 		i0, i1 = list(T).index(-e), list(T).index(e)
-		euv = strip_uv(P[i0], P[i1], closed)
+		knot_strip(group, P[i0:i1 + 1], Dr[i0:i1 + 1], T[i0:i1 + 1], closed)
 	for i in range(len(T) - 1):
 		pol = 1 if (abs(T[i]) >= ts - 0.005 and abs(T[i + 1]) >= ts - 0.005) or mat_mid == 1 else mat_mid
 		pol = 1 if abs(T[i]) >= ts - 0.005 or abs(T[i + 1]) >= ts + 0.003 else mat_mid
 		if eng and i0 <= i < i1:
-			pol = ENG
-			v0, v1 = (T[i] - T[i0]) / (T[i1] - T[i0]), (T[i + 1] - T[i0]) / (T[i1] - T[i0])
-			for j in range(m):
-				(a, _), (b, _), _, _ = euv[j]
-				FUV[len(F) + j] = [(a, v0), (b, v0), (b, v1), (a, v1)]
+			pol = mat_mid  # (round 3: under the raised knot strip)
 		F += [(i * n + j, i * n + (j + 1) % n, (i + 1) * n + (j + 1) % n, (i + 1) * n + j) for j in range(m)]
 		MI += [pol] * m
 	add(group, P.reshape(-1, 3), F, UVs.reshape(-1, 2), MI, FUV)
@@ -478,13 +635,16 @@ def ref_at(phi, z):
 
 # ================================================================ THE CHEST (arms bent down)
 FRONT, BACK, LEFT = math.pi, 0.0, math.pi / 2
+MED_U, MED_V, MED_R = 0.115, -0.045, 0.056  # (bronze round 3, owner's pick: two medallions on the breastplate, one each
+# side of the beard's middle braid; the back plate gets one big one in the middle)
 # cuirass: breastplate (pointed bottom, under the beard), backplate, side plates under the arms (tucked under both)
 # (the back in two layers like the picture: a lower plate, and an upper plate over the shoulder blades outside it)
 for phic, zc, hw, hh, pt, off, dm in ((FRONT, 0.735, 0.26, 0.172, 0.03, 0.018, 0.016),  # (round 7: wider, no leather beside it)
 		(BACK, 0.75, 0.27, 0.185, 0.012, 0.018, 0.012)):  # (round 8: one back plate; two left a dent line, owner)
 	ref = ref_at(phic, zc) + off
 	plate("chest_plate", torso_ray(phic, zc, ref), hw, hh, off=off, point=pt, pexp=6, dome=dm, rigid=True if phic == FRONT else 4,  # (round 7: domed like the picture's chest)
-		rivets=(20, 160, 200, 340, 270, 90), top_wide=0.3)  # (round 13, owner chose: wider only at the top corners, to
+		rivets=(20, 160, 200, 340, 270, 90), top_wide=0.3,
+		medals=(((-MED_U, MED_V), MED_R), ((MED_U, MED_V), MED_R)) if phic == FRONT else (((0.0, -0.01), 0.085),))  # (round 13, owner chose: wider only at the top corners, to
 	# cover the dark wedge under the arms; the waist stays narrow as round 12)
 # (round 14, owner: "there's still a plate under the armpits, we can just remove it": the two side plates are gone.
 # Round 13 tries before that (a plate over each shoulder top, bigger side plates) stuck out like flaps.)
@@ -592,7 +752,7 @@ def press_under_beard(P):
 
 
 # ================================================================ object making
-def make(name, group, mats, thick=0.0038, bevel=0.0011, beard=False):
+def make(name, group, mats, thick=0.0038, bevel=0.0011, beard=False, outward=None):
 	P, F, UV, MI, off = [], [], [], [], 0
 	FUV = {}
 	for p, f, uv, mi, fuv in PARTS[group]:
@@ -631,6 +791,14 @@ def make(name, group, mats, thick=0.0038, bevel=0.0011, beard=False):
 		b.width, b.segments, b.limit_method, b.angle_limit = bevel, 2, "ANGLE", math.radians(35)
 		b.harden_normals = False
 		cs._apply_all(o)
+	if RELIEF.get(group):
+		r = relief_object(name + "_knots", group, outward or (lambda c: c - torso_centre(c)))
+		log(name, "carving points", len(r.data.vertices))
+		bpy.ops.object.select_all(action="DESELECT")
+		r.select_set(True)
+		o.select_set(True)
+		bpy.context.view_layer.objects.active = o
+		bpy.ops.object.join()
 	if beard:
 		co = np.empty(len(o.data.vertices) * 3)
 		o.data.vertices.foreach_get("co", co)
@@ -893,15 +1061,19 @@ if ENGRAVE:
 	pfs = np.abs(((phis - math.pi + np.pi) % (2 * np.pi)) - np.pi)
 	js = [j for j in range(n_p - 1) if pfs[j] > H["cheek_phi"] + 0.05 and pfs[j + 1] > H["cheek_phi"] + 0.05]
 	js = js + [js[-1] + 1]
-	for k, uv in strip_uv(HP[ie, js], HP[ie + 1, js], False).items():
-		fi = FIDX[(ie, js[k])]
-		MI[fi] = ENG
-		HFUV[fi] = uv
+	# (round 3: a raised knot strip from one cheek guard round the back to the other, standing on these two rows)
+	sa = (phis + np.pi) % (2 * np.pi) - np.pi  # (signed angle from his back)
+	js = sorted(js, key=lambda j: sa[j])
+	rw = HP[ie:ie + 2][:, js]
+	dw = rw - np.array([0.0, SC[1], 0.0])
+	dw[..., 2] = 0.0
+	knot_strip("helm", rw, dw, [0.0, 1.0], False)
 add("helm", PTS, F, UVH, MI, HFUV)
 orient_sheets("helm", lambda c: np.array([0, SC[1], min(c[2], SC[2])]))
 M_SLIT = material("helm_slit_dark", (0.012, 0.008, 0.006), 0.0, 0.9)
 # (round 17, owner: the face frame and cheek guards get the edges' matte colour too; round 16 kept them bright copper)
-HM = make("armor_head_plate", "helm", mats(M_HAM, M_POL, M_SLIT), thick=0.005, bevel=0.0013)
+HELM_OUT = lambda c: c - np.array([0, SC[1], min(c[2], SC[2])])  # noqa: E731
+HM = make("armor_head_plate", "helm", mats(M_HAM, M_POL, M_SLIT), thick=0.005, bevel=0.0013, outward=HELM_OUT)
 HBV = BVHTree.FromObject(HM, bpy.context.evaluated_depsgraph_get())
 log("helmet shell", len(HM.data.polygons))
 
@@ -955,7 +1127,7 @@ def face_ray(U, V):
 
 log("helmet bands")
 orient_sheets("helm_band", lambda c: np.array([0, SC[1], min(c[2], SC[2])]))
-HBD = make("armor_head_band", "helm_band", mats(M_POL, M_POL), thick=0.004)
+HBD = make("armor_head_band", "helm_band", mats(M_POL, M_POL), thick=0.004, outward=HELM_OUT)
 BBV = BVHTree.FromObject(HBD, bpy.context.evaluated_depsgraph_get())
 for th in np.linspace(-1.08, 1.7, 7):  # (the picture's row of big rivets down the middle, sitting ON the strip)
 	d = np.array([0, math.sin(th), math.cos(th)])
@@ -1235,8 +1407,12 @@ for bone in sorted(set(GB.values())):
 	gs = [g for g in GB if GB[g] == bone]
 	key = "gb_" + bone
 	PARTS[key] = [p for g in gs for p in PARTS[g]]
+	if any(g in RELIEF for g in gs):
+		RELIEF[key] = [r for g in gs for r in RELIEF.get(g, [])]
+		_gc = GC[next(g for g in gs if g in RELIEF)]
 	small = bone.split("_")[0] in FINGERS5
-	o = make("_g_" + bone, key, mats(M_HAM, M_POL), thick=0.0022 if small else 0.0034, bevel=0.0007 if small else 0.001)
+	o = make("_g_" + bone, key, mats(M_HAM, M_POL), thick=0.0022 if small else 0.0034, bevel=0.0007 if small else 0.001,
+		outward=(lambda c, f=_gc: c - f(c)) if key in RELIEF else None)
 	bind_gauntlet(o, bone)
 	gp.append(o)
 	rv = [r for g in gs for r in RIVETS.get(g, [])]

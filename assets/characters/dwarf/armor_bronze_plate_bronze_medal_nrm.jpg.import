@@ -2,16 +2,19 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://bofo8codeflxf"
-path="res://.godot/imported/bronze_smooth_col.png-c0fdd1fd92f785e5319b8fe5c0157afc.ctex"
+uid="uid://bkb4r2h4o7fjp"
+path="res://.godot/imported/armor_bronze_plate_bronze_medal_nrm.jpg-e54da8457b63d97c6c449ec5c325d633.ctex"
 metadata={
 "vram_texture": false
+}
+generator_parameters={
+"md5": "c5fc3a46b94522e240604af488ca9e3e"
 }
 
 [deps]
 
-source_file="res://assets/textures/armor/bronze_smooth_col.png"
-dest_files=["res://.godot/imported/bronze_smooth_col.png-c0fdd1fd92f785e5319b8fe5c0157afc.ctex"]
+source_file="res://assets/characters/dwarf/armor_bronze_plate_bronze_medal_nrm.jpg"
+dest_files=["res://.godot/imported/armor_bronze_plate_bronze_medal_nrm.jpg-e54da8457b63d97c6c449ec5c325d633.ctex"]
 
 [params]
 
@@ -23,7 +26,7 @@ compress/rdo_quality_loss=0.0
 compress/hdr_compression=1
 compress/normal_map=0
 compress/channel_pack=0
-mipmaps/generate=false
+mipmaps/generate=true
 mipmaps/limit=-1
 roughness/mode=0
 roughness/src_normal=""

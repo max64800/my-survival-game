@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://hj65r8m17wmw"
-path="res://.godot/imported/bronze_engrave_col.png-b72c4cb905481759722261b99063f9ed.ctex"
+uid="uid://cvatom46pbkqg"
+path="res://.godot/imported/bronze_hammered_col.png-bf0264c5daf1574459986415433c3b05.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/textures/armor/bronze_engrave_col.png"
-dest_files=["res://.godot/imported/bronze_engrave_col.png-b72c4cb905481759722261b99063f9ed.ctex"]
+source_file="res://assets/textures/armor/bronze_hammered_col.png"
+dest_files=["res://.godot/imported/bronze_hammered_col.png-bf0264c5daf1574459986415433c3b05.ctex"]
 
 [params]
 

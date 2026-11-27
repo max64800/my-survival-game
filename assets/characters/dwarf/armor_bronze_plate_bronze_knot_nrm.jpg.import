@@ -2,19 +2,19 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://cm3hesf6lvd0v"
-path="res://.godot/imported/armor_bronze_plate_bronze_engrave_col.jpg-60fe644edd3317fbfaf7f1f7b391a146.ctex"
+uid="uid://b0o6qfwbu0480"
+path="res://.godot/imported/armor_bronze_plate_bronze_knot_nrm.jpg-8c38c66dbfbdb5ed31d3f4663fa7f8ed.ctex"
 metadata={
 "vram_texture": false
 }
 generator_parameters={
-"md5": "e84706a26654eafeceb057ea35687efb"
+"md5": "852236ad05c9c6048ced6a5aa0f4b772"
 }
 
 [deps]
 
-source_file="res://assets/characters/dwarf/armor_bronze_plate_bronze_engrave_col.jpg"
-dest_files=["res://.godot/imported/armor_bronze_plate_bronze_engrave_col.jpg-60fe644edd3317fbfaf7f1f7b391a146.ctex"]
+source_file="res://assets/characters/dwarf/armor_bronze_plate_bronze_knot_nrm.jpg"
+dest_files=["res://.godot/imported/armor_bronze_plate_bronze_knot_nrm.jpg-8c38c66dbfbdb5ed31d3f4663fa7f8ed.ctex"]
 
 [params]
 

@@ -2,19 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://co7jcjyjccq4m"
-path="res://.godot/imported/armor_bronze_plate_bronze_engrave_nrm.jpg-d726179c570ce3be36b9e49c99e52401.ctex"
+uid="uid://bjdvqumtm1g22"
+path="res://.godot/imported/bronze_medal_col.png-3dd50bc89d54295ae6946d1cd3f87fec.ctex"
 metadata={
 "vram_texture": false
-}
-generator_parameters={
-"md5": "fbf6535f2cf62cbad7c9d0d37c67c4c8"
 }
 
 [deps]
 
-source_file="res://assets/characters/dwarf/armor_bronze_plate_bronze_engrave_nrm.jpg"
-dest_files=["res://.godot/imported/armor_bronze_plate_bronze_engrave_nrm.jpg-d726179c570ce3be36b9e49c99e52401.ctex"]
+source_file="res://assets/textures/armor/bronze_medal_col.png"
+dest_files=["res://.godot/imported/bronze_medal_col.png-3dd50bc89d54295ae6946d1cd3f87fec.ctex"]
 
 [params]
 
@@ -26,7 +23,7 @@ compress/rdo_quality_loss=0.0
 compress/hdr_compression=1
 compress/normal_map=0
 compress/channel_pack=0
-mipmaps/generate=true
+mipmaps/generate=false
 mipmaps/limit=-1
 roughness/mode=0
 roughness/src_normal=""
