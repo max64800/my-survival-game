@@ -667,8 +667,9 @@ CLEAR = 0.03  # (the hat hair lies within ~1.8 cm of the egg; the helmet's insid
 # Round 8 (owner: "looks like a ball, not a helmet"): a lower round dome on top of the brow band, then a bell skirt that
 # drops straight and flares OUT at the bottom, a raised face guard round the eyes, and the back edge UP at 0.985 m so his
 # hair comes out under it (round 7's neck guard down at 0.875 m cut through the hair).
-H = dict(top=1.31, eq=1.125, bot=0.945, back_bot=0.985, flare=0.048, waist=0.012, guard=0.03, guard_phi=0.85,
-	eye=(1.05, 1.09), eye_phi=(0.14, 0.6), face_top=1.035, face_phi=0.98, nasal=0.2, nasal_low=0.975, brow=(1.1, 1.15))
+H = dict(top=1.31, eq=1.125, bot=0.965, back_bot=0.985, flare=0.048, waist=0.012, guard=0.03, guard_phi=0.85,
+	eye=(1.05, 1.09), eye_phi=(0.14, 0.6), face_top=1.035, face_phi=0.98, nasal=0.2, nasal_low=0.975, brow=(1.1, 1.15),
+	cheek=0.016, cheek_phi=1.45, cheek_top=1.085, eye_deep=0.012)  # (round 10: cheek guards, deeper eyes, shorter edge)
 RX, RY = 0.2, 0.198
 
 
@@ -692,6 +693,8 @@ def helm_r(phi, z):
 	eyes = (pf > H["eye_phi"][0] - 1e-6) & (pf < H["eye_phi"][1] + 1e-6) & (z > H["eye"][0] - 1e-6) & (z < H["eye"][1] + 1e-6)
 	guard = H["guard"] * (((pf < H["guard_phi"] + 1e-6) & (z < H["eq"] - 0.004) & (z > H["face_top"] - 1e-6) |
 		(pf < H["nasal"] / 2 + 1e-6) & (z > H["nasal_low"] - 1e-6) & (z < H["eq"])) & ~eyes)  # (eyes sit deep in it)
+	cheek = H["cheek"] * ((pf > H["guard_phi"] - 1e-6) & (pf < H["cheek_phi"] + 1e-6) & (z < H["cheek_top"] + 1e-6))
+	guard = guard + cheek - H["eye_deep"] * eyes
 	waist = H["waist"] * np.sin(np.pi * np.clip(low / 0.75, 0, 1))  # (the skirt pulls in under the band, then flares)
 	return np.where(z >= H["eq"], up, ex + H["flare"] * low ** 2.4 - waist + guard)
 
@@ -704,11 +707,11 @@ def helm_point(phi, z, extra=0.0):
 # grid lines on every cut edge, so the openings come out with straight clean edges
 fp = H["face_phi"]
 phis = sorted(set(list(np.linspace(-np.pi, np.pi, 97)[:-1]) +
-	[math.pi + s * a for s in (1, -1) for a in (H["nasal"] / 2, H["eye_phi"][0], H["eye_phi"][1], fp, H["guard_phi"])]))
+	[math.pi + s * a for s in (1, -1) for a in (H["nasal"] / 2, H["eye_phi"][0], H["eye_phi"][1], fp, H["guard_phi"], H["cheek_phi"])]))
 phis = np.array([((p + np.pi) % (2 * np.pi)) - np.pi for p in phis])
 phis = np.unique(np.round(phis, 6))
 zs = np.unique(np.round(np.concatenate([np.linspace(H["bot"], H["top"], 70), [H["eye"][0], H["eye"][1], H["face_top"],
-	H["nasal_low"], H["brow"][0], H["brow"][1], H["eq"] - 0.004]]), 6))
+	H["nasal_low"], H["brow"][0], H["brow"][1], H["eq"] - 0.004, H["cheek_top"]]]), 6))
 zs = zs[zs < H["top"] - 0.002]
 PH, ZZ = np.meshgrid(phis, zs)
 HP = helm_point(PH, ZZ)
@@ -724,7 +727,8 @@ for i in range(n_z - 1):
 		eye = H["eye_phi"][0] < pf < H["eye_phi"][1] and H["eye"][0] < zc < H["eye"][1]
 		F.append((i * n_p + j, i * n_p + (j + 1) % n_p, (i + 1) * n_p + (j + 1) % n_p, (i + 1) * n_p + j))
 		guard = (pf < H["guard_phi"] and H["face_top"] < zc < H["eq"] - 0.004) or (pf < H["nasal"] / 2 and zc > H["nasal_low"])
-		MI.append(2 if eye else 1 if guard and zc < H["eq"] else 0)  # (round 8b: the face guard polished, its own plate)  # (round 7: dark eye slits like the picture's; open ones showed his skin, bright)
+		cheek = H["guard_phi"] < pf < H["cheek_phi"] and zc < H["cheek_top"]
+		MI.append(2 if eye else 1 if (guard or cheek) and zc < H["eq"] else 0)  # (round 8b: the face guard polished, its own plate)  # (round 7: dark eye slits like the picture's; open ones showed his skin, bright)
 top_i = len(HP.reshape(-1, 3))
 PTS = np.vstack([HP.reshape(-1, 3), [[0, SC[1], H["top"]]]])
 F += [((n_z - 1) * n_p + j, (n_z - 1) * n_p + (j + 1) % n_p, top_i) for j in range(n_p)]
@@ -775,7 +779,7 @@ def ridge_ray(U, V):
 
 
 # (front end stops on the brow band: further down, over the eye holes, round 7's first try hung out like a visor)
-plate("helm_band", ridge_ray, 0.027, 0.29, target=HBV, off=0.002, border=0.006, pexp=8, rivets=(), stiff=(1, 3))
+plate("helm_band", ridge_ray, 0.04, 0.29, target=HBV, off=0.002, border=0.006, pexp=8, rivets=(), stiff=(1, 3))
 # (the row of big rivets down the middle is put on the finished strip below: on the shell they sank under it)
 
 
