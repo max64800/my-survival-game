@@ -823,8 +823,8 @@ for side in (1, -1):
 		n = d_[0, 0] / np.linalg.norm(d_[0, 0])
 		B = o_[0, 0] + n * lay(o_, d_, sheet_bvh(CAP), 0.0)[0, 0]
 		out = np.array([side, 0.0, 0.0])
-		ctrl = [B - 0.012 * n, B + 0.035 * n, B + 0.068 * n - 0.008 * out, B + 0.08 * n - 0.045 * out]  # (round 5e,
-		# owner: "wrong direction, turn them 180": the tip hooks in toward his head)
+		ctrl = [B - 0.012 * n, B + 0.035 * n, B + 0.07 * n - 0.004 * out, B + 0.088 * n - 0.022 * out]  # (round 5e,
+		# owner: "wrong direction, turn them 180": the tip hooks in toward his head; 5f: "a bit too bent at the end": half the hook)
 		horn_tube("chest_spike", ctrl, side, 0.052, SPIKE_CL, ridge_from=0.04, ring=(0.012, 0.021), taper=1.4)  # (round 5d,
 		# owner: "not attached, wrong rotation": it grows square out of the cap (its foot flat on the cap, not standing
 		# straight up off a slope))  # (round 5c,
