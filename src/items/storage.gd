@@ -144,6 +144,35 @@ func _rpc_transfer(box_id: int, from_box: bool, slot: int) -> void:
 		request_transfer(multiplayer.get_remote_sender_id(), box_id, from_box, slot)
 
 
+## F928 (owner, Nov 27): read a page (blueprint, recipe page, plans) straight from an open chest (right-click it),
+## without taking it out first. Request -> host decides (GameAuthority._read_page) -> everyone learns.
+func ask_read(box_id: int, slot: int) -> void:
+	if auth.is_host():
+		request_read(auth.local_peer_id(), box_id, slot)
+	else:
+		_rpc_read.rpc_id(1, box_id, slot)
+
+
+@rpc("any_peer", "reliable")
+func _rpc_read(box_id: int, slot: int) -> void:
+	if auth.is_host():
+		request_read(multiplayer.get_remote_sender_id(), box_id, slot)
+
+
+func request_read(peer_id: int, box_id: int, slot: int) -> String:
+	var ps := auth.get_player(peer_id)
+	var box := get_box(box_id)
+	if ps == null or box.is_empty() or _far(ps, box):
+		return ""
+	var s: Dictionary = box.inv.get_slot(slot)
+	if s.is_empty() or Items.kind(s.id) != "page":
+		return ""
+	var r := auth._read_page(ps, peer_id, s.id, box.inv)
+	if r == "learned":
+		_changed(box_id)
+	return r
+
+
 @rpc("any_peer", "reliable")
 func _rpc_take_all(box_id: int) -> void:
 	if auth.is_host():

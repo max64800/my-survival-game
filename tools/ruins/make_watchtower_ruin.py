@@ -97,7 +97,7 @@ chests = [
 	{"kind": "chest_stone", "pos": [*at(6, 3.0)[:1], 1.0, at(6, 3.0)[1]], "yaw": 0, "loot": {"recipe_page": 1, "dish_hollowcap_stew": 1}},
 	{"kind": "chest_small", "pos": [*at(10.4, 3.0)[:1], 3.25, at(10.4, 3.0)[1]], "yaw": 60, "loot": {"rope": 2}},
 	{"kind": "chest_small", "pos": [*at(3, 3.0)[:1], 5.5, at(3, 3.0)[1]], "yaw": 120, "loot": {"recipe_page": 1}},
-	{"kind": "chest_small", "pos": [*at(2, 1.0)[:1], 7.75, at(2, 1.0)[1]], "yaw": 210, "loot": {"watchtower_plans": 1, "recipe_page": 1}},
+	{"kind": "chest_small", "pos": [*at(2, 1.0)[:1], 7.75, at(2, 1.0)[1]], "yaw": 210, "loot": {"blueprint_page": 1, "recipe_page": 1}},
 	# Barrels you can keep things in (owner, Nov 17: "I want to live in the first tower"), one row each.
 	{"kind": "barrel", "pos": [*at(9.2, 3.05)[:1], 1.0, at(9.2, 3.05)[1]], "yaw": 0, "loot": {}},
 	{"kind": "barrel", "pos": [*at(0.2, 3.05)[:1], 3.25, at(0.2, 3.05)[1]], "yaw": 0, "loot": {}},

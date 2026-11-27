@@ -19,7 +19,7 @@ const STARTER := ["delvers_hut"]
 ## The Brewhall's two (F479): its cellar goes below the ground line, which only the ruin digs out.
 ## The Lantern Spire's two (F479): a landmark you rebuild where it stands. The Hearth Manor's two (F479) the same, and the Twin Gate's and Cliff Watch's (owner, Nov 22: so the dev menu has them),
 ## and the Prow Hall's (owner, Nov 22: its ruin teaches both), and the Smeltery's (owner, Nov 25, F845: the same).
-const REBUILD_ONLY := ["wooden_watchtower", "wooden_outpost", "hearthbrick_brewhall", "wooden_brewhall", "lantern_spire", "wooden_spire",
+const REBUILD_ONLY := ["stone_watchtower", "stone_outpost", "wooden_watchtower", "wooden_outpost", "hearthbrick_brewhall", "wooden_brewhall", "lantern_spire", "wooden_spire",
 	"hearthbrick_manor", "wooden_manor", "stonehold_twin_gate", "wooden_twin_gate", "stonehold_cliff_watch", "wooden_cliff_watch",
 	"stonehold_prow_hall", "wooden_prow_hall", "hearthbrick_smeltery", "wooden_smeltery",
 	"minehead_works", "cliff_galleries", "sinkhole_ring"]

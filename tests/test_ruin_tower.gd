@@ -35,7 +35,8 @@ func test_plan_has_the_ruin() -> void:
 	check(ids.has("door_broken") and ids.has("ruin_wall_collapsed") and ids.has("ruin_wall_worn") and ids.has("ruin_rubble"),
 		"it's broken: the door lies outside, walls worn and collapsed, rubble")
 	var roof: Array = plan.chests.filter(func(c): return float(c.pos[1]) > 7.0)
-	check(roof.size() == 1 and roof[0].loot.has("watchtower_plans"), "the roof chest holds the Watchtower Plans")
+	check(roof.size() == 1 and roof[0].loot.has("blueprint_page") and not roof[0].loot.has("watchtower_plans"),
+		"the roof chest holds an Old Blueprint, not the tower's own plans (F929: those come from rebuilding it)")
 	var kinds: Array = plan.chests.filter(func(c): return c.kind != "barrel").map(func(c): return [float(c.pos[1]), c.kind])
 	kinds.sort()
 	check_eq(kinds.map(func(k): return k[1]), ["chest_stone", "chest_small", "chest_small", "chest_small"],
@@ -110,7 +111,7 @@ func test_built_in_the_first_cave_without_monsters() -> void:
 	for id in auth.storage.boxes:
 		if auth.storage.boxes[id].inv.count_of("watchtower_plans") > 0:
 			found = true
-	check(found, "one chest holds the Watchtower Plans")
+	check(not found, "no chest holds the Watchtower Plans (F929)")
 	var helms := 0
 	for id in auth.storage.boxes:
 		helms += auth.storage.boxes[id].inv.count_of("page_helm_copper")
@@ -122,6 +123,9 @@ func test_built_in_the_first_cave_without_monsters() -> void:
 func test_plans_teach_the_watchtower() -> void:
 	check_eq(Items.info("watchtower_plans").get("teaches", ""), "stone_watchtower", "the plans teach the Stone Watchtower")
 	check(BlueprintMenu.ready_made_keys().has("stone_watchtower"), "the watchtower can be learned (not a starter)")
+	# F929 (owner, Nov 27): a ruin's own blueprints come only from rebuilding it, never from a page.
+	check(BlueprintLibrary.REBUILD_ONLY.has("stone_watchtower") and BlueprintLibrary.REBUILD_ONLY.has("stone_outpost"),
+		"the stone tower and stone outpost are learned only by rebuilding")
 
 
 ## F350 🔁 (owner, Nov 19: "there is no chest to rebuild the tower"; a merge had wiped the code): the Rebuilding Chest

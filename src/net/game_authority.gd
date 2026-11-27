@@ -2104,22 +2104,30 @@ func request_harvest(peer_id: int, glow_id: int) -> Dictionary:
 
 
 ## Reading an old page (recipe page, blueprint, plans). Works from the hand (click) or from the bag
-## (right-click it, owner Nov 17: "I cannot read the recipe"). Says why when it teaches nothing.
-func _read_page(ps: PlayerState, peer_id: int, id: String) -> String:
-	var r0 := _learn_from_page(ps, id)
+## (right-click it, owner Nov 17: "I cannot read the recipe"), or straight from an open chest (F928: `from` = the
+## chest's inventory; the page is used up from there). Says why when it teaches nothing.
+func _read_page(ps: PlayerState, peer_id: int, id: String, from: Inventory = null) -> String:
+	var r0 := _learn_from_page(ps, id, from if from != null else ps.inventory)
 	if r0 == "nothing_new" and peer_id == local_peer_id():
 		hud_message.emit("You already know everything this %s shows." % Items.display_name(id))
+	elif r0 == "rebuild_first":
+		tell(peer_id, "These plans only make sense once you rebuild the old ruin they belong to.")
 	return r0
 
 
-func _learn_from_page(ps: PlayerState, id: String) -> String:
+func _learn_from_page(ps: PlayerState, id: String, from: Inventory) -> String:
+	# F929 (owner, Nov 27): a ruin's own blueprint is only learned by rebuilding that ruin (old saves may still hold
+	# the Watchtower Plans from the tower's roof chest).
+	var t: String = Items.info(id).get("teaches", "")
+	if t != "" and BlueprintLibrary.REBUILD_ONLY.has(t) and not world_state.get("blueprints", []).has(t):
+		return "rebuild_first"
 	if id == "blueprint_page" or Items.info(id).has("teaches"):
 		# An old blueprint from a ruin: the whole group can now place that ready-made building (F98).
 		# A named plan (Watchtower Plans, F254) teaches its own building; an Old Blueprint a random one.
 		var unknown := BlueprintMenu.ready_made_keys().filter(func(k): return not world_state.get("blueprints", []).has(k) and not BlueprintLibrary.REBUILD_ONLY.has(k))
 		if Items.info(id).has("teaches"):
 			unknown = unknown.filter(func(k): return k == Items.info(id).teaches)
-		if unknown.is_empty() or not ps.inventory.remove(id, 1):
+		if unknown.is_empty() or not from.remove(id, 1):
 			return "nothing_new"
 		var key: String = unknown[randi() % unknown.size()]
 		var known: Array = world_state.get("blueprints", []).duplicate()
@@ -2133,7 +2141,7 @@ func _learn_from_page(ps: PlayerState, id: String) -> String:
 	# recipe (F237; Mossgate's scroll: "teaches_recipe").
 	var one: String = Items.info(id).get("recipe", Items.info(id).get("teaches_recipe", ""))
 	var left := ([one] if one != "" else Recipes.page_recipes(id)).filter(func(r): return not world_state.get("learned", []).has(r))
-	if left.is_empty() or not ps.inventory.remove(id, 1):
+	if left.is_empty() or not from.remove(id, 1):
 		return "nothing_new"
 	var r: String = left[randi() % left.size()]
 	var learned: Array = world_state.get("learned", []).duplicate()

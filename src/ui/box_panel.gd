@@ -124,6 +124,7 @@ func refresh() -> void:
 				b.add_theme_stylebox_override(look, UiKit.style("slot", 5))
 			b.add_theme_stylebox_override("hover", UiKit.style("slot_selected", 5))
 			b.pressed.connect(func(): GameAuthority.instance.storage.ask_transfer(box_id, true, i))
+			b.gui_input.connect(_on_slot_input.bind(i))
 			b.set_drag_forwarding(_drag.bind(i), _can_drop.bind(i), _drop.bind(i))  # F886: drag to a chosen slot
 			_grid.add_child(b)
 	for i in inv.slots.size():
@@ -138,6 +139,19 @@ func refresh() -> void:
 		else:
 			b.text = "" if int(s.count) <= 1 else str(s.count)
 		b.tooltip_text = "" if s.is_empty() else Items.display_name(s.id)
+		if not s.is_empty() and Items.kind(s.id) == "page":
+			b.tooltip_text += "
+Right-click to read it here"  # F928
+
+
+## F928 (owner, Nov 27): right-click a page in the chest to read it right there (like in the bag).
+func _on_slot_input(event: InputEvent, i: int) -> void:
+	if not (event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_RIGHT):
+		return
+	var st := GameAuthority.instance.storage
+	if Items.kind(st.get_box(box_id).inv.get_slot(i).get("id", "")) == "page":
+		st.ask_read(box_id, i)
+		accept_event()
 
 
 ## The Rebuilding Chest before it starts (owner F560, said 3×: "only show, in pictures, what you need for the two

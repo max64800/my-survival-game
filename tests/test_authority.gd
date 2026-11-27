@@ -1040,3 +1040,39 @@ func test_first_tower_gives_the_first_perk_point() -> void:
 	check_eq(p.progress.level, 2, "only once")
 	me.free()
 	a.free()
+
+
+## F928 + F929 (owner, Nov 27): a page can be read straight from an open chest (it's used up from the chest), and a
+## ruin's own blueprint is never learned from a page, only by rebuilding the ruin.
+func test_read_a_page_from_a_chest() -> void:
+	var a := GameAuthority.new()
+	var me := Node3D.new()
+	tree.root.add_child(a)
+	tree.root.add_child(me)
+	a.add_player(1, me)
+	var chest := Node3D.new()
+	tree.root.add_child(chest)
+	var inv := Inventory.new()
+	inv.add("recipe_page", 1)
+	inv.add("watchtower_plans", 1)
+	a.storage.boxes[7] = {kind = "chest_small", inv = inv, node = chest, owner = 0}
+	var page := inv.slots.find(inv.slots.filter(func(s): return not s.is_empty() and s.id == "recipe_page")[0])
+	var plans := inv.slots.find(inv.slots.filter(func(s): return not s.is_empty() and s.id == "watchtower_plans")[0])
+	me.global_position = Vector3(30, 0, 0)
+	check_eq(a.storage.request_read(1, 7, page), "", "too far from the chest: nothing")
+	me.global_position = Vector3(1, 0, 0)
+	check_eq(a.storage.request_read(1, 7, page), "learned", "right-clicked in the chest: read")
+	check_eq(inv.count_of("recipe_page"), 0, "the page is used up from the chest")
+	check_eq(a.world_state.get("learned", []).size(), 1, "a recipe was learned")
+	check_eq(a.storage.request_read(1, 7, plans), "rebuild_first", "the tower's own plans need the tower rebuilt")
+	check_eq(inv.count_of("watchtower_plans"), 1, "so the plans stay")
+	for k in 40:  # Old Blueprints teach anything else, never a ruin's own blueprint
+		inv.add("blueprint_page", 1)
+		var i := inv.slots.find(inv.slots.filter(func(s): return not s.is_empty() and s.id == "blueprint_page")[0])
+		a.storage.request_read(1, 7, i)
+	for key in a.world_state.get("blueprints", []):
+		check(not BlueprintLibrary.REBUILD_ONLY.has(key), "%s came from an Old Blueprint, not a rebuild" % key)
+	check(not a.world_state.get("blueprints", []).has("stone_watchtower"), "never the Stone Watchtower")
+	chest.free()
+	me.free()
+	a.free()
