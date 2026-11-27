@@ -15139,3 +15139,24 @@ related to F417 (9 FPS), or just other chats' Blender/Godot runs on the same PC.
 - Try 1: a 3.4 cm foot sunk 1.3 cm into the cap. The wide part was hidden inside the cap, so it still looked thin. Try 2: a 4.2 cm foot, sunk only 8 mm, gentler taper. Now it reads as a fat thorn.
 - The owner also asked to remove the back hair under the helmet, because it stuck out. Mistake I almost made: the helmet's hair piece also holds the **beard and front braids**, so cutting everything below the helmet edge would have shaved the beard. Second mistake: the later hair steps reuse a saved list of hair points, so deleting points early would have broken them. Fix: cut only points behind the head (over 115° round from the face), at the very end of the hair steps.
 - Copper rebuilt too (same script); its page model grew to 6 parts. Fit test passes. Page v37.
+
+
+## Nov 27: small boxes you can't stand on (F919) and a new "E" prompt (F931)
+
+**What we did**
+- **F919:** the dwarf used to walk on top of small things like the bolt crate. Now every loot prop under 1.1 m tall
+  carries a "small thing" tag. The dwarf won't step up onto it, and if he ends up on top he slides off.
+- **F931:** the owner picked "key stone + name". The text under the crosshair is now a dark wooden plaque with a gold
+  edge. It holds a stone "E" key cap, the thing's name in gold capitals, and what E does underneath.
+
+**Mistakes and hurdles**
+- **First photo showed nothing.** The robot put the workbench straight in front of the dwarf, but the crosshair looks
+  past his shoulder and missed it. Fix: shoot a ray from the camera and place the bench where it lands.
+- **Benches had no key cap.** Stations say "E: craft, …", not "E to …", so the first version didn't spot the key.
+  Fix: the parser knows both. It also leaves a dot inside brackets alone ("Giant Mushroom (3 chops left · copper
+  axe)" used to be cut in half).
+- **The "E" was squeezed** by its stone frame (the frame reaches 14 px in). Fix: a bigger cap.
+- **Tests:** 5 test_dwarf checks (stun meter, braid, camera…) and test_skeleton_miners failed. They fail the same way
+  without my change, so other chats' work in progress is the likely cause; I left them alone.
+- **Shared files:** hud.gd, loot_props.gd and the feedback lists held other chats' unsaved lines. I committed only my
+  own lines (hash-object + update-index), the same way as before.
