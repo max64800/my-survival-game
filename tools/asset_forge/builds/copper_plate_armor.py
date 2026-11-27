@@ -195,7 +195,8 @@ def material(name, rgb, metal, rough, col_img=None, nrm_img=None, nrm=1.0):
 M_HAM = material("copper_hammered", (0.75, 0.38, 0.2), 0.72, 0.24, HAM_COL, HAM_NRM, 0.55)  # (round 14, owner: the picture
 # "definitely has a shine": smoother (rough 0.36 -> 0.24), shallower dents (normal 0.9 -> 0.55); metal 0.72 keeps the
 # copper colour: at 0.85 + rough 0.2 it mirrored the dark room and turned grey)
-M_POL = material("copper_polished", (0.8 * DARK, 0.33 * DARK, 0.14 * DARK), 0.72, 0.18)  # (the raised borders and edges, rubbed bright)
+M_POL = material("copper_trim_dark", (0.035, 0.022, 0.015), 0.35, 0.8)  # (the raised borders, edges and bands; round 16,
+# owner: "make them darker, not as shiny, matte, maybe even black": near-black matte; was rubbed-bright copper)
 # (round 6 had (0.86, 0.47, 0.27), metal 0.9: in the game it mirrored the grey room and showed silver; the picture's are copper)
 M_RIV = material("copper_rivet", (0.7, 0.3, 0.13), 0.72, 0.2)
 QUILT = TEXD / "hide2_quilted.png"
@@ -698,7 +699,7 @@ CLEAR = 0.03  # (the hat hair lies within ~1.8 cm of the egg; the helmet's insid
 # (round 13, owner chose a NECK GUARD: the hair squeezed out under the high back edge looked smeared, so the back edge
 # comes down to 0.9 m, over the collar and the back plate's top, and the back hair is hidden inside.)
 H = dict(top=1.275, eq=1.125, bot=0.965, back_bot=0.9, flare=0.034, waist=0.012, guard=0.014, guard_phi=0.85,
-	eye=(1.06, 1.094), eye_phi=(0.12, 0.62), face_top=1.035, face_phi=0.98, nasal=0.2, nasal_low=0.95, frame_phi=0.74, brow=(1.1, 1.15),
+	eye=(1.06, 1.094), eye_phi=(0.12, 0.62), face_top=1.035, face_phi=0.98, nasal=0.26, nasal_low=0.95, nasal_out=0.016, frame_phi=0.74, brow=(1.1, 1.15),
 	cheek=0.016, cheek_phi=1.45, cheek_top=1.085, eye_deep=0.003)  # (round 15, owner: "too plain, the entire thing blocked, so much dead space under the eyes",
 # picture: a shaped eye frame: only a thin edge under the eyes (face_top back up to 1.035; at 1.047 his bare nose showed), the raised frame ends past
 # the eyes (frame_phi) so the temples step back, and the nasal narrows to a point (NASAL_PT below))  # (round 14, owner picked "solid helmet face": the face plate reaches 3.5 cm further down
@@ -729,7 +730,9 @@ def helm_r(phi, z):
 		(pf < H["nasal"] / 2 + 1e-6) & (z > H["nasal_low"] - 1e-6) & (z < H["eq"])))  # (round 14: the eyes sit IN
 	# the raised guard, only eye_deep lower; before they dropped to the shell behind it, 3 cm deep, owner: "you can see they're deep")
 	cheek = H["cheek"] * ((pf > H["guard_phi"] - 1e-6) & (pf < H["cheek_phi"] + 1e-6) & (z < H["cheek_top"] + 1e-6))
-	guard = guard + cheek - H["eye_deep"] * eyes
+	nas = (pf < H["nasal"] / 2 + 1e-6) & (z < H["eye"][0] + 1e-6) & (z > H["nasal_low"] - 1e-6)
+	guard = guard + cheek - H["eye_deep"] * eyes + H["nasal_out"] * nas  # (round 16, owner: "my nose is sticking out":
+	# the nasal below the eyes stands 1.6 cm further out and is wider, over his nose)
 	waist = H["waist"] * np.sin(np.pi * np.clip(low / 0.75, 0, 1))  # (the skirt pulls in under the band, then flares)
 	return np.where(z >= H["eq"], up, ex + H["flare"] * low ** 2.4 - waist + guard)
 
@@ -779,7 +782,9 @@ UVH = np.vstack([UVH, [[0, H["top"] / TILE]]])
 add("helm", PTS, F, UVH, MI)
 orient_sheets("helm", lambda c: np.array([0, SC[1], min(c[2], SC[2])]))
 M_SLIT = material("helm_slit_dark", (0.012, 0.008, 0.006), 0.0, 0.9)
-HM = make("armor_head_plate", "helm", [M_HAM, M_POL, M_SLIT], thick=0.005, bevel=0.0013)
+M_FACE = material("copper_face_polished", (0.8 * DARK, 0.33 * DARK, 0.14 * DARK), 0.72, 0.18)  # (round 16: the
+# face frame and cheek guards stay bright copper, so the dark eye slits show; the bands and edges went dark)
+HM = make("armor_head_plate", "helm", [M_HAM, M_FACE, M_SLIT], thick=0.005, bevel=0.0013)
 HBV = BVHTree.FromObject(HM, bpy.context.evaluated_depsgraph_get())
 log("helmet shell", len(HM.data.polygons))
 
