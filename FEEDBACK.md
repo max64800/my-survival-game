@@ -99,13 +99,11 @@ Fixed items get ~~crossed out~~, never deleted, so we can see the whole history.
 ## Open (still to do)
 
 **Nov 27 play session (big list):**
-- [ ] **F919. You can walk on top of small things like the box that gives bolts.** Give small things enough collision on their sides so you bump into them and can't stand on them; it doesn't look good. *From: you (PC, Nov 27, play session). Said: 1×*
 - [ ] **F924. The first perk point: you get it as soon as you come near the first tower, with a 'level up / perk point' notice on the right-hand side.** *From: you (PC, Nov 27, play session). Said: 1×*
 - [ ] **F925. Getting hit by a bat sounds like a 'ding'. It shouldn't.** *From: you (PC, Nov 27, play session). Said: 1×* 🛠 code done Nov 27, waiting for your round 12 sound picks (the page is open)
 - [ ] **F927. Aiming and looking up shows the back of the dwarf: the aim camera needs a new framing.** *From: you (PC, Nov 27, play session). Said: 1×*
 - [ ] **F928. Read a blueprint you find straight from the chest (without taking it out first).** *From: you (PC, Nov 27, play session). Said: 1×*
 - [ ] **F929. The stone tower's chest gave the stone tower's blueprint before it was rebuilt.** You should only get a ruin's rebuild blueprint after you actually rebuild the ruin. *From: you (PC, Nov 27, play session). Said: 1×*
-- [ ] **F931. Redesign how the 'E to pick up' text looks.** You're not a fan of how it looks now. *From: you (PC, Nov 27, play session). Said: 1×*
 - [ ] **F934. Skill-up sounds (jumping, cooking, crafting…) are way too arcade-like. Change them.** *From: you (PC, Nov 27, play session). Said: 1×* 🛠 code done Nov 27, waiting for your round 12 sound picks (the page is open)
 - [ ] **F937. Cooking at a campfire sounds like fixing something.** *From: you (PC, Nov 27, play session). Said: 1×* 🛠 code done Nov 27, waiting for your round 12 sound picks (the page is open)
 - [ ] **F940 🔁 (F900). The road that links all the places should be a sand road, and not bend about.** F900 (Nov 25) made it an old grey brick road; it still doesn't look good and it bends. *From: you (PC, Nov 27, play session). Said: 1×* (see Things that keep coming back)
