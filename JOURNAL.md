@@ -15215,3 +15215,8 @@ related to F417 (9 FPS), or just other chats' Blender/Godot runs on the same PC.
 **What we did:** The owner circled the nose guard on the helmet. It was just a thin, flat, dark strip, so from the side it looked like one black line. They wanted it bigger and not flat, on copper and bronze. I built a new solid bar on top of the old strip. It starts under the brow band and slopes out like a nose. It is about 5 cm wide at the top, narrows to a rounded tip 2.5 cm lower than before, and stands out up to 3 cm. The front is hammered metal with a ridge down the middle, and the edges and sides are dark trim, so it is no longer all black. The fit test passes. Page v49.
 
 **Hurdle:** A search for where the game loads the horn part looked through the whole folder (videos included) and hung, so I stopped it. The new part is named `armor_head_nasal`, so the game picks it up with the rest of the helmet anyway.
+
+
+## 2026-11-27: The nose guard is OK'd, and weapons go on the to-do list (F941)
+
+**What we did:** The owner liked the new nose guard ("great, I like it") and asked for a note that the weapons need the same process. I added F941 to FEEDBACK.md: build each weapon by hand in Blender by script, one shape per weapon kind, the copper and bronze looks made from that shape, thick rather than flat, shown on a 3D page and improved round by round from the owner's drawings. It is linked to F83 (silver sword). No mistakes this time.
