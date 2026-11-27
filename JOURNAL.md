@@ -14728,3 +14728,21 @@ earlier journal entries), and the camera test wears no armour, so none come from
 - The eye holes showed bright skin. They are now dark slits instead of holes.
 - Godot pulled the plate textures out of the .glb into their own files, and round 6 forgot to commit them. They are
   committed now.
+
+
+# Copper armour rounds 8 and 9 (F914)
+
+**What we did:** Fixed the owner's round 7 notes (shoulders, beard, ball helmet, dent in the back, hair), then did a round 9 for the shoulders and the helmet front.
+
+- Round 8: plates are now "stiff". Each one is a smooth curve instead of copying every bump of the body, so there are no dents. There is one back plate instead of two. Each shoulder got a roof plate plus stiff rings. The helmet got a bell shape with a face guard and a higher back edge. The hair is tucked inside the helmet, and the beard lies over the breastplate.
+- Round 9: the shoulder roofs are smaller and sit right on the shoulder (they had stuck out like wings). The face guard is thicker and stands out round the eye holes and nose bar.
+
+**Mistakes and hurdles (including Claude's):**
+- The beard still went through the chest. Cause: Claude pushed against the beard of the normal head. With a helmet on, the game shows the "hat head", which has a bigger beard. Fix: move the hat head's beard forward over the plate.
+- Two overlapping back plates made a dent line. Fix: one back plate.
+- Plates laid onto the body followed his muscles, which made dents. Fix: a smooth stiff fit (Claude fits a gentle curve, then lifts it off the body).
+- The neck guard cut through the hair. Fix: a higher back edge, and the hair is pressed inside the helmet.
+- Claude's first shoulder roofs came out as wings with dark gaps. Fix (round 9): smaller roofs, set closer to the body.
+- `git pull --rebase` in merge_inbox failed because other chats had unsaved changes. A plain pull and push worked.
+
+**Checks:** the armour fit test passes. A few hidden points under the collar still touch, same as before.
