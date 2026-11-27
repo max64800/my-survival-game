@@ -15182,3 +15182,10 @@ related to F417 (9 FPS), or just other chats' Blender/Godot runs on the same PC.
 **What we did:** The owner: "wrong direction, turn them 180". The hooked tips pointed out away from the head; now they curl up and in toward it (the hook's sideways pull flipped). Foot and size unchanged. Page v43, fit test passes.
 
 **Mistake:** I read the owner's drawing as "tip hooks outward", but it was the other way round. When a drawing's direction isn't clear, offer both ways side by side (left and right) instead of guessing.
+
+
+## 2026-11-27: Bronze shoulder spikes bend less (F914)
+
+**What we did:** The owner said the inward-hooking spike tips were "a bit too bent at the end". I halved the hook: the tip now moves about 2 cm sideways instead of 4.5 cm, and the spike stands a bit taller. Its foot is still flat on the cap. Page v45. The fit test passes.
+
+**Hurdle:** My first edit script looked for the curve's code on one line, but the comment had wrapped onto a second line, so the script stopped. I fixed it with a small one-line edit. The rebuild that ran after the failed edit was still the old shape, so I rebuilt again.
