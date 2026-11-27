@@ -527,14 +527,23 @@ func _build_gear_panel(root: Control) -> void:
 
 
 ## F931: "Chest · E to open" -> ["Chest", "Open", true]: the name, what the key does, and whether to show the key cap.
+## Splits at a "· " outside brackets, so "Giant Mushroom (3 chops left · copper axe)" stays one name.
 static func aim_parts(nm: String) -> Array:
-	if not nm.contains("· "):
+	var at := -1
+	var depth := 0
+	for i in nm.length():
+		var ch := nm[i]
+		if ch == "(": depth += 1
+		elif ch == ")": depth -= 1
+		elif ch == "·" and depth == 0: at = i
+	if at < 0:
 		return [nm, "", false]
-	var name_part := nm.get_slice("· ", 0).strip_edges()
-	var rest := nm.substr(nm.find("· ") + 2).strip_edges()
-	if rest.begins_with("E to "):
-		rest = rest.substr(5)
-		return [name_part, rest.left(1).to_upper() + rest.substr(1), true]
+	var name_part := nm.left(at).strip_edges()
+	var rest := nm.substr(at + 1).strip_edges()
+	for key in ["E to ", "E: "]:
+		if rest.begins_with(key):
+			rest = rest.substr(key.length())
+			return [name_part, rest.left(1).to_upper() + rest.substr(1), true]
 	return [name_part, rest, false]
 
 

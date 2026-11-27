@@ -70,5 +70,7 @@ func test_aim_prompt_is_key_cap_and_name() -> void:
 	check(Hud.aim_parts("Chest · E to open") == ["Chest", "Open", true], "a chest: name, action, key cap")
 	check(Hud.aim_parts("Door · E to close") == ["Door", "Close", true], "a door")
 	check(Hud.aim_parts("Your bed") == ["Your bed", "", false], "no key cap when E does nothing")
+	check(Hud.aim_parts("Workbench · E: craft, upgrade, repair (free)") == ["Workbench", "Craft, upgrade, repair (free)", true], "a bench")
+	check(Hud.aim_parts("Giant Mushroom (3 chops left · copper axe)")[0] == "Giant Mushroom (3 chops left · copper axe)", "a dot inside brackets doesn't split")
 	var src := FileAccess.get_file_as_string("res://src/ui/hud.gd")
 	check(src.contains('UiKit.style("tooltip"') and src.contains('"AimPrompt"'), "a dark wooden plaque with a gold edge")
