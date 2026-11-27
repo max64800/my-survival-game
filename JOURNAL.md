@@ -15175,3 +15175,10 @@ related to F417 (9 FPS), or just other chats' Blender/Godot runs on the same PC.
 **What we did:** The owner: "much better, but the wrong rotation, they're not attached" (drew the foot lying along the cap's slope). The upright spikes stood straight up off a slanted cap, so one side of the foot floated. Now the spike starts along the cap's own surface direction (square to the cap, so its whole foot sits on it), then the tip hooks 4.5 cm out away from the head. Same thickness. Page v41, fit test passes.
 
 **Lesson:** "straight up" in the owner's drawing meant "up from the surface it sits on", not straight up in the world. A piece growing out of a curved plate should always start square to that plate.
+
+
+## 2026-11-27: Bronze shoulder spikes turned round (F914)
+
+**What we did:** The owner: "wrong direction, turn them 180". The hooked tips pointed out away from the head; now they curl up and in toward it (the hook's sideways pull flipped). Foot and size unchanged. Page v43, fit test passes.
+
+**Mistake:** I read the owner's drawing as "tip hooks outward", but it was the other way round. When a drawing's direction isn't clear, offer both ways side by side (left and right) instead of guessing.
