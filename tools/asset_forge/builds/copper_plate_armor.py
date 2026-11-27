@@ -178,8 +178,9 @@ def material(name, rgb, metal, rough, col_img=None, nrm_img=None, nrm=1.0):
 
 
 M_HAM = material("copper_hammered", (0.75, 0.38, 0.2), 0.8, 0.36, HAM_COL, HAM_NRM, 0.9)
-M_POL = material("copper_polished", (0.86, 0.47, 0.27), 0.9, 0.24)  # (the raised borders and edges, rubbed bright)
-M_RIV = material("copper_rivet", (0.62, 0.3, 0.15), 0.85, 0.3)
+M_POL = material("copper_polished", (0.8, 0.33, 0.14), 0.78, 0.3)  # (the raised borders and edges, rubbed bright)
+# (round 6 had (0.86, 0.47, 0.27), metal 0.9: in the game it mirrored the grey room and showed silver; the picture's are copper)
+M_RIV = material("copper_rivet", (0.7, 0.3, 0.13), 0.8, 0.3)
 QUILT = TEXD / "hide2_quilted.png"
 M_LEA = material("leather_dark", (0.03, 0.018, 0.011), 0.0, 1.0)  # (linear colour: 0.17 showed light grey-brown)  # (plain: his shirt's picture layout made blotches)
 BELT = TEXD / "hide2_belt.png"
@@ -348,10 +349,10 @@ def ref_at(phi, z):
 FRONT, BACK, LEFT = math.pi, 0.0, math.pi / 2
 # cuirass: breastplate (pointed bottom, under the beard), backplate, side plates under the arms (tucked under both)
 # (the back in two layers like the picture: a lower plate, and an upper plate over the shoulder blades outside it)
-for phic, zc, hw, hh, pt, off in ((FRONT, 0.725, 0.265, 0.16, 0.03, 0.018), (BACK, 0.685, 0.265, 0.115, 0.012, 0.018),
-		(BACK, 0.84, 0.275, 0.08, 0.018, 0.032)):
+for phic, zc, hw, hh, pt, off, dm in ((FRONT, 0.735, 0.31, 0.172, 0.03, 0.018, 0.016),  # (round 7: wider, no leather beside it)
+		(BACK, 0.685, 0.265, 0.115, 0.012, 0.018, 0.008), (BACK, 0.84, 0.275, 0.08, 0.018, 0.032, 0.006)):
 	ref = ref_at(phic, zc) + off
-	plate("chest_plate", torso_ray(phic, zc, ref), hw, hh, off=off, point=pt, pexp=6,
+	plate("chest_plate", torso_ray(phic, zc, ref), hw, hh, off=off, point=pt, pexp=6, dome=dm,  # (round 7: domed like the picture's chest)
 		rivets=(20, 160, 200, 340, 270, 90))
 # side plates right up into the armpits (owner: no grey there; plate, not just dark)
 for side in (1, -1):
@@ -361,7 +362,7 @@ for side in (1, -1):
 log("cuirass")
 # belt: dark leather with a copper buckle in front, riveted
 ref = ref_at(BACK, 0.56)
-band("chest_belt", lambda S, V: torso_ray(0.0, 0.56, 1.0)(S / 1.0 * 1.0, V), 2 * math.pi, 0.028, off=0.03, border=0.004,
+band("chest_belt", lambda S, V: torso_ray(0.0, 0.56, 1.0)(S / 1.0 * 1.0, V), 2 * math.pi, 0.036, off=0.03, border=0.004,
 	step=0.0012, mat_mid=2, rivet_every=0.6)
 # (the ray above takes S as an angle: length 2 pi = all the way round)
 bk = ref_at(FRONT, 0.56)
@@ -380,7 +381,7 @@ for k, (ztop, hgt) in enumerate(ROWS):
 			point=0.012, pexp=6, flat=(ztop, 0.18), rivets=(150, 30), stiff=(2, 4))
 log("skirt rows", len(ROWS))
 # collar: a copper band round the base of his neck (over the leather undercoat's collar)
-NECK = (0.875, 0.035)
+NECK = (0.875, 0.042)  # (round 7: the picture's thick collar)
 
 
 def neck_ray(S, V):
@@ -412,16 +413,17 @@ for side in (1, -1):
 
 	for k in range(3):
 		along = 0.07 + 0.05 * k
-		plate("chest_plate", arm_ray(along), 0.115 - 0.01 * k, 0.034, target=ARMS, off=0.03 - 0.008 * k, pexp=6,
-			point=0.0, rivets=(160, 20), stiff=(3, 6))
+		plate("chest_plate", arm_ray(along), 0.115 - 0.01 * k, 0.034, target=ARMS, off=0.022 - 0.005 * k, pexp=6,
+			point=0.0, dome=0.006, rivets=(160, 20), stiff=(3, 6))
 
 	def cap_ray(U, V, S0=S0, Dv=Dv, Up=Up):
-		c = S0 - Dv * 0.03 - Up * 0.02
+		c = S0 - Dv * 0.055 - Up * 0.02  # (round 7: moved in, so the cap reaches the collar like the picture's)
 		d = Up[None, None] + (U / 0.12)[..., None] * (-Dv[None, None]) + (V / 0.12)[..., None] * Fw[None, None]
 		d = d / np.linalg.norm(d, axis=-1)[..., None]
 		return np.broadcast_to(c, d.shape).copy(), d
 
-	plate("chest_plate", cap_ray, 0.13, 0.125, target=ARMS, off=0.036, pexp=4, dome=0.004, rivets=(0, 60, 120, 180, 240, 300))
+	# (round 7: a rounder, domed cap closer on him, like the picture's; round 6's flat one stood out like a wing)
+	plate("chest_plate", cap_ray, 0.15, 0.19, target=ARMS, off=0.026, pexp=2.6, dome=0.016, rivets=(0, 60, 120, 180, 240, 300))
 log("shoulders")
 
 # ---------------------------------------------------------------- beard over the plates: press the front back under it
@@ -651,23 +653,36 @@ for m in list(HAIR.modifiers):
 
 SC, SR = np.array((0.0, 0.026, 1.075)), np.array((0.119, 0.11, 0.117))  # his skull as an egg (dwarf_armor.py)
 CLEAR = 0.03  # (the hat hair lies within ~1.8 cm of the egg; the helmet's inside 1.2 cm off that)
-H = dict(top=SC[2] + SR[2] + CLEAR + 0.03, eq=SC[2] + 0.01, bot=0.955, flare=0.045,
-	eye=(1.066, 1.104), eye_phi=(0.17, 0.66), face_top=1.046, face_phi=1.05, nasal=0.13, nasal_low=1.0, brow=(1.104, 1.138))
-RX, RY = SR[0] + CLEAR, SR[1] + CLEAR
+# Round 7: the SIZES of the picture-made helmet (measured from armor_copper_picture3d.glb, its mesh is not used):
+# a big round bell, ~20.5 cm out from the middle at the brow, top at 1.327 m, flaring ~4 cm to the bottom edge;
+# the sides end at 0.945 m, the neck guard at the back dips to 0.875 m. (Round 6's was 15 cm and 1.252 m: too small.)
+H = dict(top=1.327, eq=1.1, bot=0.945, back_bot=0.875, flare=0.042,
+	eye=(1.062, 1.096), eye_phi=(0.15, 0.6), face_top=1.04, face_phi=0.98, nasal=0.15, nasal_low=0.985, brow=(1.096, 1.14))
+RX, RY = 0.207, 0.204
+
+
+def bot_at(phi):
+	"""Where the bottom edge is at angle phi (0 = back): low neck guard behind, level at the sides and front."""
+	return H["bot"] - (H["bot"] - H["back_bot"]) * np.clip(np.cos(phi), 0, None) ** 2
+
+
+def real_z(phi, z):
+	"""The grid's height lines (made for a level edge at H['bot']) stretched down to the neck guard behind."""
+	return np.where(z >= H["eq"], z, H["eq"] - (H["eq"] - z) * (H["eq"] - bot_at(phi)) / (H["eq"] - H["bot"]))
 
 
 def helm_r(phi, z):
-	"""The helmet's outer surface: distance out from its middle line at angle phi (0 = back), height z."""
+	"""The helmet's outer surface: distance out from its middle line at angle phi (0 = back), grid height z."""
 	ex = 1.0 / np.sqrt((np.sin(phi) / RX) ** 2 + (np.cos(phi) / RY) ** 2)
 	s = np.clip((z - H["eq"]) / (H["top"] - H["eq"]), 0, 1)
 	up = ex * np.sqrt(np.clip(1 - s ** 2.2, 0, 1)) * (1 - 0.1 * s ** 2)  # (a little pointed at the top)
 	low = np.clip((H["eq"] - z) / (H["eq"] - H["bot"]), 0, 1)
-	return np.where(z >= H["eq"], up, ex + H["flare"] * low ** 2.2)
+	return np.where(z >= H["eq"], up, ex + H["flare"] * low ** 1.6)
 
 
 def helm_point(phi, z, extra=0.0):
 	r = helm_r(phi, z) + extra
-	return np.stack([np.sin(phi) * r, SC[1] + np.cos(phi) * r, z], -1)
+	return np.stack([np.sin(phi) * r, SC[1] + np.cos(phi) * r, real_z(phi, z)], -1)
 
 
 # grid lines on every cut edge, so the openings come out with straight clean edges
@@ -690,10 +705,9 @@ for i in range(n_z - 1):
 		zc = (zs[i] + zs[i + 1]) / 2
 		if pf < fp and zc < H["face_top"] and not (pf < H["nasal"] / 2 and zc > H["nasal_low"]):
 			continue  # the face opening (the nasal bar stays)
-		if H["eye_phi"][0] < pf < H["eye_phi"][1] and H["eye"][0] < zc < H["eye"][1]:
-			continue  # eye holes
+		eye = H["eye_phi"][0] < pf < H["eye_phi"][1] and H["eye"][0] < zc < H["eye"][1]
 		F.append((i * n_p + j, i * n_p + (j + 1) % n_p, (i + 1) * n_p + (j + 1) % n_p, (i + 1) * n_p + j))
-		MI.append(0)
+		MI.append(2 if eye else 0)  # (round 7: dark eye slits like the picture's; open ones showed his skin, bright)
 top_i = len(HP.reshape(-1, 3))
 PTS = np.vstack([HP.reshape(-1, 3), [[0, SC[1], H["top"]]]])
 F += [((n_z - 1) * n_p + j, (n_z - 1) * n_p + (j + 1) % n_p, top_i) for j in range(n_p)]
@@ -702,7 +716,8 @@ UVH = np.stack([PH * 0.15 / TILE, ZZ / TILE], -1).reshape(-1, 2)
 UVH = np.vstack([UVH, [[0, H["top"] / TILE]]])
 add("helm", PTS, F, UVH, MI)
 orient_sheets("helm", lambda c: np.array([0, SC[1], min(c[2], SC[2])]))
-HM = make("armor_head_plate", "helm", [M_HAM, M_POL], thick=0.005, bevel=0.0013)
+M_SLIT = material("helm_slit_dark", (0.012, 0.008, 0.006), 0.0, 0.9)
+HM = make("armor_head_plate", "helm", [M_HAM, M_POL, M_SLIT], thick=0.005, bevel=0.0013)
 HBV = BVHTree.FromObject(HM, bpy.context.evaluated_depsgraph_get())
 log("helmet shell", len(HM.data.polygons))
 
@@ -716,12 +731,12 @@ def round_ray(z0):
 
 # brow band all the way round, riveted; a band round the bottom edge
 bz = (H["brow"][0] + H["brow"][1]) / 2
-band("helm_band", round_ray(bz), 2 * math.pi, (H["brow"][1] - H["brow"][0]) / 2 + 0.004, off=0.0, border=0.006,
-	target=HBV, rivet_every=0.75, riv_size=0.0065)
+band("helm_band", round_ray(bz), 2 * math.pi, (H["brow"][1] - H["brow"][0]) / 2 + 0.004, off=0.004, border=0.007,
+	step=0.003, target=HBV, rivet_every=0.45, riv_size=0.011)  # (round 7: the picture's thick brow band, big rivets)
 
 
 def bottom_ray(S, V):
-	z = H["bot"] + 0.018 + V
+	z = real_z(S, np.full_like(S, H["bot"] + 0.024)) + V  # (high enough that no ray passes under the shell's edge)
 	return np.stack([np.zeros_like(S), np.full_like(S, SC[1]), z], -1), np.stack([np.sin(S), np.cos(S), np.zeros_like(S)], -1)
 
 
@@ -730,24 +745,21 @@ def back_arc(S, V):
 	return bottom_ray(S * (2 * np.pi - 2 * fp - 0.05) / (2 * np.pi - 2 * fp - 0.05) - (np.pi - fp - 0.025), V)
 
 
-band("helm_band", lambda S, V: bottom_ray(S - (np.pi - fp - 0.025), V), 2 * np.pi - 2 * fp - 0.05, 0.014, n=90, off=0.0,
+band("helm_band", lambda S, V: bottom_ray(S - (np.pi - fp - 0.025), V), 2 * np.pi - 2 * fp - 0.05, 0.012, n=90, off=0.0,
 	border=0.005, target=HBV, closed=False)
 
 
 # ridge over the top: front brow to the back, riveted (the picture's big round rivets)
 def ridge_ray(U, V):
-	th = V / 0.15  # (angle over the top from straight up; + toward the back)
-	d = np.stack([U / 0.15, np.sin(th), np.cos(th)], -1)
+	th = V / 0.2 + 0.28  # (angle over the top from straight up; + toward the back: brow in front, low down the back)
+	d = np.stack([U / 0.2, np.sin(th), np.cos(th)], -1)
 	d = d / np.linalg.norm(d, axis=-1)[..., None]
 	return np.broadcast_to(np.array([0, SC[1], SC[2]]), d.shape).copy(), d
 
 
-plate("helm_band", ridge_ray, 0.019, 0.2, target=HBV, off=0.0, border=0.005, pexp=8, rivets=(), stiff=(1, 3))
-for th in np.linspace(-0.95, 1.1, 6):
-	d = np.array([0, math.sin(th), math.cos(th)])
-	hit = HBV.ray_cast(Vector(SC + d * 0.4), Vector(-d), 0.4)
-	if hit[0] is not None:
-		RIVETS.setdefault("helm_band", []).append((np.array(hit[0]) + d * 0.005, d, 0.0085))
+# (front end stops on the brow band: further down, over the eye holes, round 7's first try hung out like a visor)
+plate("helm_band", ridge_ray, 0.027, 0.29, target=HBV, off=0.002, border=0.006, pexp=8, rivets=(), stiff=(1, 3))
+# (the row of big rivets down the middle is put on the finished strip below: on the shell they sank under it)
 
 
 # eye plate: a raised plate round the eyes and down the nasal bar
@@ -760,6 +772,12 @@ def face_ray(U, V):
 log("helmet bands")
 orient_sheets("helm_band", lambda c: np.array([0, SC[1], min(c[2], SC[2])]))
 HBD = make("armor_head_band", "helm_band", [M_POL, M_POL], thick=0.004)
+BBV = BVHTree.FromObject(HBD, bpy.context.evaluated_depsgraph_get())
+for th in np.linspace(-1.08, 1.7, 7):  # (the picture's row of big rivets down the middle, sitting ON the strip)
+	d = np.array([0, math.sin(th), math.cos(th)])
+	hit = BBV.ray_cast(Vector(SC + d * 0.5), Vector(-d), 0.5)
+	if hit[0] is not None:
+		RIVETS["helm_band"].append((np.array(hit[0]) + d * 0.002, d, 0.012))
 HR = rivets("armor_head_rivet", RIVETS["helm_band"])
 for o in (HM, HBD, HR, HAIR):
 	for vg in list(o.vertex_groups):
@@ -792,7 +810,7 @@ if REVIEW:
 	scene.camera = cam
 	shots = []
 	for tag, loc, aim, scale in (("front", (0, -4, 0.66), 0.66, 1.0), ("side", (-4, 0, 0.66), 0.66, 1.0),
-			("back", (0, 4, 0.66), 0.66, 1.0), ("head", (1.4, -3.0, 1.06), 1.06, 0.42)):
+			("back", (0, 4, 0.66), 0.66, 1.0), ("head", (1.4, -3.0, 1.12), 1.1, 0.62)):
 		cam.location = Vector(loc)
 		cam.data.ortho_scale = scale
 		cam.rotation_euler = (Vector((0, 0, aim)) - cam.location).to_track_quat("-Z", "Y").to_euler()
