@@ -94,6 +94,7 @@ Fixed items get ~~crossed out~~, never deleted, so we can see the whole history.
 - Wanted later: F801 locked recipe shadows. Not wanted now: button memory (input buffering). Attack tickets (F764) stay where they are.
 
 ## Open (still to do)
+- [ ] **F917. Abilities on Q/R/T you choose, the 3 sound-only abilities made real, max level 91, skill loss on death like Valheim.** Plan parts 1+2: docs/design/abilities-quality-perks-plan.md. *From: you (Mac planning chat, Nov 27). Said: 1×* 🛠 in progress (abilities + levels chat, Mac, Nov 27)
 - [x] **F805. Sometimes the dwarf keeps sprinting when you are not holding Shift.** *From: you (PC, Nov 23). Said: 1×* **Fixed Nov 23:** `src/main.gd _notification` now releases "run" and "dodge" on `NOTIFICATION_APPLICATION_FOCUS_OUT` even when a menu has the mouse — so any Alt+Tab scenario clears the sprint key.
 - [x] **F809. The two leaves of a double door don't match:** one has the iron bands, the other has none (the same door used twice). Each leaf needs its matching design. *From: you (PC, Nov 23, screenshot of the Twin Gate's big door). Said: 1×* **Fixed Nov 23:** `stonehold_v2.py gate_leaf()` now adds two copper bands to the BACK face (at y=0.6 and y=1.8, embedded in the battens, no rivets on back — passes all model rules). Both leaves of the double gate show copper bands from outside. GLB and icon rebuilt.
 
