@@ -241,7 +241,7 @@ def stiffen(D, ring=True, passes=(3, 8), lift=0.0015):
 
 
 def plate(group, ray, hw, hh, *, off=0.016, border=0.009, step=0.0022, dome=0.002, pexp=5.0, point=0.0,
-		target=None, flat=None, rivets=(45, 135, 225, 315), riv_size=0.0055, hole=0.0, keep_min=None, stiff=(3, 8)):
+		target=None, flat=None, rivets=(45, 135, 225, 315), riv_size=0.0055, hole=0.0, keep_min=None, stiff=(3, 8), rigid=False):
 	"""One plate: a rounded rectangle hw x hh (half sizes, metres) laid on target along ray(U, V) -> (origin, dir).
 	point: how far its bottom edge dips in the middle (a pointed lower edge, like the picture's breastplate and skirt).
 	flat: (z_top, flare) for skirt plates: one straight cone (doesn't follow his legs), flaring out going down.
@@ -260,6 +260,12 @@ def plate(group, ray, hw, hh, *, off=0.016, border=0.009, step=0.0022, dome=0.00
 	D = lay(O, Dr, target or TORSO, off)
 	if flat:
 		D = np.full_like(D, np.percentile(D, 85)) + flat[1] * np.clip(flat[0] - O[..., 2], 0, None)
+	elif rigid:
+		# (round 8: one smooth curved sheet resting on his highest points; following his muscles left dents, owner)
+		B = np.stack([np.ones_like(U), U, V, U * U, U * V, V * V], -1).reshape(-1, 6)
+		c, *_ = np.linalg.lstsq(B, D.ravel(), rcond=None)
+		fit = (B @ c).reshape(D.shape)
+		D = fit + np.percentile(D - fit, 99.5)
 	else:
 		D = stiffen(D, passes=stiff)
 	if keep_min is not None:
@@ -350,14 +356,14 @@ FRONT, BACK, LEFT = math.pi, 0.0, math.pi / 2
 # cuirass: breastplate (pointed bottom, under the beard), backplate, side plates under the arms (tucked under both)
 # (the back in two layers like the picture: a lower plate, and an upper plate over the shoulder blades outside it)
 for phic, zc, hw, hh, pt, off, dm in ((FRONT, 0.735, 0.31, 0.172, 0.03, 0.018, 0.016),  # (round 7: wider, no leather beside it)
-		(BACK, 0.685, 0.265, 0.115, 0.012, 0.018, 0.008), (BACK, 0.84, 0.275, 0.08, 0.018, 0.032, 0.006)):
+		(BACK, 0.75, 0.27, 0.185, 0.012, 0.018, 0.012)):  # (round 8: one back plate; two left a dent line, owner)
 	ref = ref_at(phic, zc) + off
-	plate("chest_plate", torso_ray(phic, zc, ref), hw, hh, off=off, point=pt, pexp=6, dome=dm,  # (round 7: domed like the picture's chest)
+	plate("chest_plate", torso_ray(phic, zc, ref), hw, hh, off=off, point=pt, pexp=6, dome=dm, rigid=True,  # (round 7: domed like the picture's chest)
 		rivets=(20, 160, 200, 340, 270, 90))
 # side plates right up into the armpits (owner: no grey there; plate, not just dark)
 for side in (1, -1):
 	ref = ref_at(side * LEFT, 0.7) + 0.006  # (1.2 cm inside the front and back plates where they overlap)
-	plate("chest_plate", torso_ray(side * LEFT, 0.7, ref), 0.13, 0.13, off=0.006, pexp=6, rivets=(90, 270))
+	plate("chest_plate", torso_ray(side * LEFT, 0.7, ref), 0.13, 0.13, off=0.006, pexp=6, rivets=(90, 270), rigid=True)
 # (Nov 26 try: a plate over each shoulder top stuck out like wings; the dark leather shows there instead)
 log("cuirass")
 # belt: dark leather with a copper buckle in front, riveted
@@ -413,17 +419,19 @@ for side in (1, -1):
 
 	for k in range(3):
 		along = 0.07 + 0.05 * k
-		plate("chest_plate", arm_ray(along), 0.115 - 0.01 * k, 0.034, target=ARMS, off=0.022 - 0.005 * k, pexp=6,
-			point=0.0, dome=0.006, rivets=(160, 20), stiff=(3, 6))
+		plate("chest_plate", arm_ray(along), 0.12 - 0.008 * k, 0.034, target=ARMS, off=0.024 - 0.005 * k, pexp=6,
+			point=0.0, dome=0.004, rivets=(160, 20), rigid=True)  # (round 8: stiff rings round the arm, stepping down)
 
-	def cap_ray(U, V, S0=S0, Dv=Dv, Up=Up):
-		c = S0 - Dv * 0.055 - Up * 0.02  # (round 7: moved in, so the cap reaches the collar like the picture's)
-		d = Up[None, None] + (U / 0.12)[..., None] * (-Dv[None, None]) + (V / 0.12)[..., None] * Fw[None, None]
-		d = d / np.linalg.norm(d, axis=-1)[..., None]
-		return np.broadcast_to(c, d.shape).copy(), d
+	def cap_ray(U, V, S0=S0):
+		# (round 8: the picture's shoulder plate: a curved roof over the shoulder, from the collar out over the arm;
+		# U = front to back, V = round the roof from the neck side to the arm side. Round 7's dome had dents.)
+		th = 0.62 + V / 0.12
+		d = np.stack([side * np.sin(th), np.zeros_like(th), np.cos(th)], -1)
+		o = np.stack([np.full_like(U, S0[0] - side * 0.03), S0[1] - U, np.full_like(U, S0[2] - 0.02)], -1)
+		return o, d
 
-	# (round 7: a rounder, domed cap closer on him, like the picture's; round 6's flat one stood out like a wing)
-	plate("chest_plate", cap_ray, 0.15, 0.19, target=ARMS, off=0.026, pexp=2.6, dome=0.016, rivets=(0, 60, 120, 180, 240, 300))
+	plate("chest_plate", cap_ray, 0.13, 0.125, target=ARMS, off=0.03, pexp=4, dome=0.008, rigid=True,
+		rivets=(25, 155, 205, 335, 90))
 log("shoulders")
 
 # ---------------------------------------------------------------- beard over the plates: press the front back under it
@@ -656,14 +664,17 @@ CLEAR = 0.03  # (the hat hair lies within ~1.8 cm of the egg; the helmet's insid
 # Round 7: the SIZES of the picture-made helmet (measured from armor_copper_picture3d.glb, its mesh is not used):
 # a big round bell, ~20.5 cm out from the middle at the brow, top at 1.327 m, flaring ~4 cm to the bottom edge;
 # the sides end at 0.945 m, the neck guard at the back dips to 0.875 m. (Round 6's was 15 cm and 1.252 m: too small.)
-H = dict(top=1.327, eq=1.1, bot=0.945, back_bot=0.875, flare=0.042,
-	eye=(1.062, 1.096), eye_phi=(0.15, 0.6), face_top=1.04, face_phi=0.98, nasal=0.15, nasal_low=0.985, brow=(1.096, 1.14))
-RX, RY = 0.207, 0.204
+# Round 8 (owner: "looks like a ball, not a helmet"): a lower round dome on top of the brow band, then a bell skirt that
+# drops straight and flares OUT at the bottom, a raised face guard round the eyes, and the back edge UP at 0.985 m so his
+# hair comes out under it (round 7's neck guard down at 0.875 m cut through the hair).
+H = dict(top=1.31, eq=1.125, bot=0.945, back_bot=0.985, flare=0.048, waist=0.012, guard=0.017, guard_phi=0.8,
+	eye=(1.062, 1.096), eye_phi=(0.15, 0.6), face_top=1.04, face_phi=0.98, nasal=0.15, nasal_low=0.985, brow=(1.1, 1.15))
+RX, RY = 0.2, 0.198
 
 
 def bot_at(phi):
-	"""Where the bottom edge is at angle phi (0 = back): low neck guard behind, level at the sides and front."""
-	return H["bot"] - (H["bot"] - H["back_bot"]) * np.clip(np.cos(phi), 0, None) ** 2
+	"""Where the bottom edge is at angle phi (0 = back): cheek guards low at the sides, the back edge higher (hair)."""
+	return H["bot"] + (H["back_bot"] - H["bot"]) * np.clip(np.cos(phi), 0, None) ** 2
 
 
 def real_z(phi, z):
@@ -675,9 +686,14 @@ def helm_r(phi, z):
 	"""The helmet's outer surface: distance out from its middle line at angle phi (0 = back), grid height z."""
 	ex = 1.0 / np.sqrt((np.sin(phi) / RX) ** 2 + (np.cos(phi) / RY) ** 2)
 	s = np.clip((z - H["eq"]) / (H["top"] - H["eq"]), 0, 1)
-	up = ex * np.sqrt(np.clip(1 - s ** 2.2, 0, 1)) * (1 - 0.1 * s ** 2)  # (a little pointed at the top)
+	up = ex * np.sqrt(np.clip(1 - s ** 2, 0, 1))
 	low = np.clip((H["eq"] - z) / (H["eq"] - H["bot"]), 0, 1)
-	return np.where(z >= H["eq"], up, ex + H["flare"] * low ** 1.6)
+	pf = np.abs(((phi - math.pi + np.pi) % (2 * np.pi)) - np.pi)  # (angle from his front)
+	eyes = (pf > H["eye_phi"][0] - 1e-6) & (pf < H["eye_phi"][1] + 1e-6) & (z > H["eye"][0] - 1e-6) & (z < H["eye"][1] + 1e-6)
+	guard = H["guard"] * (((pf < H["guard_phi"] + 1e-6) & (z < H["eq"] - 0.004) & (z > H["face_top"] - 1e-6) |
+		(pf < H["nasal"] / 2 + 1e-6) & (z > H["nasal_low"] - 1e-6) & (z < H["eq"])) & ~eyes)  # (eyes sit deep in it)
+	waist = H["waist"] * np.sin(np.pi * np.clip(low / 0.75, 0, 1))  # (the skirt pulls in under the band, then flares)
+	return np.where(z >= H["eq"], up, ex + H["flare"] * low ** 2.4 - waist + guard)
 
 
 def helm_point(phi, z, extra=0.0):
@@ -688,11 +704,11 @@ def helm_point(phi, z, extra=0.0):
 # grid lines on every cut edge, so the openings come out with straight clean edges
 fp = H["face_phi"]
 phis = sorted(set(list(np.linspace(-np.pi, np.pi, 97)[:-1]) +
-	[math.pi + s * a for s in (1, -1) for a in (H["nasal"] / 2, H["eye_phi"][0], H["eye_phi"][1], fp)]))
+	[math.pi + s * a for s in (1, -1) for a in (H["nasal"] / 2, H["eye_phi"][0], H["eye_phi"][1], fp, H["guard_phi"])]))
 phis = np.array([((p + np.pi) % (2 * np.pi)) - np.pi for p in phis])
 phis = np.unique(np.round(phis, 6))
 zs = np.unique(np.round(np.concatenate([np.linspace(H["bot"], H["top"], 70), [H["eye"][0], H["eye"][1], H["face_top"],
-	H["nasal_low"], H["brow"][0], H["brow"][1]]]), 6))
+	H["nasal_low"], H["brow"][0], H["brow"][1], H["eq"] - 0.004]]), 6))
 zs = zs[zs < H["top"] - 0.002]
 PH, ZZ = np.meshgrid(phis, zs)
 HP = helm_point(PH, ZZ)
@@ -731,8 +747,8 @@ def round_ray(z0):
 
 # brow band all the way round, riveted; a band round the bottom edge
 bz = (H["brow"][0] + H["brow"][1]) / 2
-band("helm_band", round_ray(bz), 2 * math.pi, (H["brow"][1] - H["brow"][0]) / 2 + 0.004, off=0.004, border=0.007,
-	step=0.003, target=HBV, rivet_every=0.45, riv_size=0.011)  # (round 7: the picture's thick brow band, big rivets)
+band("helm_band", round_ray(bz), 2 * math.pi, (H["brow"][1] - H["brow"][0]) / 2 + 0.006, off=0.008, border=0.008,
+	step=0.004, target=HBV, rivet_every=0.45, riv_size=0.011)  # (round 7: the picture's thick brow band, big rivets)
 
 
 def bottom_ray(S, V):
@@ -779,6 +795,51 @@ for th in np.linspace(-1.08, 1.7, 7):  # (the picture's row of big rivets down t
 	if hit[0] is not None:
 		RIVETS["helm_band"].append((np.array(hit[0]) + d * 0.002, d, 0.012))
 HR = rivets("armor_head_rivet", RIVETS["helm_band"])
+# (round 8, owner: "hair clipping through": every hair point under the shell is tucked in 1.2 cm inside it;
+# below the edge it hangs out free, as on the picture's helmet)
+hc = np.empty(len(HAIR.data.vertices) * 3)
+HAIR.data.vertices.foreach_get("co", hc)
+hc = hc.reshape(-1, 3)
+dx, dy = hc[:, 0], hc[:, 1] - SC[1]
+hphi, hr = np.arctan2(dx, dy), np.hypot(dx, dy)
+hz = hc[:, 2]
+hb = bot_at(hphi)
+zg = np.where(hz >= H["eq"], hz, H["eq"] - (H["eq"] - hz) * (H["eq"] - H["bot"]) / (H["eq"] - hb))
+hpf = np.abs(((hphi - math.pi + np.pi) % (2 * np.pi)) - np.pi)
+r_in = helm_r(hphi, zg) - 0.005 - 0.012
+under = (hz > hb) & (hz < H["top"]) & ~((hpf < fp + 0.06) & (hz < H["face_top"] + 0.01)) & (hr > r_in)
+k = np.where(under, r_in / np.maximum(hr, 1e-6), 1.0)
+hc[:, 0], hc[:, 1] = dx * k, SC[1] + dy * k
+HAIR.data.vertices.foreach_set("co", hc.ravel())
+HAIR.data.update()
+log("hair points tucked under the helmet", int(under.sum()))
+# (round 8, owner: the beard went through the breastplate: the helmet head's beard is bigger than his plain head's,
+# which the plate was pressed under. Now the beard is moved forward to lie ON the plate, 1.2 cm off it, in one piece.)
+cpv = np.empty(len(CP.data.vertices) * 3)
+CP.data.vertices.foreach_get("co", cpv)
+CPB = BVHTree.FromPolygons([Vector(p) for p in cpv.reshape(-1, 3)], [tuple(f.vertices) for f in CP.data.polygons])
+need = np.zeros(len(hc))
+for i in np.nonzero((hc[:, 2] < 0.95) & (hc[:, 1] < -0.06))[0]:
+	p = hc[i]
+	hit = CPB.ray_cast(Vector((p[0], -1.0, p[2])), Vector((0, 1, 0)), 2.0)
+	if hit[0] is not None and hit[0].y - 0.012 < p[1] < hit[0].y + 0.05:
+		need[i] = p[1] - (hit[0].y - 0.012)
+GS = 0.015
+gx = np.floor((hc[:, 0] + 0.4) / GS).astype(int)
+gz = np.floor((hc[:, 2] - 0.4) / GS).astype(int)
+G = np.zeros((int(0.8 / GS) + 2, int(0.8 / GS) + 2))
+ok = (gx >= 0) & (gx < G.shape[0]) & (gz >= 0) & (gz < G.shape[1])
+np.maximum.at(G, (gx[ok], gz[ok]), need[ok])
+G0 = G.copy()
+for _ in range(4):  # (spread out so the beard moves in one piece, never less than it needs)
+	G = np.maximum((G * 4 + np.roll(G, 1, 0) + np.roll(G, -1, 0) + np.roll(G, 1, 1) + np.roll(G, -1, 1)) / 8, G0)
+	G = np.maximum(G, np.maximum.reduce([np.roll(G0, 1, 0), np.roll(G0, -1, 0), np.roll(G0, 1, 1), np.roll(G0, -1, 1)]))
+taper = np.clip((1.02 - hc[:, 2]) / 0.07, 0, 1)
+mv = np.where(ok & (hc[:, 1] < -0.06), G[np.clip(gx, 0, G.shape[0] - 1), np.clip(gz, 0, G.shape[1] - 1)], 0.0) * taper
+hc[:, 1] -= mv
+HAIR.data.vertices.foreach_set("co", hc.ravel())
+HAIR.data.update()
+log("beard moved out over the breastplate: points", int((mv > 0).sum()), "most", round(float(mv.max()), 3))
 for o in (HM, HBD, HR, HAIR):
 	for vg in list(o.vertex_groups):
 		o.vertex_groups.remove(vg)
