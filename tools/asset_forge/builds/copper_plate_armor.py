@@ -251,10 +251,11 @@ def stiffen(D, ring=True, passes=(3, 8), lift=0.0015):
 
 
 def plate(group, ray, hw, hh, *, off=0.016, border=0.009, step=0.0022, dome=0.002, pexp=5.0, point=0.0,
-		target=None, flat=None, rivets=(45, 135, 225, 315), riv_size=0.0055, hole=0.0, keep_min=None, stiff=(3, 8), rigid=False):
+		target=None, flat=None, rivets=(45, 135, 225, 315), riv_size=0.0055, hole=0.0, keep_min=None, stiff=(3, 8), rigid=False, top_wide=0.0):
 	"""One plate: a rounded rectangle hw x hh (half sizes, metres) laid on target along ray(U, V) -> (origin, dir).
 	point: how far its bottom edge dips in the middle (a pointed lower edge, like the picture's breastplate and skirt).
 	flat: (z_top, flare) for skirt plates: one straight cone (doesn't follow his legs), flaring out going down.
+	top_wide: how much wider the top edge is than the middle (0.3 = 30%: the chest plates' corners up to the shoulders).
 	Returns the plate's top-surface points function for extra parts."""
 	ts = 1.0 - border / min(hw, hh)
 	T = sorted(set([0.0, 0.18, 0.34, 0.48, 0.6, 0.7, 0.78, ts - 0.05, ts - 0.004, ts + 0.004, (ts + 1) / 2, 1.0]))
@@ -266,6 +267,7 @@ def plate(group, ray, hw, hh, *, off=0.016, border=0.009, step=0.0022, dome=0.00
 	V = T[:, None] * rb * np.sin(psi)
 	if point:
 		V = V - point * np.clip(1 - np.abs(U) / hw, 0, 1) * np.clip(-V / hh, 0, 1)
+	U = U * (1 + top_wide * np.clip(V / hh, 0, 1) ** 2)
 	O, Dr = ray(U, V)
 	D = lay(O, Dr, target or TORSO, off)
 	if flat:
@@ -310,6 +312,7 @@ def plate(group, ray, hw, hh, *, off=0.016, border=0.009, step=0.0022, dome=0.00
 			u, v = np.array([[r_ * math.cos(a)]]), np.array([[r_ * math.sin(a)]])
 			if point:
 				v = v - point * np.clip(1 - np.abs(u) / hw, 0, 1) * np.clip(-v / hh, 0, 1)
+			u = u * (1 + top_wide * np.clip(v / hh, 0, 1) ** 2)
 			o, d = ray(u, v)
 			dd = lay(o, d, target or TORSO, off)
 			if flat:
@@ -375,11 +378,14 @@ for phic, zc, hw, hh, pt, off, dm in ((FRONT, 0.735, 0.26, 0.172, 0.03, 0.018, 0
 		(BACK, 0.75, 0.27, 0.185, 0.012, 0.018, 0.012)):  # (round 8: one back plate; two left a dent line, owner)
 	ref = ref_at(phic, zc) + off
 	plate("chest_plate", torso_ray(phic, zc, ref), hw, hh, off=off, point=pt, pexp=6, dome=dm, rigid=True if phic == FRONT else 4,  # (round 7: domed like the picture's chest)
-		rivets=(20, 160, 200, 340, 270, 90))
+		rivets=(20, 160, 200, 340, 270, 90), top_wide=0.3)  # (round 13, owner chose: wider only at the top corners, to
+	# cover the dark wedge under the arms; the waist stays narrow as round 12)
 # side plates right up into the armpits (owner: no grey there; plate, not just dark)
 for side in (1, -1):
 	ref = ref_at(side * LEFT, 0.7) + 0.006  # (1.2 cm inside the front and back plates where they overlap)
 	plate("chest_plate", torso_ray(side * LEFT, 0.7, ref), 0.13, 0.13, off=0.006, pexp=6, rivets=(90, 270), rigid=True)
+	# (round 13 tries for the dark wedge under the arms, both stuck out like flaps (the rigid sheet lifts 8-11 cm over his
+	# shoulder): a plate over each shoulder top (0.21 x 0.065 at 0.86 m), and these side plates bigger (0.17 x 0.15).)
 # (Nov 26 try: a plate over each shoulder top stuck out like wings; the dark leather shows there instead)
 log("cuirass")
 # belt: dark leather with a copper buckle in front, riveted
@@ -683,9 +689,11 @@ CLEAR = 0.03  # (the hat hair lies within ~1.8 cm of the egg; the helmet's insid
 # Round 8 (owner: "looks like a ball, not a helmet"): a lower round dome on top of the brow band, then a bell skirt that
 # drops straight and flares OUT at the bottom, a raised face guard round the eyes, and the back edge UP at 0.985 m so his
 # hair comes out under it (round 7's neck guard down at 0.875 m cut through the hair).
-H = dict(top=1.275, eq=1.125, bot=0.965, back_bot=0.985, flare=0.034, waist=0.012, guard=0.03, guard_phi=0.85,
+# (round 13, owner chose a NECK GUARD: the hair squeezed out under the high back edge looked smeared, so the back edge
+# comes down to 0.9 m, over the collar and the back plate's top, and the back hair is hidden inside.)
+H = dict(top=1.275, eq=1.125, bot=0.965, back_bot=0.9, flare=0.034, waist=0.012, guard=0.03, guard_phi=0.85,
 	eye=(1.068, 1.09), eye_phi=(0.14, 0.6), face_top=1.035, face_phi=0.98, nasal=0.2, nasal_low=0.975, brow=(1.1, 1.15),
-	cheek=0.016, cheek_phi=1.45, cheek_top=1.085, eye_deep=0.012)  # (round 10: cheek guards, deeper eyes, shorter edge)
+	cheek=0.016, cheek_phi=1.45, cheek_top=1.085, eye_deep=0.004)  # (round 10: cheek guards, shorter edge; round 13, owner: eye holes "too deep", was 1.2 cm)
 RX, RY = 0.172, 0.17  # (round 11, owner: "the helmet is way too big"; was 0.2)
 
 
@@ -873,16 +881,50 @@ log("beard moved out over the breastplate: points", int((mv > 0).sum()), "most",
 # left them floating off his back (round 12, owner), so now they're tucked in UNDER the back plate, like hair
 # tucked into a collar: every hair point behind the plate goes 1.2 cm inside it.)
 tuck = 0
-for i in np.nonzero((hc[:, 2] < 0.98) & (hc[:, 1] > 0.06))[0]:
+TUCKED = set()
+# (round 13: also the hair between the neck guard's edge and the plate's top edge: it goes in under the plate's top
+# edge, at the height of the plate's first point below it, so none puffs out behind the neck guard.)
+below = hc[:, 2] < bot_at(np.arctan2(hc[:, 0], hc[:, 1] - SC[1])) + 0.005
+for i in np.nonzero(below & (hc[:, 2] < 0.98) & (hc[:, 1] > 0.06))[0]:
 	p = hc[i]
-	hit = CPB.ray_cast(Vector((p[0], 1.0, p[2])), Vector((0, -1, 0)), 2.0)
+	for dz in np.arange(0.0, 0.1, 0.01):
+		hit = CPB.ray_cast(Vector((p[0], 1.0, p[2] - dz)), Vector((0, -1, 0)), 2.0)
+		if hit[0] is not None:
+			break
 	if hit[0] is not None and p[1] > hit[0].y - 0.012:
 		hc[i, 1] = hit[0].y - 0.012
 		tuck += 1
+		TUCKED.add(int(i))
 HAIR.data.vertices.foreach_set("co", hc.ravel())
 HAIR.data.update()
 log("braids tucked under the back plate: points", tuck)
-for o in (HM, HBD, HR, HAIR):
+# (round 13, owner: "his braids do not move, but the rings on the braids move": the hat hair was put fully on the Head
+# bone, so the braids and back hair stood still while body_rings swung. Now it keeps its own bones (braids, back hair,
+# beard on the chest); only the hair UNDER the helmet goes on the Head bone (so it can't swing out through the shell),
+# fading back to its own bones over the 5 cm below the helmet's edge.)
+hc = np.empty(len(HAIR.data.vertices) * 3)
+HAIR.data.vertices.foreach_get("co", hc)
+hc = hc.reshape(-1, 3)
+hphi = np.arctan2(hc[:, 0], hc[:, 1] - SC[1])
+head_w = np.clip((hc[:, 2] - (bot_at(hphi) - 0.05)) / 0.05, 0, 1)
+gi_head = HAIR.vertex_groups["Head"].index if "Head" in HAIR.vertex_groups else HAIR.vertex_groups.new(name="Head").index
+# (hair tucked under the back plate moves with his chest like the plate, so a swinging lock can't poke out through it)
+gi_chest = HAIR.vertex_groups["spine_03"].index if "spine_03" in HAIR.vertex_groups else HAIR.vertex_groups.new(name="spine_03").index
+for v in HAIR.data.vertices:
+	t = float(head_w[v.index])
+	if v.index in TUCKED:
+		for g in v.groups:
+			g.weight = 0.0
+		HAIR.vertex_groups[gi_chest].add([v.index], 1.0 - t, "REPLACE")
+	elif t <= 0.0:
+		continue
+	else:
+		for g in v.groups:
+			g.weight *= (1.0 - t)
+	if t > 0.0:
+		HAIR.vertex_groups[gi_head].add([v.index], t, "ADD")
+log("hat hair keeps its swing bones; points fully on the Head bone", int((head_w >= 1).sum()))
+for o in (HM, HBD, HR):
 	for vg in list(o.vertex_groups):
 		o.vertex_groups.remove(vg)
 	o.vertex_groups.new(name="Head").add(list(range(len(o.data.vertices))), 1.0, "REPLACE")
