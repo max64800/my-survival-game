@@ -29,6 +29,18 @@ func _crosshair_at_dwarf(dwarf: Dwarf) -> Vector2:
 	return Vector2(off.dot(cam.basis.x.normalized()), off.y)
 
 
+## How close the crosshair line (in front of the camera) comes to the dwarf's middle line, feet to helmet top.
+func _ray_clearance(dwarf: Dwarf) -> float:
+	var cam := dwarf.camera.global_transform
+	var fwd := -cam.basis.z.normalized()
+	var best := INF
+	for k in 29:
+		var p := dwarf.global_position + Vector3.UP * (k * 0.05)
+		var t := maxf(0.0, (p - cam.origin).dot(fwd))
+		best = minf(best, (cam.origin + fwd * t).distance_to(p))
+	return best
+
+
 func test_aiming_looks_past_the_right_shoulder() -> void:
 	Controls.setup()
 	var root := _room()
@@ -57,6 +69,17 @@ func test_aiming_looks_past_the_right_shoulder() -> void:
 	var aimed := _crosshair_at_dwarf(dwarf)
 	check(aimed.x > 0.3 and aimed.x < 0.8, "the crosshair passes just right of his right shoulder (%.2f m right; before %.2f)" % [aimed.x, before.x])
 	check(aimed.y > 0.75 and aimed.y < 1.1, "at shoulder height (the dwarf is about 1.2 m tall) (%.2f m up)" % aimed.y)
+	# F927 (owner, Nov 27): aiming while looking up showed the back of the dwarf. The crosshair line must pass clear
+	# of his body (feet to helmet top), with the camera not pressed against him.
+	for pitch in [0.5, 0.8, 1.1]:
+		dwarf._pitch = pitch
+		for i in 60:
+			await tree.physics_frame
+		var clear := _ray_clearance(dwarf)
+		check(clear > 0.45, "looking up %.1f while aiming: the crosshair passes %.2f m clear of him" % [pitch, clear])
+	dwarf._pitch = -0.25
+	for i in 60:
+		await tree.physics_frame
 	Input.action_release("use")
 	for i in 90:
 		await tree.physics_frame

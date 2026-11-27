@@ -26,6 +26,12 @@ const ZOOM_STEP := 0.5
 const SHOULDER := Vector3(0.55, DwarfFeel.CAM_AIM_HEIGHT, 0.0)
 ## Where the camera sits while aiming (F452): x = to his right, y = height, z = distance behind.
 const AIM_CAMERA := Vector3(0.45, 0.9, 2.0)
+## F927 (owner, Nov 27: "aiming and looking up shows the back of the dwarf"): looking up while aiming, the camera's
+## pivot rises over his helmet, slides further right and comes in a little (so it doesn't hit the floor behind him):
+## the dwarf sits low on the left and the crosshair line passes clear of him.
+const AIM_UP_RAISE := 0.55
+const AIM_UP_SIDE := 0.4
+const AIM_UP_IN := 0.6
 const POSE_SEND_TIME := 0.05  ## send our position 20 times a second
 const RUN_STAMINA := 8.0  ## per second
 const JUMP_STAMINA := 10.0
@@ -529,7 +535,8 @@ func _process(delta: float) -> void:
 	# his right shoulder, so the crosshair sits just past it. Letting go slides back to the normal camera.
 	_aim_t = move_toward(_aim_t, 1.0 if fight and fight.aiming() else 0.0, delta * 6.0)
 	var aim_k := smoothstep(0.0, 1.0, _aim_t)
-	var want_y := global_position.y + lerpf(SHOULDER.y, AIM_CAMERA.y, aim_k)
+	var aim_up := aim_k * smoothstep(0.15, 1.0, _pitch)  # (F927: aiming AND looking up)
+	var want_y := global_position.y + lerpf(SHOULDER.y, AIM_CAMERA.y, aim_k) + AIM_UP_RAISE * aim_up
 	if is_nan(_cam_y) or absf(_cam_y - want_y) > 2.0:
 		_cam_y = want_y
 	# F781 (owner, Nov 22: climbing the spiral stairs was "very jittery"): the body only moves 60 times a second, but
@@ -543,7 +550,7 @@ func _process(delta: float) -> void:
 	_cam_yaw.global_position = Vector3(global_position.x, _cam_y, global_position.z)
 	_cam_yaw.rotation.y = _yaw
 	_cam_pitch.rotation.x = _pitch
-	var side := CameraRoom.best_side(_spring, lerpf(lerpf(0.08, SHOULDER.x, near), AIM_CAMERA.x, aim_k), [get_rid()])
+	var side := CameraRoom.best_side(_spring, lerpf(lerpf(0.08, SHOULDER.x, near), AIM_CAMERA.x, aim_k) + AIM_UP_SIDE * aim_up, [get_rid()])
 	_cam_side = side if side < _cam_side else lerpf(_cam_side, side, minf(1.0, delta * DwarfFeel.CAM_RETURN_SPEED))
 	_spring.position = Vector3(_cam_side, 0, 0)
 	# Looking down pulls the camera out a little, looking up brings it in (F766, "come in close when looking up").
@@ -552,7 +559,7 @@ func _process(delta: float) -> void:
 		tilt = lerpf(1.0, DwarfFeel.CAM_LOOK_DOWN_STRETCH, smoothstep(0.0, 1.35, -_pitch))
 	else:
 		tilt = lerpf(1.0, DwarfFeel.CAM_LOOK_UP_SQUEEZE, smoothstep(0.0, 1.1, _pitch))
-	var want_len := lerpf(_zoom * tilt, AIM_CAMERA.z, aim_k)
+	var want_len := lerpf(_zoom * tilt, AIM_CAMERA.z - AIM_UP_IN * aim_up, aim_k)
 	_spring.spring_length = lerpf(_spring.spring_length, want_len, minf(1.0, delta * 10.0))  # smooth zoom
 	_place_camera(delta)
 	_kill_push_step(delta)

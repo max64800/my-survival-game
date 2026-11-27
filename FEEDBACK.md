@@ -100,7 +100,6 @@ Fixed items get ~~crossed out~~, never deleted, so we can see the whole history.
 
 **Nov 27 play session (big list):**
 - [ ] **F925. Getting hit by a bat sounds like a 'ding'. It shouldn't.** *From: you (PC, Nov 27, play session). Said: 1×* 🛠 code done Nov 27, waiting for your round 12 sound picks (the page is open)
-- [ ] **F927. Aiming and looking up shows the back of the dwarf: the aim camera needs a new framing.** *From: you (PC, Nov 27, play session). Said: 1×* 🛠 in progress (Nov 27 list, Nov 27; you picked: camera slides right + lower when looking up)
 - [ ] **F934. Skill-up sounds (jumping, cooking, crafting…) are way too arcade-like. Change them.** *From: you (PC, Nov 27, play session). Said: 1×* 🛠 code done Nov 27, waiting for your round 12 sound picks (the page is open)
 - [ ] **F937. Cooking at a campfire sounds like fixing something.** *From: you (PC, Nov 27, play session). Said: 1×* 🛠 code done Nov 27, waiting for your round 12 sound picks (the page is open)
 - [ ] **F940 🔁 (F900). The road that links all the places should be a sand road, and not bend about.** F900 (Nov 25) made it an old grey brick road; it still doesn't look good and it bends. *From: you (PC, Nov 27, play session). Said: 1×* 🛠 in progress (Nov 27 list, Nov 27; you picked: sand, smooth and straight-ish inside the caves) (see Things that keep coming back)
