@@ -13,6 +13,10 @@ const DROP_LAYER := 4
 ## also gets its own size, squash and tumble, so a pile of broken rock isn't a pile of equal cubes (F104).
 const LOOK_SCALE := 1.75  ## F153: 3.5 was too big; now 2.5x the old size
 const BODY_RADIUS := 0.3
+## F921 (owner, Nov 27): gear on the floor is the same size as in the hand (held things keep their own size,
+## DwarfRig); only raw stuff (rock, ore, wood, food...) keeps the big chunky look above.
+const CHUNK_KINDS := ["material", "fuel", "gem", "food", "seed"]
+const BOLT_SCALE := 0.75  ## F926: a bolt lying on the floor (its model is 46 cm, long next to a dwarf)
 
 var drop_id := 0
 var item_id := ""
@@ -30,8 +34,17 @@ static var _mesh_cache := {}
 func _ready() -> void:
 	collision_layer = DROP_LAYER
 	collision_mask = World.TERRAIN_LAYER
-	mass = 0.3
+	# F922 (owner, Nov 27): things felt weightless and bounced about. Heavy, no bounce, rough, slows fast.
+	mass = 4.0
 	continuous_cd = true
+	var pm := PhysicsMaterial.new()
+	pm.bounce = 0.0
+	pm.friction = 1.0
+	pm.rough = true
+	physics_material_override = pm
+	linear_damp = 1.5
+	angular_damp = 4.0
+	gravity_scale = 1.6
 	var shape := CollisionShape3D.new()
 	var sphere := SphereShape3D.new()
 	sphere.radius = BODY_RADIUS
@@ -46,9 +59,18 @@ func _ready() -> void:
 	var size := randf_range(0.75, 1.25)
 	var squash := Vector3(randf_range(0.8, 1.2), randf_range(0.7, 1.15), randf_range(0.8, 1.2))
 	look.scale = squash * size * (LOOK_SCALE if model else LOOK_SCALE * 0.5)
+	if model and not Items.kind(item_id) in CHUNK_KINDS:
+		look.scale = Vector3.ONE * look_scale_of(item_id)  # F921: real size, no squash
 	look.position = Vector3.DOWN * BODY_RADIUS * 0.8
 	look.rotation = Vector3(randf_range(-0.5, 0.5), randf() * TAU, randf_range(-0.5, 0.5))
 	add_child(look)
+
+
+## How big a dropped item's model is drawn: hand size for gear, a bit smaller for bolts (F921, F926).
+static func look_scale_of(id: String) -> float:
+	if Items.kind(id) in CHUNK_KINDS:
+		return LOOK_SCALE
+	return BOLT_SCALE if Items.kind(id) == "ammo" else 1.0
 
 
 static func _mesh_for(id: String) -> Mesh:

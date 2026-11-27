@@ -822,7 +822,7 @@ func ask_ability(perk_id: String, aim := Vector3.INF) -> void:
 		_rpc_ability.rpc_id(1, perk_id, aim)
 
 
-## Dragging an ability onto Q / R / T in the perk window ("" = clear the key).
+## Dragging an ability onto Q / T / G in the perk window ("" = clear the key).
 func ask_set_ability_key(slot: int, perk_id: String) -> void:
 	if is_host():
 		request_set_ability_key(local_peer_id(), slot, perk_id)

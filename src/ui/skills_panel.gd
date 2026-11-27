@@ -4,14 +4,14 @@ extends PanelContainer
 ##  - "Skills": the 14 skills you grow by doing, all on one page, each with its ★ perks at 25 / 50 / 75 / 100 always shown,
 ##    one line each; what every level gives is in the card's hover text (owner, Nov 21, F576: it showed too much).
 ##  - "Perks" (opens first, F576): the perk tree (PerkTreeView: 1 point per level, 4 branches; a perk opens once the one before it has a
-##    point) and, on the right, the perk you clicked with its Learn button. ◆ = active perk on an ability key (Q / R / T).
+##    point) and, on the right, the perk you clicked with its Learn button. ◆ = active perk on an ability key (Q / T / G).
 ##  - "Notes" (F870, owner Nov 25; J opens the window here): every first-time picture card you have seen (FirstCards).
 ## The window has one fixed size (switching tabs never changes it) that fits above the hotbar. It is BUILT at the
 ## screen's size (`ui` = how much bigger than the 1600 x 900 design), not stretched afterwards, so the letters stay
 ## sharp (owner, Nov 20: stretching it made everything blurry).
 
 const BRANCHES := [["toughness", "Bones"], ["fighting", "Fists"], ["utility", "Hands"], ["together", "Heart"]]  ## names (owner, Nov 19); ids stay
-const KEY_NAMES := ["Q", "R", "T"]
+const KEY_NAMES := ["Q", "T", "G"]
 const BACKGROUND := "res://assets/ui/skills_background.jpg"
 const MILESTONE_TEXT := "★%d"
 const PAGE := Vector2(1300, 700)  ## the tabs' page, at ui = 1 (the window is about 1350 x 820)
@@ -32,7 +32,7 @@ var _notes: GridContainer
 var notes: FirstCards  ## the cards you have seen (the HUD hands over its FirstCards)
 var _help: Label
 var _tree: PerkTreeView
-var _keys: Array[Control] = []  ## the Q / R / T boxes under the perk card: drag an ability onto one (owner, Nov 27)
+var _keys: Array[Control] = []  ## the Q / T / G boxes under the perk card: drag an ability onto one (owner, Nov 27)
 var _detail: VBoxContainer
 var _sel := "thick_skin"
 
@@ -209,7 +209,7 @@ func show_tab(which: String) -> void:
 		b.modulate = Color.WHITE if k == which else Color(0.8, 0.8, 0.8)
 	_help.text = ("Everything new you have met. J opens this page, K the skills" if which == "notes" else
 		"Skills grow by doing (dig for Mining, chop for Woodcutting...). ★ = a bonus at levels 25, 50, 75 and 100. Point at a skill to see what each level gives."
-		if which == "skills" else "Circle = works by itself  ·  ◆ = drag onto Q / R / T  ·  ★ = last perk  ·  scroll to zoom, drag to move  ·  K to close")
+		if which == "skills" else "Circle = works by itself  ·  ◆ = drag onto Q / T / G  ·  ★ = last perk  ·  scroll to zoom, drag to move  ·  K to close")
 	if which == "perks" and _tree.progress:
 		_tree.refresh.call_deferred()
 

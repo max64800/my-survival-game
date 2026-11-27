@@ -2,7 +2,7 @@ class_name PerkTreeView
 extends Control
 ## The perk tree in the middle of the skills window (owner, Nov 19-20; mock-up: claude.ai/artifact/MBTFW9LdXc4mA3jNNpvYWR).
 ## Four branches grow from your level in the carved ring of the painted hall: Bones up, Fists right, Hands down,
-## Heart left. Circles = passive perks, diamonds = active ones (Q / R / T), ★ = a branch's final perk.
+## Heart left. Circles = passive perks, diamonds = active ones (Q / T / G), ★ = a branch's final perk.
 ## Click a perk to see it on the right (SkillsPanel shows the details and the Learn button).
 
 signal picked(perk_id: String)
@@ -89,7 +89,7 @@ func _ready() -> void:
 	resized.connect(refresh)
 
 
-## A learned ability (◆) can be dragged onto the Q / R / T boxes (SkillsPanel._keys).
+## A learned ability (◆) can be dragged onto the Q / T / G boxes (SkillsPanel._keys).
 func _drag(box: Control, id: String) -> Variant:
 	if progress == null or not Progression.ACTIVE.has(id) or progress.perk_rank(id) < 1:
 		return null

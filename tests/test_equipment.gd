@@ -386,3 +386,17 @@ func test_weapon_tips_explain_the_damage_kind() -> void:
 			"the tip box shows the name without the [b] marks")
 	tip.free()
 	slot.queue_free()
+
+
+## F921 + F922 + F926 (owner, Nov 27): dropped gear is the size it is in the hand (rock chunks stay big), bolts
+## on the floor are smaller still, and drops are heavy and never bounce.
+func test_dropped_gear_is_hand_size_heavy_and_does_not_bounce() -> void:
+	check_eq(Drop.look_scale_of("mace_copper"), 1.0, "a mace on the floor = the mace in the hand")
+	check_eq(Drop.look_scale_of("stone"), Drop.LOOK_SCALE, "rock chunks keep the big look (F93, F153)")
+	check(Drop.look_scale_of("bolt_stone") < 1.0, "a bolt on the floor is smaller than its 46 cm model")
+	var d := Drop.new()
+	d.item_id = "mace_copper"
+	tree.root.add_child(d)
+	check(d.mass >= 3.0, "heavy, not 0.3 kg")
+	check(d.physics_material_override != null and d.physics_material_override.bounce == 0.0, "no bounce")
+	d.free()

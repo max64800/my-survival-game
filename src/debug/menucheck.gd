@@ -51,6 +51,10 @@ func _run() -> void:
 		Controls.set_captured(false)
 		await _wait(0.6)
 		await _shot("02_workbench")
+		_main.hud.craft._tab = "Stations"  # F923: the station cards (Crystal Torch, Chopping Block...) spilled out
+		_main.hud.craft.refresh()
+		await _wait(0.3)
+		await _shot("02b_workbench_stations")
 		_main._set_bag(false)
 	if box_id >= 0:
 		_main.hud.open_box(box_id)

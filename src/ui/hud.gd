@@ -224,7 +224,8 @@ func _build() -> void:
 	# F870 (owner, Nov 25): no lantern bar; one simple pop-up when the lantern runs out.
 	_lantern_out = PanelContainer.new()
 	_lantern_out.name = "LanternOut"
-	UiKit.panel(_lantern_out, 18.0)
+	# F939: the frame's corners reach 30 px in, so the text needs at least that much room or it sits on the border
+	_lantern_out.add_theme_stylebox_override("panel", UiKit.style("panel", 30.0, 40.0))
 	_lantern_out.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_lantern_out.set_anchors_and_offsets_preset(Control.PRESET_CENTER_BOTTOM)
 	_lantern_out.grow_horizontal = Control.GROW_DIRECTION_BOTH
@@ -1399,7 +1400,7 @@ func _process(delta: float) -> void:
 			var bolts := 0
 			for id in Combat.BOLT_ORDER:
 				bolts += ps.inventory.count_of(id)
-			var state := "loaded" if me.fight.loaded else ("reloading %.1f s" % me.fight.reload_left if me.fight.reload_left >= 0.0 else "empty: click to reload")
+			var state := "loaded" if me.fight.loaded else ("reloading %.1f s" % me.fight.reload_left if me.fight.reload_left >= 0.0 else "empty: R or click to reload")
 			_fuel_label.text = "Crossbow %s, %d bolts" % [state, bolts]
 		_refresh_selection(ps.selected_slot)
 	var dwarf := _local_dwarf()

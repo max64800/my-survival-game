@@ -25,9 +25,10 @@ const KEYS := {
 	"blueprints": [KEY_V],
 	"break_piece": [KEY_X],  ## build hammer: break the aimed piece for half its materials (F100)
 	"dodge": [KEY_CTRL],
-	"ability_1": [KEY_Q],  ## the 3 active perks you put on Q / R / T in the perk window (owner, Nov 27);
-	"ability_2": [KEY_R],  ## Q still turns a piece while building (main.gd), Q over a bag slot still drops it (hud.gd)
-	"ability_3": [KEY_T],
+	"ability_1": [KEY_Q],  ## the 3 active perks you put on Q / T / G in the perk window (owner, Nov 27; F938 moved R to reload);
+	"ability_2": [KEY_T],  ## Q still turns a piece while building (main.gd), Q over a bag slot still drops it (hud.gd)
+	"ability_3": [KEY_G],
+	"reload": [KEY_R],  ## crossbow reload (F938 🔁 F458/F459: owner wants R back); clicking an empty crossbow still reloads too
 	"draw_weapon": [KEY_F],  ## draw / put away the equipped weapon (F23)
 	"stow_lantern": [KEY_L],  ## put the lantern away / take it out (owner, Nov 17)
 	"quicksave": [KEY_F5],

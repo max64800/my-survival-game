@@ -1136,7 +1136,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		Controls.set_captured(false) if open_map else Input.MOUSE_MODE_CAPTURED
 		return
 	var building := (dwarf.build_mode and dwarf.build_mode.active()) or (place_ghost and place_ghost.visible)
-	for i in Progression.ABILITY_KEYS:  # active perks on Q / R / T (owner, Nov 27)
+	for i in Progression.ABILITY_KEYS:  # active perks on Q / T / G (owner, Nov 27; F938)
 		if event.is_action_pressed("ability_%d" % (i + 1)) and not (i == 0 and building):  # Q turns the piece instead
 			var me := authority.get_player(authority.local_peer_id())
 			var slots: Array = me.progress.ability_slots() if me else []

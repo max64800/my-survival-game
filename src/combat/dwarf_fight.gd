@@ -506,7 +506,9 @@ func _crossbow_step(delta: float, move_dir := Vector3.ZERO) -> float:
 			if reload_left < 0.0:
 				loaded = true
 				Sfx.play("crossbow_reload", dwarf.global_position + Vector3.UP, -4.0)
-	if Input.is_action_just_pressed("dig") and _busy <= 0.0:
+	if Input.is_action_just_pressed("reload") and _busy <= 0.0:  # R reloads (F938)
+		start_reload()
+	elif Input.is_action_just_pressed("dig") and _busy <= 0.0:
 		if loaded:
 			_shoot(aiming())
 		else:
@@ -516,7 +518,7 @@ func _crossbow_step(delta: float, move_dir := Vector3.ZERO) -> float:
 	return (_ps().progress.guard_walk_mult(true) if _ps() else 0.6) if aiming() else 1.0  # Crossbow ★25
 
 
-## Clicking while the crossbow is empty (R is an ability key since Nov 27).
+## R, or clicking while the crossbow is empty (F938: R is back on reload).
 func start_reload() -> void:
 	if not is_crossbow() or loaded or reload_left >= 0.0:
 		return

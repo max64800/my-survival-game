@@ -882,7 +882,7 @@ const BOLT_BUILDUP := {"bolt_ember": {burn = 40.0}, "bolt_rime": {chill = 40.0},
 func _ev_shot(from: Vector3, to: Vector3, bolt: String) -> void:
 	var dart := MeshInstance3D.new()
 	var mesh := BoxMesh.new()
-	mesh.size = Vector3(0.04, 0.04, 0.5)
+	mesh.size = Vector3(0.022, 0.022, 0.32)  # F926 (owner, Nov 27): bolts were way too big (was 4 x 4 x 50 cm)
 	dart.mesh = mesh
 	var mat := StandardMaterial3D.new()
 	mat.albedo_color = Items.color(bolt)

@@ -27,6 +27,8 @@ var _amount_slider: HSlider
 var _amount_label: Label
 ## Recipe cards (owner F187): click a card, it shows big at the bottom with one Craft button.
 const CARD := 86
+const CARD_INSET := 11  ## F923: how far in from the card's edge its picture and name stay (clear of the frame)
+const CARD_PIC := 35  ## the picture box's height on a recipe card
 const CARD_COLUMNS := 5
 var _picked := ""
 var _detail: PanelContainer
@@ -535,17 +537,41 @@ func _card(recipe_id: String, inv: Inventory) -> Control:
 	b.name = "Card_" + recipe_id
 	b.custom_minimum_size = Vector2(CARD, CARD)
 	b.focus_mode = Control.FOCUS_NONE
-	b.icon = Items.icon(r.output)
-	b.expand_icon = true
-	b.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	b.vertical_icon_alignment = VERTICAL_ALIGNMENT_TOP
-	b.add_theme_constant_override("icon_max_width", 46)
-	b.text = Items.display_name(r.output) + ("" if r.count == 1 else " ×%d" % r.count)
-	b.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-	b.clip_text = true
-	b.add_theme_font_size_override("font_size", 12)
-	b.add_theme_color_override("font_color", UiKit.TEXT)
-	b.add_theme_color_override("font_hover_color", UiKit.AMBER)
+	# F923 (owner, Nov 27): the button's own icon + text spilled over the frame (long names ran over the border,
+	# tall pictures pushed into the name). Now a fixed picture box and a name that wraps onto 2 lines, both
+	# kept inside the frame's border.
+	b.clip_contents = true
+	var inside := VBoxContainer.new()
+	inside.name = "Inside"
+	inside.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	inside.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	inside.offset_left = CARD_INSET
+	inside.offset_right = -CARD_INSET
+	inside.offset_top = CARD_INSET
+	inside.offset_bottom = -CARD_INSET + 3
+	inside.add_theme_constant_override("separation", 1)
+	b.add_child(inside)
+	var pic := TextureRect.new()
+	pic.name = "Pic"
+	pic.texture = Items.icon(r.output)
+	pic.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	pic.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	pic.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	pic.custom_minimum_size = Vector2(0, CARD_PIC)
+	inside.add_child(pic)
+	var name_l := UiKit.label(inside, Items.display_name(r.output) + ("" if r.count == 1 else " ×%d" % r.count), 11, UiKit.TEXT)
+	name_l.name = "Name"
+	name_l.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	name_l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	name_l.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	name_l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	name_l.max_lines_visible = 2
+	name_l.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	name_l.add_theme_constant_override("line_spacing", 0)
+	name_l.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	name_l.clip_text = true
+	b.mouse_entered.connect(func(): name_l.add_theme_color_override("font_color", UiKit.AMBER))
+	b.mouse_exited.connect(func(): name_l.add_theme_color_override("font_color", UiKit.TEXT))
 	b.tooltip_text = Items.display_name(r.output)
 	var picked := recipe_id == _picked
 	var normal := UiKit.style("slot_selected" if picked else "card", 6)

@@ -3,11 +3,11 @@
 Build list for the PC. Every choice below is the owner's. Do the steps in this order; each one is playable on its own.
 
 ## 1. Active abilities (the 7 diamond perks)
-- **Keys Q / R / T** (were Z / G / T). `src/player/controls.gd` `ability_1..3`.
+- **Keys Q / T / G** (were Z / G / T). `src/player/controls.gd` `ability_1..3`.
   - Q still rotates a building piece **while the build hammer is out**; otherwise Q = ability 1.
   - Q over a bag slot still drops the item (bag open = no ability).
   - **Lantern refill moves from R to L:** tap L = put away / take out (as now), hold L ~0.5 s = refill.
-- **You choose:** in the perk window, drag an owned ability onto the Q / R / T boxes. Any time, anywhere.
+- **You choose:** in the perk window, drag an owned ability onto the Q / T / G boxes. Any time, anywhere.
   A swapped-in ability starts its full recharge (no swapping to skip waits). Saved per player.
   Replaces `Progression.ability_slots()` "first 3 in tree order" (keep that only as the default for old saves).
 - **Still 3 keys, still the same 7 abilities** (owner: no new ones).

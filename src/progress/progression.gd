@@ -99,7 +99,7 @@ const PERKS := {
 ## Active perks: seconds until you can use them again.
 const ACTIVE := {stone_stance = 180.0, whirlwind = 45.0, rapid_volley = 60.0, quick_fix = 300.0,
 	war_horn = 90.0, healing_brew = 120.0, clan_banner = 300.0}
-## Ability keys Q / R / T: the player drags an owned active perk onto each in the perk window (owner, Nov 27).
+## Ability keys Q / T / G: the player drags an owned active perk onto each in the perk window (owner, Nov 27).
 const ABILITY_KEYS := 3
 ## Resetting your perk points costs gold coins (owner, Nov 19): this many per level.
 const RESPEC_GOLD_PER_LEVEL := 5
@@ -120,7 +120,7 @@ var xp := 0  ## XP into the current level
 var skill_level := _zeros()
 var skill_xp := _zeros()
 var perks := {}  ## perk id -> rank
-var ability_keys := ["", "", ""]  ## the active perk on Q / R / T ("" = empty); saved per player
+var ability_keys := ["", "", ""]  ## the active perk on Q / T / G ("" = empty); saved per player
 var kills := {}  ## creature kind -> kills you shared in (for later rewards, e.g. "20 bats: Bat Hunter")
 var _points_spent := 0
 
@@ -255,7 +255,7 @@ func respec() -> void:
 	ability_keys = ["", "", ""]
 
 
-## The active perk on each ability key Q / R / T ("" = nothing there). Always ABILITY_KEYS long.
+## The active perk on each ability key Q / T / G ("" = nothing there). Always ABILITY_KEYS long.
 func ability_slots() -> Array:
 	return ability_keys.map(func(id): return id if perk_rank(id) > 0 else "")
 
