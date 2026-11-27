@@ -179,10 +179,8 @@ func _process(delta: float) -> void:
 			print("RUIN_OUTPOST carving %d spots (t=%d ms)" % [_carve.size(), Time.get_ticks_msec()])
 		return
 	if _state == "build":
-		var t0 := Time.get_ticks_msec()
-		print("RUIN_OUTPOST carved, building (t=%d ms)" % t0)
-		_build()
-		print("RUIN_OUTPOST build took %d ms" % (Time.get_ticks_msec() - t0))
+		if not _build():
+			return  # (a little each frame, F417; RUIN_TOWER built says how long it took)
 		auth.world_state["outpost"] = "built"
 		built_origin = origin
 		built_turn = turn

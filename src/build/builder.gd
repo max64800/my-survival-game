@@ -393,15 +393,23 @@ func _ev_add_piece(uid: int, piece: String, family: String, pos: Vector3, rot: i
 		ladders[uid] = true
 	if piece == "gate_leaf" or piece == "gateway":
 		_flip_gate_leaves(pos)
+	var later := batch or _loading  # F417: a ruin or a saved world: each neighbour is touched up once, at the end
 	if piece in ["stairs", "stairs_corner"] or Pieces.LIST[piece].get("place", "") == "cell":
-		_relip_stairs(pos)
+		if later:
+			_later_lips.append(pos)
+		else:
+			_relip_stairs(pos)
 	if _affects_gaps(piece):
-		_refill_gaps(pos)
+		if later:
+			_later_gaps.append(pos)
+		else:
+			_refill_gaps(pos)
 	_next_uid = maxi(_next_uid, uid + 1)
 	if auth.is_host() and not batch:
 		structure.settle_added(uid)  # (F565: a new piece only makes things steadier: no whole-world check)
 	elif batch:
 		_batch_added = true
+		_batch_new.append(uid)
 	if not batch and not _loading:  # F724: a puff of chips and dust as it goes up (everyone sees it: this runs on every screen)
 		Fx.build_puff(get_parent(), Pieces.box(piece, pos, rot), family)
 
@@ -418,16 +426,76 @@ var _batch_removed := false
 ## strength 0 everywhere, so a tower whose only missing piece was high up could never be rebuilt (nothing new below it
 ## spread strength up).
 var _batch_added := false
+var _batch_new: Array[int] = []  ## (the pieces added in this batch: their strength spreads out from them at its end)
+## F417 (Nov 27): the 1046-piece Brickcrown froze the game for 8 s, 4.5 s of it the gap beams and stair lips of every
+## neighbour being worked out again after each new piece. In a batch (and while a save loads) only the spots are noted
+## here, and touch_up_later() does each piece near them once.
+var _later_gaps: Array[Vector3] = []
+var _later_lips: Array[Vector3] = []
+
+
+## F417: ends the batch a little at a time (a ruin of 1000 pieces): the touch-ups, then the strength spreading out,
+## each stopping after about `budget_ms`. False = call again next frame; true = the batch is over.
+func finish_batch(budget_ms: float) -> bool:
+	var t0 := Time.get_ticks_usec()
+	if not touch_up_later(budget_ms):
+		return false
+	if auth.is_host() and _batch_added and not _batch_removed:
+		if not _batch_new.is_empty():
+			structure.settle_start(_batch_new)
+			_batch_new.clear()
+		if not structure.settle_step(maxf(budget_ms - (Time.get_ticks_usec() - t0) / 1000.0, 1.0)):
+			return false
+		_batch_added = false  # (done: end_batch has nothing left to settle)
+	end_batch()
+	return true
+
+
+var _touch_lips: Array = []
+var _touch_gaps: Array = []
+
+
+## Does the noted touch-ups. `budget_ms` > 0: stops after about that long and returns false (call again next frame);
+## true = all done.
+func touch_up_later(budget_ms: float = -1.0) -> bool:
+	var t0 := Time.get_ticks_usec()
+	if not _later_lips.is_empty() or not _later_gaps.is_empty():
+		var lips := {}
+		for uid in _touch_lips:
+			lips[uid] = true
+		for at in _later_lips:
+			for uid in structure.near(AABB(at - Vector3(3.5, 3.5, 3.5), Vector3(7, 7, 7))):
+				lips[uid] = true
+		var gaps := {}
+		for uid in _touch_gaps:
+			gaps[uid] = true
+		for at in _later_gaps:
+			for uid in structure.near(AABB(at - Vector3(4.5, 3.0, 4.5), Vector3(9, 6, 9))):
+				gaps[uid] = true
+		_later_lips.clear()
+		_later_gaps.clear()
+		_touch_lips = lips.keys()
+		_touch_gaps = gaps.keys()
+	while not _touch_lips.is_empty() or not _touch_gaps.is_empty():
+		if budget_ms > 0.0 and Time.get_ticks_usec() - t0 > budget_ms * 1000.0:
+			return false
+		if not _touch_lips.is_empty():
+			_relip_one(_touch_lips.pop_back())
+		else:
+			_refill_one(_touch_gaps.pop_back())
+	return true
 
 
 func end_batch() -> void:
 	batch = false
+	touch_up_later()
 	if auth.is_host() and _batch_removed:
 		_queue_shaky()
 	elif auth.is_host() and _batch_added:
-		structure.recompute()  # (only adding: nothing falls, every piece just gets its real strength)
+		structure.settle_many(_batch_new)  # (only adding: nothing falls, every piece just gets its real strength)
 	_batch_removed = false
 	_batch_added = false
+	_batch_new.clear()
 
 
 @rpc("authority", "call_local", "reliable")
@@ -1701,6 +1769,8 @@ func load_snapshot(s: Dictionary) -> void:
 			_ev_door(p[0], int(p[6]))  # old saves stored true (= 1)
 			_door_shut_at[p[0]] = _clock + DOOR_SHUT_TIME  # F869: left open when saved, it still shuts by itself
 	_loading = false
+	if not batch:
+		touch_up_later()
 	_next_uid = s.get("next", _next_uid)
 	for st in s.get("sites", []):
 		_ev_site(st[0], st[1], st[2], st[3], st[4])
@@ -1754,20 +1824,26 @@ func _recap_spirals(pos: Vector3) -> void:
 ## a slope that climbs those 25 cm too (PieceNode.lip), so walking down doesn't roll off that edge.
 func _relip_stairs(at: Vector3) -> void:
 	for uid in structure.near(AABB(at - Vector3(3.5, 3.5, 3.5), Vector3(7, 7, 7))):
-		var p: Dictionary = structure.pieces[uid]
-		if not p.piece in ["stairs", "stairs_corner"] or not nodes.has(uid):
-			continue
-		var s: Vector3 = Pieces.LIST[p.piece].size
-		var out := Vector3(-s.x * 0.5 - 0.15, 0, 0) if p.piece == "stairs_corner" else Vector3(0, 0, -s.z * 0.5 - 0.15)
-		var past: Vector3 = p.pos + Basis(Vector3.UP, Pieces.yaw_of(p.rot)) * (out + Vector3(0, s.y + PieceNode.LIP * 0.5, 0))
-		var on := false
-		for q in structure.near(AABB(past - Vector3(0.05, 0.05, 0.05), Vector3(0.1, 0.1, 0.1))):
-			var o: Dictionary = structure.pieces[q]
-			var top: float = o.pos.y + Pieces.LIST[o.piece].size.y
-			if o.piece in ["floor", "foundation", "floor_half", "floor_triangle", "floor_hatch"] \
-					and absf(top - (p.pos.y + s.y + PieceNode.LIP)) < 0.03 and Pieces.box(o.piece, o.pos, o.rot).has_point(past):
-				on = true
-		(nodes[uid] as PieceNode).set_lip(on)
+		_relip_one(uid)
+
+
+func _relip_one(uid: int) -> void:
+	if not structure.pieces.has(uid):
+		return
+	var p: Dictionary = structure.pieces[uid]
+	if not p.piece in ["stairs", "stairs_corner"] or not nodes.has(uid):
+		return
+	var s: Vector3 = Pieces.LIST[p.piece].size
+	var out := Vector3(-s.x * 0.5 - 0.15, 0, 0) if p.piece == "stairs_corner" else Vector3(0, 0, -s.z * 0.5 - 0.15)
+	var past: Vector3 = p.pos + Basis(Vector3.UP, Pieces.yaw_of(p.rot)) * (out + Vector3(0, s.y + PieceNode.LIP * 0.5, 0))
+	var on := false
+	for q in structure.near(AABB(past - Vector3(0.05, 0.05, 0.05), Vector3(0.1, 0.1, 0.1))):
+		var o: Dictionary = structure.pieces[q]
+		var top: float = o.pos.y + Pieces.LIST[o.piece].size.y
+		if o.piece in ["floor", "foundation", "floor_half", "floor_triangle", "floor_hatch"] \
+				and absf(top - (p.pos.y + s.y + PieceNode.LIP)) < 0.03 and Pieces.box(o.piece, o.pos, o.rot).has_point(past):
+			on = true
+	(nodes[uid] as PieceNode).set_lip(on)
 
 
 ## F833 🔁 (F165): walls, windows and doorways (and the floors whose rim fills the slit) change the gap beams nearby.
@@ -1785,8 +1861,12 @@ static func _stacks(piece: String) -> bool:
 
 func _refill_gaps(at: Vector3) -> void:
 	for uid in structure.near(AABB(at - Vector3(4.5, 3.0, 4.5), Vector3(9, 6, 9))):
-		if nodes.has(uid) and _stacks(structure.pieces[uid].piece):
-			(nodes[uid] as PieceNode).set_fills(gap_fill_for(structure, uid), seams_for(structure, uid))
+		_refill_one(uid)
+
+
+func _refill_one(uid: int) -> void:
+	if nodes.has(uid) and structure.pieces.has(uid) and _stacks(structure.pieces[uid].piece):
+		(nodes[uid] as PieceNode).set_fills(gap_fill_for(structure, uid), seams_for(structure, uid))
 
 
 const GAP_MAX := 0.3  ## a bigger gap between two stacked walls was left on purpose (or is something else)

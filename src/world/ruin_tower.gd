@@ -11,10 +11,15 @@ extends Node
 const PLAN := "res://blueprints/ruins/watchtower_ruin.json"
 const CARVE_RADIUS := 1.1
 const CARVES_PER_FRAME := 30
+const BUILDING_GROUP := "ruin_building"  ## F417: a ruin still placing pieces (no autosave until it is done)
+const BUILD_MS := 6  ## F417: placing pieces stops for this frame after this long (a 1046-piece ruin froze the game 8 s)
 const RUBBLE := ["ruin_rubble", "door_broken", "barrel_smashed"]  ## placed as hit-to-clear rubble, not as building pieces
 
 var auth: GameAuthority
-var plan: Dictionary
+var plan: Dictionary:  ## (setting it starts reading its pieces' models in the background, F417)
+	set(v):
+		plan = v
+		_start_loading_looks()
 var origin := Vector3.INF   ## the tower's bottom centre (ground level of its foundations)
 var turn := 0               ## quarter turns: its door faces where you come from
 var _carve: Array = []
@@ -162,9 +167,9 @@ func _process(_delta: float) -> void:
 			if _carve.is_empty():
 				_state = "build"
 		"build":
-			_build()
-			_state = "done"
-			queue_free()
+			if _build():
+				_state = "done"
+				queue_free()
 
 
 ## The floor under `p`: the cave's own rock (the tower only carves ABOVE its ground line, so the ground the
@@ -173,11 +178,64 @@ func _floor_at(p: Vector3) -> float:
 	return auth.world.maker.find_floor(p.x, p.z, p.y + 2.5).y
 
 
-func _build() -> void:
+## F417 (Nov 27): every piece and model file a ruin uses starts loading on helper threads as soon as its plan is set,
+## so the build doesn't wait for the drive (it was 3 s of the Brickcrown's 8 s freeze).
+func _start_loading_looks() -> void:
+	var seen := {}
+	_warm = []
+	for p in plan.get("pieces", []):
+		var key := String(p.id) + "__" + String(p.mat)
+		if not seen.has(key) and Pieces.LIST.has(String(p.id)) and Pieces.FAMILIES.has(String(p.mat)):
+			seen[key] = true
+			PieceNode.start_loading(String(p.id), String(p.mat))
+			if not String(p.id) in RUBBLE and not p.get("fallen", false):
+				_warm.append([String(p.id), String(p.mat)])
+	for c in plan.get("chests", []):  # (their models too: the Brickcrown's 4 chests took 110 ms)
+		Look.start_loading("stations", Storage.model_id(String(c.kind)))
+	Look.start_loading("stations", Storage.model_id("rebuild"))
+	if not plan.get("torches", []).is_empty():
+		Look.start_loading("stations", Station.model_id("crystal_torch"))
+
+
+var _warm: Array = []       ## piece kinds still to get ready (PieceNode.warm_up) before placing starts
+var _checks := 0             ## how many of _warm have had their model check started
+var _next_piece := 0          ## the next plan piece _build places
+var _hidden: Array[int] = []  ## the pieces placed so far, hidden until the whole ruin stands
+var _build_ms := 0.0
+
+
+## Places the ruin's pieces a few at a time (F417): BUILD_MS a frame, hidden until the last one is in, then the chests
+## and torches. Call it every frame until it returns true (done). The Builder stays in its batch the whole time, so the
+## strength check and the gap beams are worked out once, at the end.
+func _build() -> bool:
+	if not is_in_group(BUILDING_GROUP):
+		add_to_group(BUILDING_GROUP)  # (autosave waits for this, main.gd)
 	var basis := Basis(Vector3.UP, turn * PI / 2.0)
 	var b: Builder = auth.builder
 	b.batch = true
-	for p in plan.get("pieces", []):
+	var t0 := Time.get_ticks_usec()
+	var pieces: Array = plan.get("pieces", [])
+	while _checks < _warm.size():  # first each kind's model check starts on a helper thread (PieceNode.start_checking)
+		PieceNode.start_checking(_warm[_checks][0], _warm[_checks][1])
+		_checks += 1
+		if Time.get_ticks_usec() - t0 > BUILD_MS * 1000:
+			_build_ms += (Time.get_ticks_usec() - t0) / 1000.0
+			return false
+	while not _warm.is_empty():  # then every kind gets ready (each a few ms once its check is done)
+		if not PieceNode.check_done(_warm[-1][0], _warm[-1][1]):
+			_build_ms += (Time.get_ticks_usec() - t0) / 1000.0
+			return false
+		var w: Array = _warm.pop_back()
+		PieceNode.warm_up(w[0], w[1])
+		if Time.get_ticks_usec() - t0 > BUILD_MS * 1000:
+			_build_ms += (Time.get_ticks_usec() - t0) / 1000.0
+			return false
+	while _next_piece < pieces.size():
+		if Time.get_ticks_usec() - t0 > BUILD_MS * 1000:
+			_build_ms += (Time.get_ticks_usec() - t0) / 1000.0
+			return false
+		var p: Dictionary = pieces[_next_piece]
+		_next_piece += 1
 		var pos: Vector3 = origin + basis * Vector3(p.pos[0], p.pos[1], p.pos[2])
 		var rot: int = Pieces.add_rot(int(p.rot), turn)
 		if p.get("fallen", false):
@@ -196,7 +254,16 @@ func _build() -> void:
 			continue
 		var uid: int = b._next_uid
 		b._ev_add_piece.rpc(uid, String(p.id), String(p.mat), pos, rot, float(p.pos[1]) < 0.3 or bool(p.get("anchor", false)))  # ("anchor": on a rock lump)
-	b.end_batch()
+		if b.nodes.has(uid):
+			(b.nodes[uid] as Node3D).visible = false
+			_hidden.append(uid)
+	if not b.finish_batch(maxf(BUILD_MS - (Time.get_ticks_usec() - t0) / 1000.0, 1.0)):
+		_build_ms += (Time.get_ticks_usec() - t0) / 1000.0
+		return false  # (the gap beams, stair lips and strength, a little each frame)
+	for uid in _hidden:
+		if b.nodes.has(uid) and is_instance_valid(b.nodes[uid]):
+			(b.nodes[uid] as Node3D).visible = true
+	_hidden.clear()
 	var main := main_chest(plan.get("chests", []))
 	for ci in plan.get("chests", []).size():
 		var c: Dictionary = plan.chests[ci]
@@ -224,7 +291,10 @@ func _build() -> void:
 		var sid: int = auth._next_station_id
 		auth._next_station_id += 1
 		auth._ev_place_station.rpc(sid, "crystal_torch", tp, turn * PI / 2.0)
-	print("RUIN_TOWER built at %s (turn %d): %d pieces, %d chests" % [origin, turn, plan.get("pieces", []).size(), plan.get("chests", []).size()])
+	remove_from_group(BUILDING_GROUP)
+	_build_ms += (Time.get_ticks_usec() - t0) / 1000.0
+	print("RUIN_TOWER built at %s (turn %d): %d pieces, %d chests, %.0f ms of building" % [origin, turn, pieces.size(), plan.get("chests", []).size(), _build_ms])
+	return true
 
 
 ## The ruin's main chest (index in the plan's chests, -1 = none): the one with the most recipe pages, the first on a

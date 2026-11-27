@@ -304,6 +304,8 @@ func _follow(sk: Skeleton3D) -> void:
 
 
 func _on_bones(sk: Skeleton3D) -> void:
+	if not sk.is_inside_tree():
+		return  # (a skeleton still finishing as it leaves the world: no place to read, F417 log errors)
 	var g := sk.global_transform
 	var u := -1.0
 	for p in parts:

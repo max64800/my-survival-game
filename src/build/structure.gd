@@ -323,6 +323,61 @@ static func _loss(family: String, neighbor: AABB, me: AABB, piece: String = "") 
 	if below and piece in ["pillar", "column"]:
 		return minf(Pieces.PILLAR_UP_LOSS, f.up)
 	return f.up if below else f.side
+## F417 (Nov 27): settle_added for many new pieces at once (a ruin's 1000): each gets the best strength its neighbours
+## give it, then strength spreads out from them only. Same result as recompute() after adding (nothing gets weaker),
+## but it doesn't go over every piece in the world again and again (that was 335 ms after the Brickcrown went up).
+## settle_start + settle_step(budget) do it a little each frame.
+func settle_many(uids: Array) -> void:
+	settle_start(uids)
+	settle_step()
+
+
+var _settle_seed: Array = []
+var _settle_todo: Array = []
+
+
+func settle_start(uids: Array) -> void:
+	_settle_seed.append_array(uids)
+
+
+## Goes on with the settling; `budget_ms` > 0 stops after about that long and returns false (call again). True = done.
+func settle_step(budget_ms: float = -1.0) -> bool:
+	var t0 := Time.get_ticks_usec()
+	var n := 0
+	while not _settle_seed.is_empty():
+		n += 1
+		if budget_ms > 0.0 and n % 8 == 0 and Time.get_ticks_usec() - t0 > budget_ms * 1000.0:
+			return false
+		var uid: int = _settle_seed.pop_back()
+		if not pieces.has(uid):
+			continue
+		var me: Dictionary = pieces[uid]
+		if not me.anchored:
+			var my_box := box_of(uid)
+			for other in neighbors(uid):
+				me.stability = maxf(me.stability, pieces[other].stability - _loss(me.family, box_of(other), my_box, me.piece))
+		_settle_todo.append(uid)
+	var guard := 0
+	while not _settle_todo.is_empty() and guard < 1000000:
+		guard += 1
+		if budget_ms > 0.0 and guard % 8 == 0 and Time.get_ticks_usec() - t0 > budget_ms * 1000.0:
+			return false
+		var a: int = _settle_todo.pop_back()
+		if not pieces.has(a):
+			continue
+		var a_box := box_of(a)
+		for other in near(a_box):
+			var o: Dictionary = pieces[other]
+			if other == a or o.anchored or not neighbors(other).has(a):  # (as recompute: what `other` itself touches)
+				continue
+			var st: float = pieces[a].stability - _loss(o.family, a_box, box_of(other), o.piece)
+			if st > o.stability + 0.0001:
+				o.stability = st
+				_settle_todo.append(other)
+	_settle_todo.clear()
+	return true
+
+
 
 
 func to_data() -> Array:

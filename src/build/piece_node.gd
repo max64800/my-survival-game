@@ -306,6 +306,7 @@ static func stacked_mesh(p_family: String) -> Mesh:
 
 
 static var _forged_meshes := {}
+static var _solid_shapes := {}
 static var _fire_spots := {}  ## piece__family -> [[position, size]] from the model's fire_spot markers
 
 
@@ -325,6 +326,61 @@ static func start_loading(p_piece: String, p_family: String) -> void:
 	Look.start_loading(model.get_slice("/", 0), model.get_slice("/", 1))
 
 
+## F417: the "does a part float" check of a piece model (PieceMesh.islands, 20-50 ms a model) on a helper thread: the
+## main thread only copies the model's points out. key -> [task id, result holder].
+static var _island_jobs := {}
+
+
+## Starts the check for this piece + material's model (its file should be read already: start_loading).
+static func start_checking(p_piece: String, p_family: String) -> void:
+	var key := p_piece + "__" + p_family
+	if not use_models or _forged_meshes.has(key) or _island_jobs.has(key) or not Pieces.LIST.has(p_piece):
+		return
+	var model: String = Pieces.LIST[p_piece].get("model", "build/" + key)
+	var scene := Look.forged(model.get_slice("/", 0), model.get_slice("/", 1))
+	if scene == null:
+		return
+	var parts := scene.find_children("*", "MeshInstance3D", true, false)
+	if parts.size() == 1:
+		var m: Mesh = (parts[0] as MeshInstance3D).mesh
+		var surfaces: Array = []
+		for si in m.get_surface_count():
+			surfaces.append(m.surface_get_arrays(si))
+		var out: Array = []
+		var id := WorkerThreadPool.add_task(func(): out.append(PieceMesh.islands_of(surfaces)), false, "piece model check")
+		_island_jobs[key] = [id, out]
+	scene.free()
+
+
+## True when this kind's check (if any) is finished.
+static func check_done(p_piece: String, p_family: String) -> bool:
+	var job: Array = _island_jobs.get(p_piece + "__" + p_family, [])
+	return job.is_empty() or WorkerThreadPool.is_task_completed(job[0])
+
+
+## The helper thread's parts for this model ([] = none started: work it out here).
+static func _island_result(key: String) -> Array:
+	if not _island_jobs.has(key):
+		return []
+	var job: Array = _island_jobs[key]
+	_island_jobs.erase(key)
+	WorkerThreadPool.wait_for_task_completion(job[0])
+	return job[1][0] if not (job[1] as Array).is_empty() else []
+
+
+## F417: gets a piece kind ready before the first one goes up (its model read and checked, its solid shape made):
+## 20-50 ms each, so a ruin does one or two a frame before placing its pieces instead of many in the same frame.
+static func warm_up(p_piece: String, p_family: String) -> void:
+	var made := forged_mesh(p_piece, p_family)
+	if made == null:
+		PieceMesh.visual(p_piece, p_family)
+	var info: Dictionary = Pieces.LIST[p_piece]
+	if made and info.get("collide_as_model", false) and not info.get("walkable_slope", false):
+		slice_tops(p_piece, p_family, made, info.size)
+	elif not info.get("walkable_slope", false) and not _solid_shapes.has(p_piece):
+		_solid_shapes[p_piece] = PieceMesh.solid(p_piece).create_trimesh_shape()
+
+
 static func forged_mesh(p_piece: String, p_family: String) -> Mesh:
 	if not use_models:
 		return null
@@ -338,8 +394,11 @@ static func forged_mesh(p_piece: String, p_family: String) -> Mesh:
 			if parts.size() == 1:
 				m = (parts[0] as MeshInstance3D).mesh  # one baked mesh, as agreed with Claude 2
 				var why := model_misfit(p_piece, m.get_aabb())
-				if why == "" and floating_parts(p_piece, m) > 0:
-					why = "%d separate parts: something floats" % PieceMesh.islands(m).size()
+				var boxes: Array = _island_result(key)
+				if boxes.is_empty():
+					boxes = PieceMesh.islands(m)
+				if why == "" and _floating_of(p_piece, boxes) > 0:
+					why = "%d separate parts: something floats" % boxes.size()
 				if why != "":
 					print("Model skipped: %s.glb doesn't fit its piece (%s); using the code shape" % [key, why])
 					m = null
@@ -359,7 +418,10 @@ static func forged_mesh(p_piece: String, p_family: String) -> Mesh:
 ## How many parts of a model float: every part but one, or for wreckage lying in pieces (Pieces "lies_in_parts",
 ## the Spire's fallen top broke in two, F479) every part that doesn't rest on the ground.
 static func floating_parts(p_piece: String, m: Mesh) -> int:
-	var parts := PieceMesh.islands(m)
+	return _floating_of(p_piece, PieceMesh.islands(m))
+
+
+static func _floating_of(p_piece: String, parts: Array) -> int:
 	if Pieces.LIST.get(p_piece, {}).get("lies_in_parts", false):
 		return parts.filter(func(b: AABB): return b.position.y > 0.1).size()
 	return parts.size() - 1
@@ -408,7 +470,9 @@ func _build() -> void:
 			_model_slices(made, s)
 		else:
 			var cs := CollisionShape3D.new()
-			cs.shape = PieceMesh.solid(piece).create_trimesh_shape()
+			if not _solid_shapes.has(piece):  # F417: one shared solid shape per kind (a ruin made 1000 of them)
+				_solid_shapes[piece] = PieceMesh.solid(piece).create_trimesh_shape()
+			cs.shape = _solid_shapes[piece]
 			add_child(cs)
 	if Pieces.FAMILIES[family].get("glow", false) and not ghost:
 		var l := OmniLight3D.new()
@@ -598,6 +662,19 @@ const SLICES := 8
 
 
 func _model_slices(made: Mesh, s: Vector3) -> void:
+	var tops := slice_tops(piece, family, made, s)
+	for k in SLICES:
+		if tops[k] < 0.05:
+			continue
+		var cs := CollisionShape3D.new()
+		var box := BoxShape3D.new()
+		box.size = Vector3(s.x / SLICES, minf(tops[k], s.y), s.z)
+		cs.shape = box
+		cs.position = Vector3(-s.x * 0.5 + (k + 0.5) * s.x / SLICES, box.size.y * 0.5, 0.0)
+		add_child(cs)
+
+
+static func slice_tops(piece: String, family: String, made: Mesh, s: Vector3) -> PackedFloat32Array:
 	var key := "%s/%s" % [piece, family]
 	if not _slices.has(key):
 		var tops := PackedFloat32Array()
@@ -619,16 +696,7 @@ func _model_slices(made: Mesh, s: Vector3) -> void:
 				for k in range(k0, k1 + 1):
 					tops[k] = maxf(tops[k], _top_in_slab([a, b, c], lo + k * w, lo + (k + 1) * w))
 		_slices[key] = tops
-	var tops: PackedFloat32Array = _slices[key]
-	for k in SLICES:
-		if tops[k] < 0.05:
-			continue
-		var cs := CollisionShape3D.new()
-		var box := BoxShape3D.new()
-		box.size = Vector3(s.x / SLICES, minf(tops[k], s.y), s.z)
-		cs.shape = box
-		cs.position = Vector3(-s.x * 0.5 + (k + 0.5) * s.x / SLICES, box.size.y * 0.5, 0.0)
-		add_child(cs)
+	return _slices[key]
 
 
 ## The highest point of a triangle between x0 and x1 (its corners in there, and where its edges cross x0 and x1).

@@ -975,7 +975,8 @@ func _process(delta: float) -> void:
 			_solid_viewer = null
 	if world and _ready_to_play and saves_world() and authority.is_host():
 		_autosave -= delta
-		if _autosave <= 0.0:
+		# F417: a big ruin builds a little each frame (~2 s). Saving halfway would store half a ruin, so wait for it.
+		if _autosave <= 0.0 and not get_tree().has_group(RuinTower.BUILDING_GROUP):
 			_autosave = 300.0  # every 5 minutes (spec 5.11)
 			save_now("Autosaved")
 	if world == null or _ready_to_play:
@@ -985,6 +986,8 @@ func _process(delta: float) -> void:
 	# Loading bar: how much of the ground around you is ready (rings from 2 m out to 6 m).
 	var rings_ready := 0
 	for r in [2.0, 3.0, 4.0, 5.0, 6.0]:
+	if not is_instance_valid(dwarf):
+		return  # F417: no dwarf yet (or it is gone): this line once failed 2219 times in a row
 		if world.terrain.is_area_meshed(AABB(p - Vector3.ONE * r, Vector3.ONE * r * 2.0)):
 			rings_ready += 1
 	hud.set_loading_progress(0.15 + 0.85 * rings_ready / 5.0)
@@ -1027,6 +1030,11 @@ func save_now(note: String = "Saved") -> void:
 		hud.show_toast(note if err == "" else "Save failed: " + err, 2.0)
 
 
+	# F417: a big ruin builds a little each frame. A save (F5, quitting) first finishes it, so no save holds half a
+	# ruin that would be built again on top when the world loads.
+	for ruin in get_tree().get_nodes_in_group(RuinTower.BUILDING_GROUP):
+		while is_instance_valid(ruin) and ruin.is_in_group(RuinTower.BUILDING_GROUP):
+			ruin._process(0.0)
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_WM_CLOSE_REQUEST and _ready_to_play:
 		save_now()  # saving when you quit (spec 5.11)

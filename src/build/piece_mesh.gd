@@ -1118,9 +1118,16 @@ static func _face(pts: Array, outward: Vector3) -> void:
 ## The separate parts of a mesh after joining the ones that touch or nearly touch (1 cm).
 ## One part = everything holds together; more = something floats (owner's model notes F34-F62).
 static func islands(mesh: Mesh) -> Array:
-	var boxes: Array = []
+	var surfaces: Array = []
 	for si in mesh.get_surface_count():
-		var arr := mesh.surface_get_arrays(si)
+		surfaces.append(mesh.surface_get_arrays(si))
+	return islands_of(surfaces)
+
+
+## islands() from the mesh's surface arrays (F417: plain data, so a helper thread can do it).
+static func islands_of(surfaces: Array) -> Array:
+	var boxes: Array = []
+	for arr: Array in surfaces:
 		var verts: PackedVector3Array = arr[Mesh.ARRAY_VERTEX]
 		var idx := PackedInt32Array()
 		if arr[Mesh.ARRAY_INDEX] != null:

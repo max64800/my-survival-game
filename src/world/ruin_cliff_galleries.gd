@@ -516,7 +516,8 @@ func _process(delta: float) -> void:
 			_state = "carve"
 		return
 	if _state == "build":
-		_build()
+		if not _build():
+			return  # (a little each frame, F417)
 		auth.world_state["cliff_galleries"] = "built"
 		built_origin = origin
 		built_turn = turn

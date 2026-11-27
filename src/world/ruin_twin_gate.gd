@@ -703,7 +703,8 @@ func _process(delta: float) -> void:
 			_state = "build"
 		return
 	if _state == "build":
-		_build()
+		if not _build():
+			return  # (a little each frame, F417)
 		auth.world_state["twin_gate"] = "built"
 		built_origin = origin
 		built_turn = turn
