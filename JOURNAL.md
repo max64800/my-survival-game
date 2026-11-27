@@ -15168,3 +15168,10 @@ related to F417 (9 FPS), or just other chats' Blender/Godot runs on the same PC.
 - The spike now grows straight up (world up, not along the cap's slanted surface), then the tip leans out 2.6 cm. Its foot is 5.2 cm across the radius (about 8 cm wide where it leaves the cap), sunk 1.6 cm in so the curved cap covers its whole foot. The knot ring sits where it comes out. Page v39, fit test passes.
 
 **Lesson:** my two earlier tries followed the helmet horns (out, then up). On a shoulder the owner reads "spike" as an upright fin. Next time a drawing is about direction, copy the drawing's angle first and the thickness second.
+
+
+## 2026-11-27: Bronze shoulder spikes, fourth shape (F914)
+
+**What we did:** The owner: "much better, but the wrong rotation, they're not attached" (drew the foot lying along the cap's slope). The upright spikes stood straight up off a slanted cap, so one side of the foot floated. Now the spike starts along the cap's own surface direction (square to the cap, so its whole foot sits on it), then the tip hooks 4.5 cm out away from the head. Same thickness. Page v41, fit test passes.
+
+**Lesson:** "straight up" in the owner's drawing meant "up from the surface it sits on", not straight up in the world. A piece growing out of a curved plate should always start square to that plate.
