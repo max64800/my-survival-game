@@ -262,10 +262,16 @@ def plate(group, ray, hw, hh, *, off=0.016, border=0.009, step=0.0022, dome=0.00
 		D = np.full_like(D, np.percentile(D, 85)) + flat[1] * np.clip(flat[0] - O[..., 2], 0, None)
 	elif rigid:
 		# (round 8: one smooth curved sheet resting on his highest points; following his muscles left dents, owner)
-		B = np.stack([np.ones_like(U), U, V, U * U, U * V, V * V], -1).reshape(-1, 6)
+		deg = 2 if rigid is True else int(rigid)  # (round 11: the back plate bends more (4): with 2 it floated 6.5 cm off his back, a hump)
+		Un, Vn = U / max(hw, 1e-6), V / max(hh, 1e-6)
+		B = np.stack([Un ** i * Vn ** j for i in range(deg + 1) for j in range(deg + 1 - i)], -1).reshape(-1, (deg + 1) * (deg + 2) // 2)
 		c, *_ = np.linalg.lstsq(B, D.ravel(), rcond=None)
 		fit = (B @ c).reshape(D.shape)
-		D = fit + np.percentile(D - fit, 99.5)
+		r = D - fit
+		if deg > 2:
+			r = np.minimum(r, np.percentile(r, 97) + 0.01)  # (a braid-sized spike shouldn't lift the whole plate)
+		log("rigid %s %.2fx%.2f lift %.3f max %.3f low %.3f" % (group, hw, hh, np.percentile(r, 99.5), r.max(), r.min()))
+		D = fit + np.percentile(r, 99.5)
 	else:
 		D = stiffen(D, passes=stiff)
 	if keep_min is not None:
@@ -358,7 +364,7 @@ FRONT, BACK, LEFT = math.pi, 0.0, math.pi / 2
 for phic, zc, hw, hh, pt, off, dm in ((FRONT, 0.735, 0.31, 0.172, 0.03, 0.018, 0.016),  # (round 7: wider, no leather beside it)
 		(BACK, 0.75, 0.27, 0.185, 0.012, 0.018, 0.012)):  # (round 8: one back plate; two left a dent line, owner)
 	ref = ref_at(phic, zc) + off
-	plate("chest_plate", torso_ray(phic, zc, ref), hw, hh, off=off, point=pt, pexp=6, dome=dm, rigid=True,  # (round 7: domed like the picture's chest)
+	plate("chest_plate", torso_ray(phic, zc, ref), hw, hh, off=off, point=pt, pexp=6, dome=dm, rigid=True if phic == FRONT else 4,  # (round 7: domed like the picture's chest)
 		rivets=(20, 160, 200, 340, 270, 90))
 # side plates right up into the armpits (owner: no grey there; plate, not just dark)
 for side in (1, -1):
@@ -667,10 +673,10 @@ CLEAR = 0.03  # (the hat hair lies within ~1.8 cm of the egg; the helmet's insid
 # Round 8 (owner: "looks like a ball, not a helmet"): a lower round dome on top of the brow band, then a bell skirt that
 # drops straight and flares OUT at the bottom, a raised face guard round the eyes, and the back edge UP at 0.985 m so his
 # hair comes out under it (round 7's neck guard down at 0.875 m cut through the hair).
-H = dict(top=1.31, eq=1.125, bot=0.965, back_bot=0.985, flare=0.048, waist=0.012, guard=0.03, guard_phi=0.85,
+H = dict(top=1.275, eq=1.125, bot=0.965, back_bot=0.985, flare=0.034, waist=0.012, guard=0.03, guard_phi=0.85,
 	eye=(1.05, 1.09), eye_phi=(0.14, 0.6), face_top=1.035, face_phi=0.98, nasal=0.2, nasal_low=0.975, brow=(1.1, 1.15),
 	cheek=0.016, cheek_phi=1.45, cheek_top=1.085, eye_deep=0.012)  # (round 10: cheek guards, deeper eyes, shorter edge)
-RX, RY = 0.2, 0.198
+RX, RY = 0.172, 0.17  # (round 11, owner: "the helmet is way too big"; was 0.2)
 
 
 def bot_at(phi):
@@ -823,28 +829,41 @@ log("hair points tucked under the helmet", int(under.sum()))
 cpv = np.empty(len(CP.data.vertices) * 3)
 CP.data.vertices.foreach_get("co", cpv)
 CPB = BVHTree.FromPolygons([Vector(p) for p in cpv.reshape(-1, 3)], [tuple(f.vertices) for f in CP.data.polygons])
-need = np.zeros(len(hc))
-for i in np.nonzero((hc[:, 2] < 0.95) & (hc[:, 1] < -0.06))[0]:
-	p = hc[i]
-	hit = CPB.ray_cast(Vector((p[0], -1.0, p[2])), Vector((0, 1, 0)), 2.0)
-	if hit[0] is not None and hit[0].y - 0.012 < p[1] < hit[0].y + 0.05:
-		need[i] = p[1] - (hit[0].y - 0.012)
-GS = 0.015
-gx = np.floor((hc[:, 0] + 0.4) / GS).astype(int)
-gz = np.floor((hc[:, 2] - 0.4) / GS).astype(int)
-G = np.zeros((int(0.8 / GS) + 2, int(0.8 / GS) + 2))
-ok = (gx >= 0) & (gx < G.shape[0]) & (gz >= 0) & (gz < G.shape[1])
-np.maximum.at(G, (gx[ok], gz[ok]), need[ok])
-G0 = G.copy()
-for _ in range(4):  # (spread out so the beard moves in one piece, never less than it needs)
-	G = np.maximum((G * 4 + np.roll(G, 1, 0) + np.roll(G, -1, 0) + np.roll(G, 1, 1) + np.roll(G, -1, 1)) / 8, G0)
-	G = np.maximum(G, np.maximum.reduce([np.roll(G0, 1, 0), np.roll(G0, -1, 0), np.roll(G0, 1, 1), np.roll(G0, -1, 1)]))
-taper = np.clip((1.02 - hc[:, 2]) / 0.07, 0, 1)
-mv = np.where(ok & (hc[:, 1] < -0.06), G[np.clip(gx, 0, G.shape[0] - 1), np.clip(gz, 0, G.shape[1] - 1)], 0.0) * taper
-hc[:, 1] -= mv
+def lay_over(sgn, zmax, ztaper):
+	"""Hair points behind the plate (sgn -1: the beard in front, +1: the braids down his back) move out to lie
+	1.2 cm over it, all in one piece (spread out, never less than a point needs)."""
+	need = np.zeros(len(hc))
+	for i in np.nonzero((hc[:, 2] < zmax) & (hc[:, 1] * sgn > 0.06))[0]:
+		p = hc[i]
+		hit = CPB.ray_cast(Vector((p[0], sgn * 1.0, p[2])), Vector((0, -sgn, 0)), 2.0)
+		d = (hit[0].y + sgn * 0.012 - p[1]) * sgn if hit[0] is not None else 0.0
+		if 0.0 < d < 0.062:  # (deeper points are inside him, hidden)
+			need[i] = d
+	GS = 0.015
+	gx = np.floor((hc[:, 0] + 0.4) / GS).astype(int)
+	gz = np.floor((hc[:, 2] - 0.4) / GS).astype(int)
+	G = np.zeros((int(0.8 / GS) + 2, int(0.8 / GS) + 2))
+	ok = (gx >= 0) & (gx < G.shape[0]) & (gz >= 0) & (gz < G.shape[1])
+	np.maximum.at(G, (gx[ok], gz[ok]), need[ok])
+	G0 = G.copy()
+	for _ in range(4):
+		G = np.maximum((G * 4 + np.roll(G, 1, 0) + np.roll(G, -1, 0) + np.roll(G, 1, 1) + np.roll(G, -1, 1)) / 8, G0)
+		G = np.maximum(G, np.maximum.reduce([np.roll(G0, 1, 0), np.roll(G0, -1, 0), np.roll(G0, 1, 1), np.roll(G0, -1, 1)]))
+	taper = np.clip((ztaper - hc[:, 2]) / 0.07, 0, 1)
+	mv = np.where(ok & (hc[:, 1] * sgn > 0.06), G[np.clip(gx, 0, G.shape[0] - 1), np.clip(gz, 0, G.shape[1] - 1)], 0.0) * taper
+	hc[:, 1] += sgn * mv
+	return mv
+
+
+mv = lay_over(-1, 0.95, 1.02)
 HAIR.data.vertices.foreach_set("co", hc.ravel())
 HAIR.data.update()
 log("beard moved out over the breastplate: points", int((mv > 0).sum()), "most", round(float(mv.max()), 3))
+# (round 11, owner: "the braids are still clipping out" at the back: the same for the braids down his back)
+mv = lay_over(1, 0.98, 1.0)
+HAIR.data.vertices.foreach_set("co", hc.ravel())
+HAIR.data.update()
+log("braids moved out over the back plate: points", int((mv > 0).sum()), "most", round(float(mv.max()), 3))
 for o in (HM, HBD, HR, HAIR):
 	for vg in list(o.vertex_groups):
 		o.vertex_groups.remove(vg)
