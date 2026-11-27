@@ -14958,3 +14958,21 @@ The 3D page (v23) now shows old vs new gauntlets, with a "Hands close" view.
   myself. The model had already passed two rounds of game screenshots.
 
 **Next:** the owner's verdict on the gauntlets, then the bronze set, made the same way.
+
+
+## Nov 27: Bronze armour, made the F914 way (F914)
+
+**What we did:** made the bronze armour set from the same recipe as the copper set the owner OK'd.
+The owner picked: same shapes, a different colour, more engravings, dark green patina edges and a smoother, less dented metal.
+- `tools/art/make_bronze_plate.py` (new) paints two pictures. One is smooth bronze with small, soft hammer marks. The other is an engraved strip: a chain of diamonds with dots, where the grooves are filled with dark green patina.
+- `copper_plate_armor.py` now takes `metal=bronze` (and `trim=`). The engraved strip runs just inside every big plate's raised edge, along the collar, round the helmet's brow band and skirt, and along the forearm bands. It builds `armor_bronze_plate.glb`.
+- `dwarf_armor.py` has a new `bronze` set (legs and boots), which builds `armor_bronze.glb`.
+- The game wears the bronze plate file for `armor_head/chest_bronze` (`dwarf_rig.gd` ARMOR_PLATES). The fit test now covers bronze, and `shot_armor.gd metal=both` puts copper and bronze side by side.
+- The 3D page now shows copper (left) vs bronze (right).
+
+**Mistakes and hurdles:**
+- Round 1 looked olive and dull. The patina edges looked teal and too bright, and the engraving lines were so thin that they vanished from the game camera. The diamonds on the forearms were 6 cm tall, which was too big. Fix: brighter bronze, much darker patina, thicker and darker grooves on a polished, brighter strip, and the band height capped at 3.4 cm.
+- Round 1's hammer picture showed thin cell lines between the dents, because the copper recipe's bright ridges are too strong when the dents are this small. Fix: much fainter ridges.
+- The review renders inside Blender show plain materials as white, so the real colours could only be judged in Godot shots.
+- A command-rewriting hook stopped auto mode from reviewing one call. Re-sending the rewritten command worked.
+- I did not rebuild copper to prove its file comes out the same after the recipe changes. The copper glb in the game is untouched.
