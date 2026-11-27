@@ -823,8 +823,11 @@ for side in (1, -1):
 		n = d_[0, 0] / np.linalg.norm(d_[0, 0])
 		B = o_[0, 0] + n * lay(o_, d_, sheet_bvh(CAP), 0.0)[0, 0]
 		out = np.array([side, 0.0, 0.0])
-		ctrl = [B - 0.008 * n, B + 0.02 * n, B + 0.025 * n + 0.035 * out, B + 0.022 * n + 0.055 * out + np.array([0, 0, 0.028])]
-		horn_tube("chest_spike", ctrl, side, 0.042, SPIKE_CL, ridge_from=0.032, ring=(0.008, 0.016), taper=1.25)  # (round 5b,
+		up = np.array([0.0, 0.0, 1.0])
+		ctrl = [B - 0.016 * up, B + 0.035 * up, B + 0.065 * up + 0.006 * out, B + 0.088 * up + 0.026 * out]
+		horn_tube("chest_spike", ctrl, side, 0.052, SPIKE_CL, ridge_from=0.04, ring=(0.016, 0.025), taper=1.4)  # (round 5c,
+		# owner drew it again: "the angle is weird, even thicker": it stands UP from the cap's top like a fin, ~8 cm wide
+		# where it leaves the cap, the tip leaning out a little)  # (round 5b,
 		# owner drew it: "too long, not wide enough": a short thorn, ~7 cm wide where it leaves the cap, ~6 cm out, the tip curling up)
 		SPIKE_AT.append(B)
 log("shoulders")
