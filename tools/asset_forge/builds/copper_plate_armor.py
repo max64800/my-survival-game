@@ -380,12 +380,8 @@ for phic, zc, hw, hh, pt, off, dm in ((FRONT, 0.735, 0.26, 0.172, 0.03, 0.018, 0
 	plate("chest_plate", torso_ray(phic, zc, ref), hw, hh, off=off, point=pt, pexp=6, dome=dm, rigid=True if phic == FRONT else 4,  # (round 7: domed like the picture's chest)
 		rivets=(20, 160, 200, 340, 270, 90), top_wide=0.3)  # (round 13, owner chose: wider only at the top corners, to
 	# cover the dark wedge under the arms; the waist stays narrow as round 12)
-# side plates right up into the armpits (owner: no grey there; plate, not just dark)
-for side in (1, -1):
-	ref = ref_at(side * LEFT, 0.7) + 0.006  # (1.2 cm inside the front and back plates where they overlap)
-	plate("chest_plate", torso_ray(side * LEFT, 0.7, ref), 0.13, 0.13, off=0.006, pexp=6, rivets=(90, 270), rigid=True)
-	# (round 13 tries for the dark wedge under the arms, both stuck out like flaps (the rigid sheet lifts 8-11 cm over his
-	# shoulder): a plate over each shoulder top (0.21 x 0.065 at 0.86 m), and these side plates bigger (0.17 x 0.15).)
+# (round 14, owner: "there's still a plate under the armpits, we can just remove it": the two side plates are gone.
+# Round 13 tries before that (a plate over each shoulder top, bigger side plates) stuck out like flaps.)
 # (Nov 26 try: a plate over each shoulder top stuck out like wings; the dark leather shows there instead)
 log("cuirass")
 # belt: dark leather with a copper buckle in front, riveted
@@ -693,7 +689,7 @@ CLEAR = 0.03  # (the hat hair lies within ~1.8 cm of the egg; the helmet's insid
 # comes down to 0.9 m, over the collar and the back plate's top, and the back hair is hidden inside.)
 H = dict(top=1.275, eq=1.125, bot=0.965, back_bot=0.9, flare=0.034, waist=0.012, guard=0.03, guard_phi=0.85,
 	eye=(1.068, 1.09), eye_phi=(0.14, 0.6), face_top=1.035, face_phi=0.98, nasal=0.2, nasal_low=0.975, brow=(1.1, 1.15),
-	cheek=0.016, cheek_phi=1.45, cheek_top=1.085, eye_deep=0.004)  # (round 10: cheek guards, shorter edge; round 13, owner: eye holes "too deep", was 1.2 cm)
+	cheek=0.016, cheek_phi=1.45, cheek_top=1.085, eye_deep=0.003)  # (round 10: cheek guards, shorter edge; round 13, owner: eye holes "too deep", was 1.2 cm; round 14: flat dark slits 3 mm into the guard)
 RX, RY = 0.172, 0.17  # (round 11, owner: "the helmet is way too big"; was 0.2)
 
 
@@ -716,7 +712,8 @@ def helm_r(phi, z):
 	pf = np.abs(((phi - math.pi + np.pi) % (2 * np.pi)) - np.pi)  # (angle from his front)
 	eyes = (pf > H["eye_phi"][0] - 1e-6) & (pf < H["eye_phi"][1] + 1e-6) & (z > H["eye"][0] - 1e-6) & (z < H["eye"][1] + 1e-6)
 	guard = H["guard"] * (((pf < H["guard_phi"] + 1e-6) & (z < H["eq"] - 0.004) & (z > H["face_top"] - 1e-6) |
-		(pf < H["nasal"] / 2 + 1e-6) & (z > H["nasal_low"] - 1e-6) & (z < H["eq"])) & ~eyes)  # (eyes sit deep in it)
+		(pf < H["nasal"] / 2 + 1e-6) & (z > H["nasal_low"] - 1e-6) & (z < H["eq"])))  # (round 14: the eyes sit IN
+	# the raised guard, only eye_deep lower; before they dropped to the shell behind it, 3 cm deep, owner: "you can see they're deep")
 	cheek = H["cheek"] * ((pf > H["guard_phi"] - 1e-6) & (pf < H["cheek_phi"] + 1e-6) & (z < H["cheek_top"] + 1e-6))
 	guard = guard + cheek - H["eye_deep"] * eyes
 	waist = H["waist"] * np.sin(np.pi * np.clip(low / 0.75, 0, 1))  # (the skirt pulls in under the band, then flares)
