@@ -139,10 +139,10 @@ func _ready() -> void:
 func make_upgrade_panel() -> PanelContainer:
 	upgrade_panel = PanelContainer.new()
 	UiKit.panel(upgrade_panel)
-	upgrade_panel.custom_minimum_size = Vector2(330, 0)
+	upgrade_panel.custom_minimum_size = Vector2(360, 0)
 	upgrade_panel.visible = false
 	var scroll := ScrollContainer.new()
-	scroll.custom_minimum_size = Vector2(310, 440)
+	scroll.custom_minimum_size = Vector2(330, 440)
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	upgrade_panel.add_child(scroll)
 	_up_list = VBoxContainer.new()
@@ -395,20 +395,16 @@ func _prog() -> Progression:
 
 
 ## Gear upgrades (building polish spec §4): everything you carry or wear that this station can improve.
+## F918 (owner, Nov 27: "needs pictures and better UI"): a plaque title, then one card per tool/weapon/armour piece
+## with its picture in a slot, its upgrade steps as gold pips, every cost as picture + have / need (missing in red),
+## and the kit's gold Upgrade / dark Repair buttons (the same look as the Workbench's picked recipe).
 func _upgrade_rows(inv: Inventory) -> void:
 	UiKit.clear(_up_list)
-	var heading := Label.new()
-	heading.text = "Upgrade and repair gear"
-	heading.add_theme_font_size_override("font_size", 20)
-	_up_list.add_child(heading)
-	var sub := Label.new()
-	sub.text = "Upgrades: +15% each step, up to +3. Repairs are free.\nThe station's level decides how far you can upgrade: stone and wood gear +1 at level 1, copper gear +1 at level 2, each next step one level more."
-	sub.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	sub.add_theme_font_size_override("font_size", 13)
-	_up_list.add_child(sub)
+	UiKit.title(_up_list, "Upgrade & Repair")
+	UiKit.label(_up_list, "Each upgrade: +15%, up to +3. Repairs are free.", 13, UiKit.DIM).autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	# One big button that fixes everything this station can fix (owner F568: "repairing should cost nothing").
 	var worn := repairable_here(inv, station.kind)
-	var all := Button.new()
+	var all := UiKit.gold_button(Button.new(), 15) if worn > 0 else UiKit.dark_button(Button.new(), 14)
 	all.name = "RepairAll"
 	all.text = "Repair all (free)" if worn > 0 else "Nothing needs repair"
 	all.disabled = worn == 0
@@ -417,63 +413,110 @@ func _upgrade_rows(inv: Inventory) -> void:
 		GameAuthority.instance.ask_repair_all(station.station_id)
 		get_tree().create_timer(0.15).timeout.connect(refresh))
 	_up_list.add_child(all)
+	UiKit.divider(_up_list)
 	var any := false
 	for i in inv.slots.size():
 		var s := inv.get_slot(i)
 		if s.is_empty() or not Upgrades.can_upgrade(s.id) or Upgrades.station_for(s.id) != station.kind:
 			continue
 		any = true
-		var row := HBoxContainer.new()
-		var text := RichTextLabel.new()
-		text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART  # long lines wrap: the panel keeps its width
-		text.bbcode_enabled = true
-		text.fit_content = true
-		text.scroll_active = false
-		text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		var cost := Upgrades.next_cost(s, 0.10 if _prog() and _prog().has_star("crafting", 25) else 0.0)
-		var ok := not cost.is_empty() and station.level() >= Upgrades.needed_level(s)
-		var parts := []
+		_up_list.add_child(_upgrade_card(inv, s, i))
+	if not any:
+		var l := UiKit.label(_up_list, "Nothing to upgrade here. (%s)" % {"anvil": "copper, bronze and silver tools and weapons", "armoury_bench": "armour and shields"}.get(station.kind, "stone and wood tools and weapons"), 14, UiKit.DIM)
+		l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+
+
+## One gear card in the upgrade box (F918).
+func _upgrade_card(inv: Inventory, s: Dictionary, slot_index: int) -> PanelContainer:
+	var card := PanelContainer.new()
+	card.name = "UpgradeCard"
+	card.add_theme_stylebox_override("panel", UiKit.style("tooltip", 12))
+	var v := VBoxContainer.new()
+	v.add_theme_constant_override("separation", 6)
+	card.add_child(v)
+	var top := HBoxContainer.new()
+	top.add_theme_constant_override("separation", 10)
+	v.add_child(top)
+	var frame := PanelContainer.new()
+	frame.add_theme_stylebox_override("panel", UiKit.style("slot", 5))
+	frame.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	top.add_child(frame)
+	var pic := TextureRect.new()
+	pic.name = "Pic"
+	pic.texture = Items.icon(s.id)
+	pic.custom_minimum_size = Vector2(54, 54)
+	pic.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	pic.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	frame.add_child(pic)
+	var info := VBoxContainer.new()
+	info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	info.add_theme_constant_override("separation", 2)
+	top.add_child(info)
+	var name_l := UiKit.label(info, Items.display_name(s.id), 16, UiKit.AMBER)  # (the pips show the +level)
+	name_l.add_theme_font_override("font", UiKit.heading_font())
+	name_l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	var lvl := Upgrades.level(s)
+	var pips := HBoxContainer.new()
+	pips.add_theme_constant_override("separation", 4)
+	info.add_child(pips)
+	for n in Upgrades.MAX_UP:
+		var pip := Panel.new()
+		var sb := StyleBoxFlat.new()
+		sb.bg_color = UiKit.AMBER if n < lvl else Color(0.16, 0.1, 0.06)
+		sb.border_color = Color(0.55, 0.38, 0.18)
+		sb.set_border_width_all(1)
+		sb.set_corner_radius_all(3)
+		pip.add_theme_stylebox_override("panel", sb)
+		pip.custom_minimum_size = Vector2(14, 10)
+		pips.add_child(pip)
+	UiKit.label(pips, "  +%d of %d" % [lvl, Upgrades.MAX_UP] if lvl < Upgrades.MAX_UP else "  fully upgraded", 13, UiKit.TEXT if lvl < Upgrades.MAX_UP else UiKit.AMBER)
+	if Durability.needs_repair(s):
+		UiKit.label(info, Durability.status_text(s), 13, UiKit.MISSING).autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	var cost := Upgrades.next_cost(s, 0.10 if _prog() and _prog().has_star("crafting", 25) else 0.0)
+	var ok := not cost.is_empty() and station.level() >= Upgrades.needed_level(s)
+	if not cost.is_empty():
+		var grid := GridContainer.new()
+		grid.columns = 3
+		grid.add_theme_constant_override("h_separation", 8)
+		v.add_child(grid)
 		for item in cost:
 			var have := inv.count_of(item)
-			var col := "white" if have >= cost[item] else "#ff7070"
 			ok = ok and have >= cost[item]
-			parts.append("[color=%s]%d/%d %s[/color]" % [col, mini(have, cost[item]), cost[item], Items.display_name(item)])
-		if cost.is_empty():
-			parts = ["fully upgraded"]
-		elif station.level() < Upgrades.needed_level(s):
-			parts.append("[color=#ff7070]to make it +%d, this %s must be level %d (now %d)[/color]" % [Upgrades.level(s) + 1,
-				Items.display_name(station.kind), Upgrades.needed_level(s), station.level()])
-		# The gear's name in the game's title font (F882: the plain bold looked wrong).
-		text.add_theme_font_override("bold_font", UiKit.heading_font())
-		text.add_theme_font_size_override("bold_font_size", 17)
-		text.text = "[b][color=#ffcc73]%s[/color][/b]\n[font_size=13]%s[/font_size]" % [Upgrades.display_name(s), ", ".join(parts)]
-		if Durability.needs_repair(s):  # worn: show how worn; repairing is free
-			text.text += "\n[font_size=13]%s · repair: free[/font_size]" % Durability.status_text(s)
-		row.add_child(text)
-		if Durability.needs_repair(s):
-			var rb := Button.new()
-			rb.text = "Repair"
-			rb.custom_minimum_size = Vector2(70, 0)
-			var at := i
-			rb.pressed.connect(func():
-				GameAuthority.instance.ask_repair(at, station.station_id)
-				get_tree().create_timer(0.15).timeout.connect(refresh))
-			row.add_child(rb)
-		var b := Button.new()
+			var col := UiKit.TEXT if have >= cost[item] else UiKit.MISSING
+			var ip := TextureRect.new()
+			ip.texture = Items.icon(item)
+			ip.custom_minimum_size = Vector2(22, 22)
+			ip.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+			ip.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+			grid.add_child(ip)
+			UiKit.label(grid, Items.display_name(item), 14, col).size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			UiKit.label(grid, "%d / %d" % [have, cost[item]], 14, col)
+		if station.level() < Upgrades.needed_level(s):
+			UiKit.label(v, "To make it +%d, this %s must be level %d (now %d)." % [lvl + 1, Items.display_name(station.kind),
+				Upgrades.needed_level(s), station.level()], 13, UiKit.MISSING).autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	var buttons := HBoxContainer.new()
+	buttons.add_theme_constant_override("separation", 8)
+	buttons.alignment = BoxContainer.ALIGNMENT_END
+	v.add_child(buttons)
+	if Durability.needs_repair(s):
+		var rb := UiKit.dark_button(Button.new(), 14)
+		rb.text = "Repair"
+		rb.custom_minimum_size = Vector2(90, 36)
+		rb.pressed.connect(func():
+			GameAuthority.instance.ask_repair(slot_index, station.station_id)
+			get_tree().create_timer(0.15).timeout.connect(refresh))
+		buttons.add_child(rb)
+	if not cost.is_empty():
+		var b := UiKit.gold_button(Button.new(), 15)
+		b.name = "Upgrade"
 		b.text = "Upgrade"
 		b.disabled = not ok
-		b.custom_minimum_size = Vector2(80, 0)
-		var slot_index := i
+		b.custom_minimum_size = Vector2(110, 36)
 		b.pressed.connect(func():
 			GameAuthority.instance.ask_upgrade(slot_index, station.station_id)
 			get_tree().create_timer(0.15).timeout.connect(refresh))
-		row.add_child(b)
-		_up_list.add_child(row)
-	if not any:
-		var l := Label.new()
-		l.text = "Nothing to upgrade here. (%s)" % {"anvil": "copper, bronze and silver tools and weapons", "armoury_bench": "armour and shields"}.get(station.kind, "stone and wood tools and weapons")
-		l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		_up_list.add_child(l)
+		buttons.add_child(b)
+	return card
 
 
 ## How many worn things you carry or wear that a `kind` station can repair (for "Repair all").

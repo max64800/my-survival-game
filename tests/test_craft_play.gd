@@ -153,9 +153,12 @@ func test_stone_gear_upgrades_at_a_plain_workbench() -> void:
 	auth.get_parent().add_child(up)
 	panel.open_for(auth.stations[7])
 	var texts := []
-	for n in up.find_children("*", "RichTextLabel", true, false):
-		texts.append((n as RichTextLabel).text)
+	for n in up.find_children("*", "Label", true, false):  # (F918: plain labels on picture cards now)
+		texts.append((n as Label).text)
 	var pick := " ".join(texts)
 	check(pick.contains("Pickaxe"), "the stone pickaxe is listed (%s)" % pick)
+	var card := up.find_child("UpgradeCard", true, false)
+	check(card != null and (card.find_child("Pic", true, false) as TextureRect).texture != null, "F918: its card shows its picture")
+	check(card != null and card.find_child("Upgrade", true, false) is Button, "F918: and an Upgrade button")
 	check(not pick.contains("must be level"), "and needs no higher station level")
 	auth.get_parent().queue_free()
