@@ -102,12 +102,12 @@ Fixed items get ~~crossed out~~, never deleted, so we can see the whole history.
 - [ ] **F918. The Upgrade & Repair menu should sit on the left-hand side.** *From: you (PC, Nov 27, play session). Said: 1×*
 - [ ] **F919. You can walk on top of small things like the box that gives bolts.** Give small things enough collision on their sides so you bump into them and can't stand on them; it doesn't look good. *From: you (PC, Nov 27, play session). Said: 1×*
 - [ ] **F920. Using the amount slider in crafting shouldn't jump to the next thing / keep crafting.** You accidentally crafted about 6 maces while using the slider. *From: you (PC, Nov 27, play session). Said: 1×*
-- [ ] **F921. Things thrown on the ground are far too big next to the dwarf (maces especially).** Dropped items should be the same size as in his hand. *From: you (PC, Nov 27, play session). Said: 1×*
-- [ ] **F922. Dropped things bounce around like they weigh nothing.** Make them feel heavy; fix everything that bounces around. *From: you (PC, Nov 27, play session). Said: 1×*
-- [ ] **F923. Workbench list: pictures and sometimes text spill outside their frames.** Seen on Crystal Torch, Chopping Block, Carpentry Vise. *From: you (PC, Nov 27, play session). Said: 1×*
+- [ ] **F921. Things thrown on the ground are far too big next to the dwarf (maces especially).** Dropped items should be the same size as in his hand. *From: you (PC, Nov 27, play session). Said: 1×* 🛠 in progress (Nov 27 quick fixes chat, Nov 27)
+- [ ] **F922. Dropped things bounce around like they weigh nothing.** Make them feel heavy; fix everything that bounces around. *From: you (PC, Nov 27, play session). Said: 1×* 🛠 in progress (Nov 27 quick fixes chat, Nov 27)
+- [ ] **F923. Workbench list: pictures and sometimes text spill outside their frames.** Seen on Crystal Torch, Chopping Block, Carpentry Vise. *From: you (PC, Nov 27, play session). Said: 1×* 🛠 in progress (Nov 27 quick fixes chat, Nov 27)
 - [ ] **F924. The first perk point: you get it as soon as you come near the first tower, with a 'level up / perk point' notice on the right-hand side.** *From: you (PC, Nov 27, play session). Said: 1×*
 - [ ] **F925. Getting hit by a bat sounds like a 'ding'. It shouldn't.** *From: you (PC, Nov 27, play session). Said: 1×*
-- [ ] **F926. Crossbow bolts are way too big.** *From: you (PC, Nov 27, play session). Said: 1×*
+- [ ] **F926. Crossbow bolts are way too big.** *From: you (PC, Nov 27, play session). Said: 1×* 🛠 in progress (Nov 27 quick fixes chat, Nov 27)
 - [ ] **F927. Aiming and looking up shows the back of the dwarf: the aim camera needs a new framing.** *From: you (PC, Nov 27, play session). Said: 1×*
 - [ ] **F928. Read a blueprint you find straight from the chest (without taking it out first).** *From: you (PC, Nov 27, play session). Said: 1×*
 - [ ] **F929. The stone tower's chest gave the stone tower's blueprint before it was rebuilt.** You should only get a ruin's rebuild blueprint after you actually rebuild the ruin. *From: you (PC, Nov 27, play session). Said: 1×*
@@ -119,8 +119,8 @@ Fixed items get ~~crossed out~~, never deleted, so we can see the whole history.
 - [ ] **F935. Show which station is an upgrade of another and which is its own station.** At the Stove Oven you wanted a Charcoal Kiln and couldn't tell if it was an upgrade or not. *From: you (PC, Nov 27, play session). Said: 1×*
 - [ ] **F936. Eating a Glowcap (and meat) puts no buff on the right-hand side.** *From: you (PC, Nov 27, play session). Said: 1×*
 - [ ] **F937. Cooking at a campfire sounds like fixing something.** *From: you (PC, Nov 27, play session). Said: 1×*
-- [ ] **F939. 'Hold L to refill the lantern' doesn't fit inside the message's borders.** *From: you (PC, Nov 27, play session). Said: 1×*
-- [ ] **F938 🔁 (F458/F459). Bring back reloading the crossbow with R.** F917 (Nov 27) put abilities on Q/R/T, so R no longer reloads. *From: you (PC, Nov 27, play session). Said: 1×* (see Things that keep coming back)
+- [ ] **F939. 'Hold L to refill the lantern' doesn't fit inside the message's borders.** *From: you (PC, Nov 27, play session). Said: 1×* 🛠 in progress (Nov 27 quick fixes chat, Nov 27)
+- [ ] **F938 🔁 (F458/F459). Bring back reloading the crossbow with R.** F917 (Nov 27) put abilities on Q/R/T, so R no longer reloads. *From: you (PC, Nov 27, play session). Said: 1×* (see Things that keep coming back) 🛠 in progress (Nov 27 quick fixes chat, Nov 27)
 - [ ] **F940 🔁 (F900). The road that links all the places should be a sand road, and not bend about.** F900 (Nov 25) made it an old grey brick road; it still doesn't look good and it bends. *From: you (PC, Nov 27, play session). Said: 1×* (see Things that keep coming back)
 - [x] **F805. Sometimes the dwarf keeps sprinting when you are not holding Shift.** *From: you (PC, Nov 23). Said: 1×* **Fixed Nov 23:** `src/main.gd _notification` now releases "run" and "dodge" on `NOTIFICATION_APPLICATION_FOCUS_OUT` even when a menu has the mouse — so any Alt+Tab scenario clears the sprint key.
 - [x] **F809. The two leaves of a double door don't match:** one has the iron bands, the other has none (the same door used twice). Each leaf needs its matching design. *From: you (PC, Nov 23, screenshot of the Twin Gate's big door). Said: 1×* **Fixed Nov 23:** `stonehold_v2.py gate_leaf()` now adds two copper bands to the BACK face (at y=0.6 and y=1.8, embedded in the battens, no rivets on back — passes all model rules). Both leaves of the double gate show copper bands from outside. GLB and icon rebuilt.
