@@ -79,6 +79,7 @@ var _jump_elapsed := 0.0  ## F807: seconds airborne so far this jump, so the han
 var _cam_y := NAN
 var _cam_tick := 0  ## the physics frame the camera's height last glided on (F781)
 var _zoom := CAMERA_DISTANCE  ## where the mouse wheel wants the camera
+var _l_down := 0  ## L presses: odd while one is held and not yet used (tap = stow, hold = refill)
 
 var _yaw := 0.0
 var _pitch := -0.25
@@ -213,9 +214,19 @@ func _unhandled_input(event: InputEvent) -> void:
 	for i in Inventory.HOTBAR_SIZE:
 		if event.is_action_pressed("hotbar_%d" % (i + 1)):
 			auth.ask_select_slot(i)
-	if ps and event.is_action_pressed("stow_lantern") and Lantern.has_lantern(ps):
-		auth.ask_stow_lantern(not ps.lantern_stowed)
-		fight.message.emit("Lantern put away (L to take it out)." if ps.lantern_stowed else "Lantern out.", Color.WHITE)
+	# L: tap = put the lantern away / take it out; hold ~0.5 s = refill it (owner, Nov 27)
+	if event.is_action_pressed("stow_lantern"):
+		_l_down += 1
+		var press := _l_down
+		get_tree().create_timer(0.5).timeout.connect(func():
+			if _l_down == press and Input.is_action_pressed("stow_lantern"):
+				_l_down += 1  # held: refill, and the release no longer counts as a tap
+				auth.ask_refill())
+	if event.is_action_released("stow_lantern") and _l_down % 2 == 1:
+		_l_down += 1
+		if ps and Lantern.has_lantern(ps):
+			auth.ask_stow_lantern(not ps.lantern_stowed)
+			fight.message.emit("Lantern put away (L to take it out)." if ps.lantern_stowed else "Lantern out.", Color.WHITE)
 	if ps and event.is_action_pressed("draw_weapon"):
 		if not ps.can_draw():
 			fight.message.emit("No weapon or shield equipped. Right-click one in your bag (Tab).", Color.WHITE)
@@ -227,11 +238,6 @@ func _unhandled_input(event: InputEvent) -> void:
 		_zoom = maxf(ZOOM_MIN, _zoom - ZOOM_STEP)
 	if event.is_action_pressed("zoom_out") and not lifting:
 		_zoom = minf(ZOOM_MAX, _zoom + ZOOM_STEP)
-	if event.is_action_pressed("refill_lantern"):
-		if fight and fight.is_crossbow():
-			fight.start_reload()  # R reloads while you hold the crossbow (doc 1.5)
-		else:
-			auth.ask_refill()
 	if event.is_action_pressed("use") and Controls.captured() and not _holding_hammer() and not fight.weapon_mode():
 		var hit := aim_far(20.0) if ps and Items.kind(ps.selected_item()) == "throw" else aim()  # you can throw far
 		var using := Items.kind(ps.selected_item()) if ps else ""

@@ -191,9 +191,9 @@ const CONTROLS := [
 	["W A S D", "walk"], ["Shift", "run"], ["Space", "jump"], ["Ctrl", "dodge roll"], ["Mouse", "look"],
 	["Left click", "dig, harvest, attack"], ["Right click", "eat, place, block"], ["E", "use, open, pick up"],
 	["1 - 9", "hotbar"], ["Wheel", "zoom"], ["F", "draw / put away weapon"],
-	["R", "refill the lantern"], ["L", "put the lantern away / out"],
+	["Hold L", "refill the lantern"], ["L", "put the lantern away / out"],
 	["Tab", "bag + crafting"], ["K", "skills"], ["J", "notes"], ["M", "map"], ["B", "build menu (hammer)"],
-	["V", "blueprints (hammer)"], ["Q", "turn piece (hammer)"], ["Z  G  T", "perks"],
+	["V", "blueprints (hammer)"], ["Q", "turn piece (hammer)"], ["Q  R  T", "abilities (drag them on in K)"],
 	["F5", "quick save"], ["Esc", "pause"],
 ]
 

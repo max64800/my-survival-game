@@ -30,7 +30,7 @@ var _equip_title: Label
 var _gear_panel: PanelContainer  ## left of the bag: armour, lantern, backpack (owner F825)
 var _gear_names := {}  ## gear slot index -> the Label beside it ("Copper Helm" or "Head")
 const EQUIP_NAMES := ["Pick", "Lamp", "Weapon", "Shield", "Head", "Chest", "Legs", "Feet", "Pack"]
-var _lantern_out: PanelContainer  ## "Press R to refill the lantern" while it's out (F870)
+var _lantern_out: PanelContainer  ## "Hold L to refill the lantern" while it's out (F870)
 var skill_popup: SkillPopup  ## a skill pops up for ~2 s when it grows (F870)
 var pickup_feed: PickupFeed  ## what you pick up pops up on the left: picture + amount (F885)
 var _fuel_label: Label
@@ -232,7 +232,7 @@ func _build() -> void:
 	_lantern_out.offset_bottom = -300.0
 	_lantern_out.visible = false
 	root.add_child(_lantern_out)
-	UiKit.label(_lantern_out, "Press %s to refill the lantern" % Controls.key_name("refill_lantern"), 17, UiKit.TEXT)
+	UiKit.label(_lantern_out, "Hold %s to refill the lantern" % Controls.key_name("refill_lantern"), 17, UiKit.TEXT)
 	skill_popup = SkillPopup.new()  # F870: a skill shows for ~2 s only when it grows
 	skill_popup.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
 	skill_popup.grow_horizontal = Control.GROW_DIRECTION_BEGIN
@@ -1369,11 +1369,15 @@ func _process(delta: float) -> void:
 			buffs.append("Cozy (comfort %d) %d:%02d" % [v.cozy_points, int(v.cozy_time) / 60, int(v.cozy_time) % 60])
 		var slots: Array = ps.progress.ability_slots()
 		for i in slots.size():  # active perks: which key, ready or recharging
+			if slots[i] == "":
+				continue
 			var cd: Dictionary = v.effects.get("cd_" + slots[i], {})
-			buffs.append("%s %s %s" % [["Z", "G", "T"][i], Progression.PERKS[slots[i]][4], "%d s" % ceili(cd.left) if cd.has("left") else "ready"])
+			buffs.append("%s %s %s" % [Controls.key_name("ability_%d" % (i + 1)), Progression.PERKS[slots[i]][4], "%d s" % ceili(cd.left) if cd.has("left") else "ready"])
 		for e in v.effects:
 			if not e.begins_with("cd_") and Progression.PERKS.has(e) or e == "bond":
 				buffs.append("%s %d s" % [Progression.PERKS[e][4] if Progression.PERKS.has(e) else "Bond of the Clan", ceili(v.effects[e].left)])
+			elif e == "skill_calm":  # after dying: no skill loss for 10 min (owner, Nov 27)
+				buffs.append("Skills safe from death %d:%02d" % [int(v.effects[e].left) / 60, int(v.effects[e].left) % 60])
 			elif e == "bandage_heal":
 				buffs.append("Bandage healing %d s" % ceili(v.effects[e].left))
 		# (F870: no well-fed / peckish words: the hunger dial shows it)
@@ -1395,7 +1399,7 @@ func _process(delta: float) -> void:
 			var bolts := 0
 			for id in Combat.BOLT_ORDER:
 				bolts += ps.inventory.count_of(id)
-			var state := "loaded" if me.fight.loaded else ("reloading %.1f s" % me.fight.reload_left if me.fight.reload_left >= 0.0 else "empty: R to reload")
+			var state := "loaded" if me.fight.loaded else ("reloading %.1f s" % me.fight.reload_left if me.fight.reload_left >= 0.0 else "empty: click to reload")
 			_fuel_label.text = "Crossbow %s, %d bolts" % [state, bolts]
 		_refresh_selection(ps.selected_slot)
 	var dwarf := _local_dwarf()

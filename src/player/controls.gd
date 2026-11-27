@@ -8,7 +8,7 @@ const KEYS := {
 	"move_right": [KEY_D, KEY_RIGHT],
 	"jump": [KEY_SPACE],
 	"run": [KEY_SHIFT],
-	"refill_lantern": [KEY_R],
+	"refill_lantern": [KEY_L],  ## HOLD L ~0.5 s refills the lantern (tap L = stow_lantern; owner, Nov 27)
 	"toggle_bag": [KEY_TAB, KEY_I],
 	"pause": [KEY_ESCAPE],
 	"toggle_fps": [KEY_F3],
@@ -25,8 +25,8 @@ const KEYS := {
 	"blueprints": [KEY_V],
 	"break_piece": [KEY_X],  ## build hammer: break the aimed piece for half its materials (F100)
 	"dodge": [KEY_CTRL],
-	"ability_1": [KEY_Z],  ## active perks: the first 3 you own (owner's tree, Nov 19)
-	"ability_2": [KEY_G],
+	"ability_1": [KEY_Q],  ## the 3 active perks you put on Q / R / T in the perk window (owner, Nov 27);
+	"ability_2": [KEY_R],  ## Q still turns a piece while building (main.gd), Q over a bag slot still drops it (hud.gd)
 	"ability_3": [KEY_T],
 	"draw_weapon": [KEY_F],  ## draw / put away the equipped weapon (F23)
 	"stow_lantern": [KEY_L],  ## put the lantern away / take it out (owner, Nov 17)

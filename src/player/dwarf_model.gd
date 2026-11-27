@@ -337,8 +337,11 @@ func set_pose(blocking: bool, aiming: bool, shield: bool) -> void:
 		dwarf_rig.set_hold("aim" if aiming else (("shield" if shield else "block") if blocking else ""))
 
 
-## A short reaction: "hit", "knock", "stunned", "die", "block", "eat", "throw".
+## A short reaction: "hit", "knock", "stunned", "die", "block", "eat", "throw", "whirlwind".
 ## duration: how long it plays (-1 = its usual time). The crossbow reload passes the real reload time.
+const WHIRL_TIME := 0.55
+
+
 func react(what: String, duration := -1.0) -> void:
 	reacted.emit(what, duration)
 	if dwarf_rig == null:
@@ -368,6 +371,11 @@ func react(what: String, duration := -1.0) -> void:
 			dwarf_rig.stop_upper()
 		"use":
 			dwarf_rig.play_upper("use", 0.7)
+		"whirlwind":  # Whirlwind (owner, Nov 27: "spin"): a level sweep with the weapon while the whole body turns once
+			dwarf_rig.play_upper("attack_a", WHIRL_TIME)
+			var tw := dwarf_rig.create_tween()
+			tw.tween_property(dwarf_rig, "rotation:y", TAU, WHIRL_TIME).from(0.0).set_trans(Tween.TRANS_SINE)
+			tw.tween_callback(func(): dwarf_rig.rotation.y = 0.0)
 
 
 ## The real dwarf (see DwarfRig). Tools go in its right hand, the lantern in its left.

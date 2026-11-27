@@ -2,7 +2,7 @@ class_name PerkTreeView
 extends Control
 ## The perk tree in the middle of the skills window (owner, Nov 19-20; mock-up: claude.ai/artifact/MBTFW9LdXc4mA3jNNpvYWR).
 ## Four branches grow from your level in the carved ring of the painted hall: Bones up, Fists right, Hands down,
-## Heart left. Circles = passive perks, diamonds = active ones (Z / G / T), ★ = a branch's final perk.
+## Heart left. Circles = passive perks, diamonds = active ones (Q / R / T), ★ = a branch's final perk.
 ## Click a perk to see it on the right (SkillsPanel shows the details and the Learn button).
 
 signal picked(perk_id: String)
@@ -67,6 +67,7 @@ func _ready() -> void:
 		box.tooltip_text = Progression.PERKS[id][4]
 		box.mouse_filter = Control.MOUSE_FILTER_STOP
 		box.gui_input.connect(func(e): if e is InputEventMouseButton and e.pressed and e.button_index == MOUSE_BUTTON_LEFT: picked.emit(id))
+		box.set_drag_forwarding(func(_at): return _drag(box, id), Callable(), Callable())
 		var pic := TextureRect.new()
 		pic.name = "Pic"
 		pic.texture = SkillsPanel.perk_icon(id)
@@ -86,6 +87,25 @@ func _ready() -> void:
 	_over.draw.connect(_draw_over)
 	add_child(_over)
 	resized.connect(refresh)
+
+
+## A learned ability (◆) can be dragged onto the Q / R / T boxes (SkillsPanel._keys).
+func _drag(box: Control, id: String) -> Variant:
+	if progress == null or not Progression.ACTIVE.has(id) or progress.perk_rank(id) < 1:
+		return null
+	box.set_drag_preview(drag_picture(id))
+	return {ability = id}
+
+
+static func drag_picture(id: String) -> Control:
+	var pic := TextureRect.new()
+	pic.texture = SkillsPanel.perk_icon(id)
+	pic.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	pic.size = Vector2(64, 64)
+	pic.position = -pic.size / 2.0
+	var holder := Control.new()  # (the preview's top-left follows the mouse: centre the picture on it)
+	holder.add_child(pic)
+	return holder
 
 
 func _scale() -> float:

@@ -46,8 +46,8 @@ func test_level_up_signal_and_carry_over() -> void:
 func test_level_cap() -> void:
 	var p := Progression.new()
 	p.add_xp(10_000_000)
-	check_eq(p.level, Progression.MAX_LEVEL, "stops at 30")
-	check_eq(p.points_free(), 29, "1 point per level: 29")
+	check_eq(p.level, Progression.MAX_LEVEL, "stops at the top level (91)")
+	check_eq(p.points_free(), 90, "1 point per level: 90")
 
 
 func test_perk_needs_points_and_the_perk_before() -> void:
@@ -70,10 +70,10 @@ func test_respec_refunds_points() -> void:
 	p.add_xp(10_000_000)
 	p.buy_perk("thick_skin")
 	p.buy_perk("iron_belly")
-	check_eq(p.points_free(), 27, "spent 2")
-	check_eq(p.respec_cost(), 30 * Progression.RESPEC_GOLD_PER_LEVEL, "reset costs gold by level")
+	check_eq(p.points_free(), 88, "spent 2")
+	check_eq(p.respec_cost(), 91 * Progression.RESPEC_GOLD_PER_LEVEL, "reset costs gold by level")
 	p.respec()
-	check_eq(p.points_free(), 29, "all back")
+	check_eq(p.points_free(), 90, "all back")
 	check_eq(p.perk_rank("thick_skin"), 0, "perk gone")
 
 
@@ -96,10 +96,42 @@ func test_every_perk_is_reachable() -> void:
 		check(Progression.PERKS[id][3] == Progression.ACTIVE.has(id), "%s: active perks have a recharge" % id)
 
 
-func test_ability_keys_take_the_first_active_perks() -> void:
+func test_ability_keys_are_chosen_and_saved() -> void:
 	var p := Progression.new()
-	p.perks = {stone_stance = 1, war_horn = 1, whirlwind = 1, clan_banner = 1, thick_skin = 3}
-	check_eq(p.ability_slots(), ["stone_stance", "whirlwind", "war_horn"], "3 keys, tree order, passives skipped")
+	var d := p.to_data()
+	d.erase("ab")  # a save from before Nov 27
+	d.p = {stone_stance = 1, war_horn = 1, whirlwind = 1, clan_banner = 1, thick_skin = 3}
+	p.load_data(d)
+	check_eq(p.ability_slots(), ["stone_stance", "whirlwind", "war_horn"], "old save: 3 keys in tree order, passives skipped")
+	check(p.set_ability_key(0, "clan_banner"), "an owned ability goes on Q")
+	check(p.set_ability_key(2, "whirlwind"), "moving one to another key...")
+	check_eq(p.ability_slots(), ["clan_banner", "war_horn", "whirlwind"], "...swaps the two")
+	check(not p.set_ability_key(1, "healing_brew"), "not learned: refused")
+	check(not p.set_ability_key(1, "thick_skin"), "a passive: refused")
+	p.load_data(p.to_data())
+	check_eq(p.ability_slots(), ["clan_banner", "war_horn", "whirlwind"], "the choice is saved")
+	var q := Progression.new()
+	q.add_xp(10_000_000)
+	var chain := ["war_horn"]
+	while Progression.PERKS[chain[0]][2] != "":
+		chain.push_front(Progression.PERKS[chain[0]][2])
+	for id in chain:
+		check(q.buy_perk(id), "buy " + id)
+	check_eq(q.ability_slots(), ["war_horn", "", ""], "a newly learned ability fills the first empty key")
+	q.respec()
+	check_eq(q.ability_slots(), ["", "", ""], "reset perks: empty keys")
+
+
+func test_death_costs_5_percent_of_every_skill() -> void:
+	var p := Progression.new()
+	var s: String = p.skill_level.keys()[0]
+	p.skill_level[s] = 60
+	check(is_equal_approx(p.lose_skills_on_death(), 0.05), "5% without Grave Walker")
+	check_eq(p.skill_level[s], 57, "60 -> 57")
+	p.skill_level[s] = 60
+	p.perks["grave_walker"] = 2
+	p.lose_skills_on_death()
+	check(p.skill_level[s] == 58 and p.skill_xp[s] > 0, "Grave Walker 2: only 2.5% lost (58 and a half)")
 
 
 func test_old_tree_perks_give_their_points_back() -> void:
@@ -111,7 +143,7 @@ func test_old_tree_perks_give_their_points_back() -> void:
 	p.load_data(d)
 	check_eq(p.perk_rank("strong_swing"), 0, "old perk dropped")
 	check_eq(p.perk_rank("thick_skin"), 2, "same-name perk kept")
-	check_eq(p.points_free(), 27, "only the kept ranks still cost points")
+	check_eq(p.points_free(), 88, "only the kept ranks still cost points")
 
 
 func test_quality_table_rows_add_to_100() -> void:

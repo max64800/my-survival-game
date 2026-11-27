@@ -516,7 +516,7 @@ func _crossbow_step(delta: float, move_dir := Vector3.ZERO) -> float:
 	return (_ps().progress.guard_walk_mult(true) if _ps() else 0.6) if aiming() else 1.0  # Crossbow ★25
 
 
-## R while holding the crossbow (or clicking when it's empty).
+## Clicking while the crossbow is empty (R is an ability key since Nov 27).
 func start_reload() -> void:
 	if not is_crossbow() or loaded or reload_left >= 0.0:
 		return

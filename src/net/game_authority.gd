@@ -91,6 +91,11 @@ var _refill_timer := 0.0  ## counts down to the next dungeon-chest refill check
 var _next_station_id := 1
 var _progress_dirty := {}  ## peer ids whose XP changed and need a sync
 var _progress_sync := 0.0
+var _banners := []  ## host: Clan Banners standing, {at, until}; friends within BANNER_REACH of one resist ailments
+var _banner_tick := 0.0
+const BANNER_REACH := 10.0
+const BREW_REACH := 5.0   ## Healing Brew heals everyone this close to where the flask splashes
+const BREW_THROW := 14.0  ## how far the flask flies at most
 
 
 ## Item kinds you hold in your hand to use. Anything else picked on the hotbar (rocks, ore,
@@ -295,6 +300,10 @@ func _process(delta: float) -> void:
 				AutoSmelt.feed(st, storage)
 			if st.tick_water(delta):
 				_ev_water.rpc(st.station_id, st.water, st.under_drip)
+		_banner_tick -= delta
+		if _banner_tick <= 0.0 and not _banners.is_empty():
+			_banner_tick = 1.0  # a short effect, renewed every second while you stand near a banner
+			_banner_guard()
 		_progress_sync -= delta
 		if _progress_sync <= 0.0 and not _progress_dirty.is_empty():
 			_progress_sync = PROGRESS_SYNC_TIME
@@ -805,12 +814,20 @@ func ask_body_xp(run_seconds: float, jumps: int, blocks: int = 0) -> void:
 		_rpc_body_xp.rpc_id(1, run_seconds, jumps, blocks)
 
 
-## Pressing an ability key (an active perk).
-func ask_ability(perk_id: String) -> void:
+## Pressing an ability key (an active perk). `aim` = where you look (Healing Brew flies there).
+func ask_ability(perk_id: String, aim := Vector3.INF) -> void:
 	if is_host():
-		request_ability(local_peer_id(), perk_id)
+		request_ability(local_peer_id(), perk_id, aim)
 	else:
-		_rpc_ability.rpc_id(1, perk_id)
+		_rpc_ability.rpc_id(1, perk_id, aim)
+
+
+## Dragging an ability onto Q / R / T in the perk window ("" = clear the key).
+func ask_set_ability_key(slot: int, perk_id: String) -> void:
+	if is_host():
+		request_set_ability_key(local_peer_id(), slot, perk_id)
+	else:
+		_rpc_set_ability_key.rpc_id(1, slot, perk_id)
 
 
 ## Reset perk points for gold coins (skills window button).
@@ -1401,9 +1418,15 @@ func _rpc_body_xp(run_seconds: float, jumps: int, blocks: int) -> void:
 
 
 @rpc("any_peer", "reliable")
-func _rpc_ability(perk_id: String) -> void:
+func _rpc_ability(perk_id: String, aim: Vector3) -> void:
 	if is_host():
-		request_ability(multiplayer.get_remote_sender_id(), perk_id)
+		request_ability(multiplayer.get_remote_sender_id(), perk_id, aim)
+
+
+@rpc("any_peer", "reliable")
+func _rpc_set_ability_key(slot: int, perk_id: String) -> void:
+	if is_host():
+		request_set_ability_key(multiplayer.get_remote_sender_id(), slot, perk_id)
 
 
 @rpc("any_peer", "reliable")
@@ -2567,7 +2590,7 @@ func request_body_xp(peer_id: int, run_seconds: float, jumps: int, blocks: int =
 
 
 ## An active perk (owner's tree, Nov 19). Returns "used", "cooldown" or "" (can't).
-func request_ability(peer_id: int, perk_id: String) -> String:
+func request_ability(peer_id: int, perk_id: String, aim := Vector3.INF) -> String:
 	var ps := get_player(peer_id)
 	if ps == null or ps.dying or not Progression.ACTIVE.has(perk_id) or ps.progress.perk_rank(perk_id) < 1:
 		return ""
@@ -2578,6 +2601,9 @@ func request_ability(peer_id: int, perk_id: String) -> String:
 		return "cooldown"
 	var rank := ps.progress.perk_rank(perk_id)
 	var here: Vector3 = ps.node.global_position
+	var flat := Vector3(aim.x - here.x, 0.0, aim.z - here.z) if aim.is_finite() else Vector3.ZERO
+	var fwd := flat.normalized() if flat.length() > 0.1 else Vector3.FORWARD
+	var to := here  # where the flask lands / the banner stands
 	match perk_id:
 		"stone_stance":
 			send_effect(peer_id, "stone_stance", {damage_taken = -0.4, move_speed = -0.5}, 60.0)
@@ -2596,17 +2622,20 @@ func request_ability(peer_id: int, perk_id: String) -> String:
 			tell(peer_id, "%s is like new." % Upgrades.display_name(held))
 		"war_horn":
 			_war_horn(ps, 0.10 * rank, 20.0)
-		"healing_brew":
-			for pid in players:
-				if players[pid].node.global_position.distance_to(here) <= 5.0:
-					heal(pid, 15.0 * rank)
-		"clan_banner":
-			for pid in players:
-				if players[pid].node.global_position.distance_to(here) <= 10.0:
-					send_effect(pid, "clan_banner", {resist_poison = 0.5, resist_burn = 0.5, resist_chill = 0.5}, 60.0)
+		"healing_brew":  # a thrown flask: it heals everyone near where it splashes (owner, Nov 27)
+			# shortcut: aimed at open air, it splashes in the air 14 m out (no falling arc); fine in caves
+			to = _chest(ps) + (aim - _chest(ps)).limit_length(BREW_THROW) if aim.is_finite() else here + fwd * 6.0
+			get_tree().create_timer(brew_flight(_chest(ps), to)).timeout.connect(func():
+				for pid in players:
+					if players[pid].node.global_position.distance_to(to) <= BREW_REACH:
+						heal(pid, 15.0 * rank))
+		"clan_banner":  # planted in front of you for 60 s; friends near the BANNER resist (owner, Nov 27)
+			to = here + fwd * 1.5
+			_banners.append({at = to, until = now() + 60.0})
+			_banner_guard()  # guards right away, then every second from _process
 	add_boost(ps, cd_key, {}, Progression.ACTIVE[perk_id])
 	send_effect(peer_id, cd_key, {}, Progression.ACTIVE[perk_id])  # so their screen can show the recharge
-	_ev_ability.rpc(here, perk_id)
+	_ev_ability.rpc(peer_id, here, perk_id, to)
 	tell(peer_id, name + "!")
 	return "used"
 
@@ -2619,13 +2648,28 @@ func _war_horn(ps: PlayerState, damage: float, seconds: float) -> void:
 	_ev_horn.rpc(ps.node.global_position)
 
 
+## Seconds a thrown flask flies (the same arc as a thrown bomb, _ev_throw).
+static func brew_flight(from: Vector3, to: Vector3) -> float:
+	return 0.15 + from.distance_to(to) / 18.0
+
+
 @rpc("authority", "call_local", "reliable")
-func _ev_ability(at: Vector3, perk_id: String) -> void:
-	# shortcut: sounds only; the spin, brew splash and banner have no animation or model yet
+func _ev_ability(peer: int, at: Vector3, perk_id: String, to: Vector3) -> void:
+	var dwarf := get_player(peer).node as Dwarf if get_player(peer) else null
 	match perk_id:
-		"whirlwind": Sfx.play("swing", at + Vector3.UP, 0.0, 0.7)
-		"healing_brew": Sfx.play("eat", at + Vector3.UP, 0.0, 1.2)
-		"stone_stance", "clan_banner": Sfx.play("dig_break", at, -4.0, 0.6)
+		"whirlwind":
+			Sfx.play("swing", at + Vector3.UP, 0.0, 0.7)
+			if dwarf:
+				dwarf.model.react("whirlwind")
+		"healing_brew":
+			if dwarf:
+				dwarf.model.react("throw")
+			AbilityFx.throw_flask(drops_root, at + Vector3.UP * 1.3, to, brew_flight(at + Vector3.UP * 1.3, to), BREW_REACH)
+		"clan_banner":
+			Sfx.play("dig_break", to, -4.0, 0.6)
+			AbilityFx.plant_banner(drops_root, to, dwarf.model.global_rotation.y if dwarf else 0.0, 60.0)
+		"stone_stance":
+			Sfx.play("dig_break", at, -4.0, 0.6)
 
 
 ## Resetting perk points costs gold coins (owner, Nov 19). Skills stay.
@@ -2641,6 +2685,21 @@ func request_respec(peer_id: int) -> bool:
 	ps.progress.respec()
 	_progress_dirty[peer_id] = true
 	tell(peer_id, "Perk points reset for %d gold." % cost)
+	return true
+
+
+## Host: puts an ability on a key. One that wasn't on a key starts its full recharge (no swapping to skip waits, owner Nov 27).
+func request_set_ability_key(peer_id: int, slot: int, perk_id: String) -> bool:
+	var ps := get_player(peer_id)
+	if ps == null:
+		return false
+	var was_on := ps.progress.ability_slots().has(perk_id)
+	if not ps.progress.set_ability_key(slot, perk_id):
+		return false
+	if perk_id != "" and not was_on:
+		add_boost(ps, "cd_" + perk_id, {}, Progression.ACTIVE[perk_id])
+		send_effect(peer_id, "cd_" + perk_id, {}, Progression.ACTIVE[perk_id])
+	_progress_dirty[peer_id] = true
 	return true
 
 
@@ -3398,6 +3457,7 @@ func request_died(peer_id: int) -> void:
 		return
 	var where: Vector3 = ps.node.global_position
 	_bond_of_the_clan(peer_id, where)
+	_death_skill_loss(ps, peer_id)
 	where = grave_spot(peer_id, where)
 	var grave := -1
 	for i in ps.inventory.slots.size():
@@ -3417,6 +3477,28 @@ func request_died(peer_id: int) -> void:
 		_respawn_here(wake)
 	else:
 		_rpc_respawn.rpc_id(peer_id, wake)
+
+
+## Host: everyone within BANNER_REACH of a standing Clan Banner resists poison, fire and chill by half.
+func _banner_guard() -> void:
+	_banners = _banners.filter(func(b): return b.until > now())
+	for b in _banners:
+		for pid in players:
+			if players[pid].node.global_position.distance_to(b.at) <= BANNER_REACH:
+				send_effect(pid, "clan_banner", {resist_poison = 0.5, resist_burn = 0.5, resist_chill = 0.5}, 1.5)
+
+
+## Host: dying costs a bit of every skill (like Valheim, owner Nov 27), then none for 10 min ("skill_calm": the HUD
+## shows its icon and timer).
+func _death_skill_loss(ps: PlayerState, peer_id: int) -> void:
+	if ps.boosts.has("skill_calm") and ps.boosts.skill_calm.until > now():
+		tell(peer_id, "No skills lost: you died less than 10 minutes ago.")
+		return
+	var part := ps.progress.lose_skills_on_death()
+	_progress_dirty[peer_id] = true
+	add_boost(ps, "skill_calm", {}, Progression.DEATH_CALM)
+	send_effect(peer_id, "skill_calm", {}, Progression.DEATH_CALM)
+	tell(peer_id, "You lost %s%% of every skill. No more loss for 10 minutes." % String.num(part * 100.0, 2).trim_suffix(".0"))
 
 
 ## Host: a few times a second, note where each player stands on solid ground (rock or something built under their feet).

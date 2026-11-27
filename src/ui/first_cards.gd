@@ -15,7 +15,7 @@ const CARDS := {
 	"lantern": ["Lantern", "Lights your way. R refills it with fuel, L puts it away", "lantern"],
 	"stone": ["Stone", "Stone + rootwood make your first pickaxe (Tab)", "stone"],
 	"rootwood": ["Rootwood", "For planks, tools and a campfire. It burns in the lantern too", "rootwood"],
-	"crystal": ["Glow crystal", "Lantern fuel: press R to refill", "crystal_white"],
+	"crystal": ["Glow crystal", "Lantern fuel: hold L to refill", "crystal_white"],
 	"pickaxe": ["Pickaxe", "Hold left click on rock and soft walls to dig", "pickaxe_stone"],
 	"clay": ["Clay", "For a smelter, a kiln and bricks", "clay"],
 	"copper_ore": ["Copper ore", "Melt it into copper in a smelter", "copper_ore"],

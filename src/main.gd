@@ -1135,14 +1135,17 @@ func _unhandled_input(event: InputEvent) -> void:
 		hud.set_map_open(open_map)
 		Controls.set_captured(false) if open_map else Input.MOUSE_MODE_CAPTURED
 		return
-	for i in Progression.ABILITY_KEYS:  # active perks on Z / G / T (owner's tree, Nov 19)
-		if event.is_action_pressed("ability_%d" % (i + 1)):
+	var building := (dwarf.build_mode and dwarf.build_mode.active()) or (place_ghost and place_ghost.visible)
+	for i in Progression.ABILITY_KEYS:  # active perks on Q / R / T (owner, Nov 27)
+		if event.is_action_pressed("ability_%d" % (i + 1)) and not (i == 0 and building):  # Q turns the piece instead
 			var me := authority.get_player(authority.local_peer_id())
 			var slots: Array = me.progress.ability_slots() if me else []
-			if i < slots.size():
-				authority.ask_ability(slots[i])
+			if i < slots.size() and slots[i] != "":
+				var cam := get_viewport().get_camera_3d()  # where you look: the brew flies there, the banner goes that way
+				var look: Vector3 = dwarf.aim_far(GameAuthority.BREW_THROW).get("position", cam.global_position - cam.global_basis.z * 30.0)
+				authority.ask_ability(slots[i], look)
 			else:
-				hud.show_toast("No ability on this key yet. Active perks (diamonds) in the skills window (K) go here.", 3.0)
+				hud.show_toast("No ability on this key yet. Drag an active perk (diamond) onto it in the skills window (K).", 3.0)
 			return
 	if event.is_action_pressed("toggle_notes"):  # J: the same window, on the Notes tab (F870)
 		if hud.is_skills_open() and hud.skills.tab != "notes":

@@ -35,8 +35,10 @@ const WEAPON_SKILL := {sword = "sword", axe = "axe", axe_2h = "axe", mace = "mac
 const BAND_HOURS := [0.5, 1.0, 1.5, 2.0, 3.0, 4.0, 5.0, 6.0, 8.0, 10.0]
 ## shortcut: a guess at the skill XP an hour of steady work gives; measure with the robots and retune.
 const XP_PER_HOUR := 3000.0
-const MAX_LEVEL := 30
+const MAX_LEVEL := 91  ## owner, Nov 27: 90 perk points = the whole tree, slowly (same curve: 91 takes ~10x the XP of 30)
 const MAX_SKILL := 100
+const DEATH_LOSS := 0.05   ## dying takes 5% off every skill, like Valheim (owner, Nov 27): 60 -> 57
+const DEATH_CALM := 600.0  ## ...and then no loss again for 10 min (GameAuthority.request_died)
 
 ## The perk tree (owner, Nov 19; draft page: claude.ai/artifact/UTLcKhgPsVEZiubPB2dfWP). 1 point per level.
 ## Four branches around the dwarf: Bones (top, toughness), Fists (right, fighting), Hands (bottom, utility),
@@ -54,7 +56,7 @@ const PERKS := {
 	"stubborn_heart": ["toughness", 3, "big_lungs", false, "Stubborn Heart", "Health comes back 10% faster per rank"],
 	"fire_and_frost": ["toughness", 2, "deep_well", false, "Fire and Frost", "Burning and chill build up 15% slower per rank"],
 	"stone_skin": ["toughness", 3, "poison_blood", false, "Stone Skin", "+3% armor per rank"],
-	"grave_walker": ["toughness", 2, "stubborn_heart", false, "Grave Walker", "Lose 25% less skill when you die, per rank (skill loss isn't in the game yet)"],
+	"grave_walker": ["toughness", 2, "stubborn_heart", false, "Grave Walker", "Lose 25% less skill when you die, per rank"],
 	"unbreakable": ["toughness", 1, "grave_walker", false, "Unbreakable", "Once every 10 min, a killing hit leaves you at 1 health"],
 	"stone_stance": ["toughness", 1, "stone_skin", true, "Stone Stance", "Take 40% less damage for 60 s, but walk slowly"],
 	# Fighting
@@ -97,7 +99,7 @@ const PERKS := {
 ## Active perks: seconds until you can use them again.
 const ACTIVE := {stone_stance = 180.0, whirlwind = 45.0, rapid_volley = 60.0, quick_fix = 300.0,
 	war_horn = 90.0, healing_brew = 120.0, clan_banner = 300.0}
-## Keys for the first 3 active perks you own (in tree order). shortcut: no choosing which ability goes on which key yet.
+## Ability keys Q / R / T: the player drags an owned active perk onto each in the perk window (owner, Nov 27).
 const ABILITY_KEYS := 3
 ## Resetting your perk points costs gold coins (owner, Nov 19): this many per level.
 const RESPEC_GOLD_PER_LEVEL := 5
@@ -118,6 +120,7 @@ var xp := 0  ## XP into the current level
 var skill_level := _zeros()
 var skill_xp := _zeros()
 var perks := {}  ## perk id -> rank
+var ability_keys := ["", "", ""]  ## the active perk on Q / R / T ("" = empty); saved per player
 var kills := {}  ## creature kind -> kills you shared in (for later rewards, e.g. "20 bats: Bat Hunter")
 var _points_spent := 0
 
@@ -187,6 +190,18 @@ func add_xp(amount: int, skill: String = "") -> void:
 		xp = 0
 
 
+## Dying: every skill loses DEATH_LOSS of itself, counting the way into its next level (Grave Walker: 25% less
+## per rank). Returns the share that was lost (0.05 = 5%).
+func lose_skills_on_death() -> float:
+	var part := DEATH_LOSS * maxf(0.0, 1.0 - 0.25 * perk_rank("grave_walker"))
+	for s in skill_level:
+		var have := float(skill_level[s]) + float(skill_xp[s]) / skill_xp_to_next(skill_level[s])
+		var after := have * (1.0 - part)
+		skill_level[s] = floori(after + 0.0001)  # (60 x 0.95 must land on 57, not 56.99)
+		skill_xp[s] = maxi(0, roundi((after - skill_level[s]) * skill_xp_to_next(skill_level[s])))
+	return part
+
+
 # ---------------------------------------------------------------- perks
 
 var bonus_points := 0  ## extra perk points for testing (the dev-only dungeon test gives 15, owner Nov 20); not saved
@@ -223,6 +238,8 @@ func buy_perk(id: String) -> bool:
 		return false
 	perks[id] = perk_rank(id) + 1
 	_points_spent += 1
+	if PERKS[id][3]:
+		_fill_free_key(id)
 	return true
 
 
@@ -235,15 +252,30 @@ func respec_cost() -> int:
 func respec() -> void:
 	perks.clear()
 	_points_spent = 0
+	ability_keys = ["", "", ""]
 
 
-## The active perks on your ability keys: the first ABILITY_KEYS you own, in tree order.
+## The active perk on each ability key Q / R / T ("" = nothing there). Always ABILITY_KEYS long.
 func ability_slots() -> Array:
-	var out := []
-	for id in PERKS:
-		if PERKS[id][3] and perk_rank(id) > 0 and out.size() < ABILITY_KEYS:
-			out.append(id)
-	return out
+	return ability_keys.map(func(id): return id if perk_rank(id) > 0 else "")
+
+
+## Puts an owned active perk (or "" = clear) on key `slot`. Already on another key: the two swap.
+func set_ability_key(slot: int, id: String) -> bool:
+	if slot < 0 or slot >= ABILITY_KEYS or (id != "" and (not ACTIVE.has(id) or perk_rank(id) < 1)):
+		return false
+	var from := ability_keys.find(id) if id != "" else -1
+	if from >= 0:
+		ability_keys[from] = ability_keys[slot]
+	ability_keys[slot] = id
+	return true
+
+
+## A newly learned ability goes on the first empty key (none free: it waits in the tree until dragged on).
+func _fill_free_key(id: String) -> void:
+	var slots := ability_slots()
+	if not slots.has(id) and slots.has(""):
+		ability_keys[slots.find("")] = id
 
 
 # ---------------------------------------------------------------- bonuses
@@ -552,6 +584,7 @@ func total_kills() -> int:
 
 func to_data() -> Dictionary:
 	return {l = level, x = xp, sl = skill_level.duplicate(), sx = skill_xp.duplicate(), p = perks.duplicate(), ps = _points_spent,
+		ab = ability_keys.duplicate(),
 		k = kills.duplicate()}
 
 
@@ -581,3 +614,11 @@ func load_data(d: Dictionary) -> void:
 		if PERKS.has(id):
 			perks[id] = mini(int(d.p[id]), PERKS[id][1])
 			_points_spent += perks[id]
+	ability_keys = ["", "", ""]
+	var ab: Array = d.get("ab", [])
+	for i in mini(ab.size(), ABILITY_KEYS):
+		ability_keys[i] = str(ab[i])
+	if ab.is_empty():  # saves from before Nov 27: the first 3 you own, in tree order (as they were)
+		for id in PERKS:
+			if PERKS[id][3] and perk_rank(id) > 0:
+				_fill_free_key(id)

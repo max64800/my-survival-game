@@ -4,14 +4,14 @@ extends PanelContainer
 ##  - "Skills": the 14 skills you grow by doing, all on one page, each with its ★ perks at 25 / 50 / 75 / 100 always shown,
 ##    one line each; what every level gives is in the card's hover text (owner, Nov 21, F576: it showed too much).
 ##  - "Perks" (opens first, F576): the perk tree (PerkTreeView: 1 point per level, 4 branches; a perk opens once the one before it has a
-##    point) and, on the right, the perk you clicked with its Learn button. ◆ = active perk on an ability key (Z / G / T).
+##    point) and, on the right, the perk you clicked with its Learn button. ◆ = active perk on an ability key (Q / R / T).
 ##  - "Notes" (F870, owner Nov 25; J opens the window here): every first-time picture card you have seen (FirstCards).
 ## The window has one fixed size (switching tabs never changes it) that fits above the hotbar. It is BUILT at the
 ## screen's size (`ui` = how much bigger than the 1600 x 900 design), not stretched afterwards, so the letters stay
 ## sharp (owner, Nov 20: stretching it made everything blurry).
 
 const BRANCHES := [["toughness", "Bones"], ["fighting", "Fists"], ["utility", "Hands"], ["together", "Heart"]]  ## names (owner, Nov 19); ids stay
-const KEY_NAMES := ["Z", "G", "T"]
+const KEY_NAMES := ["Q", "R", "T"]
 const BACKGROUND := "res://assets/ui/skills_background.jpg"
 const MILESTONE_TEXT := "★%d"
 const PAGE := Vector2(1300, 700)  ## the tabs' page, at ui = 1 (the window is about 1350 x 820)
@@ -32,6 +32,7 @@ var _notes: GridContainer
 var notes: FirstCards  ## the cards you have seen (the HUD hands over its FirstCards)
 var _help: Label
 var _tree: PerkTreeView
+var _keys: Array[Control] = []  ## the Q / R / T boxes under the perk card: drag an ability onto one (owner, Nov 27)
 var _detail: VBoxContainer
 var _sel := "thick_skin"
 
@@ -148,9 +149,37 @@ func _build() -> void:
 	side.add_theme_stylebox_override("panel", UiKit.style("card", _px(12)))
 	side.custom_minimum_size.x = _px(380)
 	_perks_page.add_child(side)
+	var col := VBoxContainer.new()
+	side.add_child(col)
 	_detail = VBoxContainer.new()
 	_detail.add_theme_constant_override("separation", _px(6))
-	side.add_child(_detail)
+	_detail.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	col.add_child(_detail)
+	_lbl(col, "Ability keys: drag a ◆ you learned onto a box", 15, UiKit.DIM).horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	var bar := HBoxContainer.new()
+	bar.alignment = BoxContainer.ALIGNMENT_CENTER
+	bar.add_theme_constant_override("separation", _px(14))
+	col.add_child(bar)
+	_keys.clear()
+	for i in Progression.ABILITY_KEYS:
+		var key := PanelContainer.new()
+		key.name = "Key%d" % (i + 1)
+		key.add_theme_stylebox_override("panel", UiKit.style("card", _px(6)))
+		key.custom_minimum_size = Vector2.ONE * _px(78)
+		var pic := TextureRect.new()
+		pic.name = "Pic"
+		pic.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		pic.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		pic.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		key.add_child(pic)
+		var letter := _lbl(key, KEY_NAMES[i], 20, UiKit.AMBER, true)
+		letter.size_flags_vertical = Control.SIZE_SHRINK_END
+		letter.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+		key.set_drag_forwarding(func(_at): return _drag_key(i),
+			func(_at, data): return data is Dictionary and data.has("ability"),
+			func(_at, data): _put_on_key(i, data.ability))
+		bar.add_child(key)
+		_keys.append(key)
 	_help = _lbl(box, "", 15, UiKit.DIM)
 	_help.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	show_tab(tab)
@@ -180,7 +209,7 @@ func show_tab(which: String) -> void:
 		b.modulate = Color.WHITE if k == which else Color(0.8, 0.8, 0.8)
 	_help.text = ("Everything new you have met. J opens this page, K the skills" if which == "notes" else
 		"Skills grow by doing (dig for Mining, chop for Woodcutting...). ★ = a bonus at levels 25, 50, 75 and 100. Point at a skill to see what each level gives."
-		if which == "skills" else "Circle = works by itself  ·  ◆ = press Z / G / T  ·  ★ = last perk  ·  scroll to zoom, drag to move  ·  K to close")
+		if which == "skills" else "Circle = works by itself  ·  ◆ = drag onto Q / R / T  ·  ★ = last perk  ·  scroll to zoom, drag to move  ·  K to close")
 	if which == "perks" and _tree.progress:
 		_tree.refresh.call_deferred()
 
@@ -213,6 +242,10 @@ func refresh() -> void:
 	_tree.progress = p
 	_tree.selected = _sel
 	_tree.refresh()
+	var slots := p.ability_slots()
+	for i in _keys.size():
+		(_keys[i].get_node("Pic") as TextureRect).texture = perk_icon(slots[i]) if slots[i] != "" else null
+		_keys[i].tooltip_text = Progression.PERKS[slots[i]][4] if slots[i] != "" else "Empty: drag a learned ◆ here"
 	_show_skills()
 	_show_detail()
 
@@ -304,6 +337,23 @@ func _show_skills(p: Progression = null) -> void:
 
 # ---------------------------------------------------------------- the Perks tab: the perk you clicked
 
+## Dragging from one key box to another swaps them.
+func _drag_key(i: int) -> Variant:
+	var p := _progress()
+	var id: String = p.ability_slots()[i] if p else ""
+	if id == "":
+		return null
+	_keys[i].set_drag_preview(PerkTreeView.drag_picture(id))
+	return {ability = id}
+
+
+## The host checks it; an ability new to the keys starts its full recharge (request_set_ability_key).
+func _put_on_key(i: int, id: String) -> void:
+	GameAuthority.instance.ask_set_ability_key(i, id)
+	for wait in [0.15, 0.8]:  # (a friend's copy comes back from the host within PROGRESS_SYNC_TIME)
+		get_tree().create_timer(wait).timeout.connect(func(): if visible: refresh())
+
+
 func _show_detail() -> void:
 	var p := _progress()
 	UiKit.clear(_detail)
@@ -341,7 +391,7 @@ func _show_detail() -> void:
 	var slot := p.ability_slots().find(_sel)
 	var lines := ["Learned: %d of %d points" % [have, info[1]]]
 	if info[3]:
-		lines.append("Key: " + ("press " + KEY_NAMES[slot] if slot >= 0 else ("no free key (only 3 fit on Z, G, T)" if have > 0 else "it goes on Z, G or T")))
+		lines.append("Key: " + ("press " + KEY_NAMES[slot] if slot >= 0 else ("drag it onto Q, R or T below" if have > 0 else "it goes on Q, R or T")))
 		var cd: float = Progression.ACTIVE[_sel]
 		lines.append("Use again after: %s" % ("%d min" % roundi(cd / 60.0) if cd >= 60.0 and fmod(cd, 60.0) == 0.0 else "%d s" % roundi(cd)))
 	lines.append("First learn: " + (Progression.PERKS[info[2]][4] if info[2] != "" else "nothing, it's the first one"))
