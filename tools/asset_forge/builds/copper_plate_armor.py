@@ -23,6 +23,7 @@
 # Legs, boots and gauntlets stay from the hand-built set (armor_copper.glb, dwarf_armor.py; owner liked them).
 import math
 import sys
+import tempfile
 from pathlib import Path
 
 import bmesh
@@ -151,6 +152,15 @@ def image(name, path, colour=True):
 
 
 HAM_COL = image("copper_hammered_col", TEXD / "copper_hammered_col.png")
+DARK = 0.8  # (round 12, owner: "make the entire texture a little bit darker")
+_px = np.empty(len(HAM_COL.pixels), np.float32)
+HAM_COL.pixels.foreach_get(_px)
+_px = _px.reshape(-1, 4)
+_px[:, :3] *= DARK
+HAM_COL.pixels.foreach_set(_px.ravel())
+HAM_COL.filepath_raw = str(Path(tempfile.gettempdir()) / "copper_hammered_col.png")
+HAM_COL.file_format = "PNG"
+HAM_COL.save()
 HAM_NRM = image("copper_hammered_nrm", TEXD / "copper_hammered_nrm.png", False)
 
 
@@ -178,7 +188,7 @@ def material(name, rgb, metal, rough, col_img=None, nrm_img=None, nrm=1.0):
 
 
 M_HAM = material("copper_hammered", (0.75, 0.38, 0.2), 0.8, 0.36, HAM_COL, HAM_NRM, 0.9)
-M_POL = material("copper_polished", (0.8, 0.33, 0.14), 0.78, 0.3)  # (the raised borders and edges, rubbed bright)
+M_POL = material("copper_polished", (0.8 * DARK, 0.33 * DARK, 0.14 * DARK), 0.78, 0.3)  # (the raised borders and edges, rubbed bright)
 # (round 6 had (0.86, 0.47, 0.27), metal 0.9: in the game it mirrored the grey room and showed silver; the picture's are copper)
 M_RIV = material("copper_rivet", (0.7, 0.3, 0.13), 0.8, 0.3)
 QUILT = TEXD / "hide2_quilted.png"
@@ -361,7 +371,7 @@ def ref_at(phi, z):
 FRONT, BACK, LEFT = math.pi, 0.0, math.pi / 2
 # cuirass: breastplate (pointed bottom, under the beard), backplate, side plates under the arms (tucked under both)
 # (the back in two layers like the picture: a lower plate, and an upper plate over the shoulder blades outside it)
-for phic, zc, hw, hh, pt, off, dm in ((FRONT, 0.735, 0.31, 0.172, 0.03, 0.018, 0.016),  # (round 7: wider, no leather beside it)
+for phic, zc, hw, hh, pt, off, dm in ((FRONT, 0.735, 0.26, 0.172, 0.03, 0.018, 0.016),  # (round 7: wider, no leather beside it)
 		(BACK, 0.75, 0.27, 0.185, 0.012, 0.018, 0.012)):  # (round 8: one back plate; two left a dent line, owner)
 	ref = ref_at(phic, zc) + off
 	plate("chest_plate", torso_ray(phic, zc, ref), hw, hh, off=off, point=pt, pexp=6, dome=dm, rigid=True if phic == FRONT else 4,  # (round 7: domed like the picture's chest)
@@ -674,7 +684,7 @@ CLEAR = 0.03  # (the hat hair lies within ~1.8 cm of the egg; the helmet's insid
 # drops straight and flares OUT at the bottom, a raised face guard round the eyes, and the back edge UP at 0.985 m so his
 # hair comes out under it (round 7's neck guard down at 0.875 m cut through the hair).
 H = dict(top=1.275, eq=1.125, bot=0.965, back_bot=0.985, flare=0.034, waist=0.012, guard=0.03, guard_phi=0.85,
-	eye=(1.05, 1.09), eye_phi=(0.14, 0.6), face_top=1.035, face_phi=0.98, nasal=0.2, nasal_low=0.975, brow=(1.1, 1.15),
+	eye=(1.068, 1.09), eye_phi=(0.14, 0.6), face_top=1.035, face_phi=0.98, nasal=0.2, nasal_low=0.975, brow=(1.1, 1.15),
 	cheek=0.016, cheek_phi=1.45, cheek_top=1.085, eye_deep=0.012)  # (round 10: cheek guards, deeper eyes, shorter edge)
 RX, RY = 0.172, 0.17  # (round 11, owner: "the helmet is way too big"; was 0.2)
 
@@ -859,11 +869,19 @@ mv = lay_over(-1, 0.95, 1.02)
 HAIR.data.vertices.foreach_set("co", hc.ravel())
 HAIR.data.update()
 log("beard moved out over the breastplate: points", int((mv > 0).sum()), "most", round(float(mv.max()), 3))
-# (round 11, owner: "the braids are still clipping out" at the back: the same for the braids down his back)
-mv = lay_over(1, 0.98, 1.0)
+# (round 11, owner: "the braids are still clipping out" at the back. Lifting them out over the plate (round 11)
+# left them floating off his back (round 12, owner), so now they're tucked in UNDER the back plate, like hair
+# tucked into a collar: every hair point behind the plate goes 1.2 cm inside it.)
+tuck = 0
+for i in np.nonzero((hc[:, 2] < 0.98) & (hc[:, 1] > 0.06))[0]:
+	p = hc[i]
+	hit = CPB.ray_cast(Vector((p[0], 1.0, p[2])), Vector((0, -1, 0)), 2.0)
+	if hit[0] is not None and p[1] > hit[0].y - 0.012:
+		hc[i, 1] = hit[0].y - 0.012
+		tuck += 1
 HAIR.data.vertices.foreach_set("co", hc.ravel())
 HAIR.data.update()
-log("braids moved out over the back plate: points", int((mv > 0).sum()), "most", round(float(mv.max()), 3))
+log("braids tucked under the back plate: points", tuck)
 for o in (HM, HBD, HR, HAIR):
 	for vg in list(o.vertex_groups):
 		o.vertex_groups.remove(vg)

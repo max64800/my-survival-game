@@ -117,7 +117,11 @@ func _init() -> void:
 		if c[2] in ["walk", "jog", "sprint"] or (c[2] == "idle" and not hands):  # (the loops play slower now: record one whole loop so it joins up)
 			var src: String = DwarfRig.ANIMS[c[2]]
 			if rig.tree.has_animation(src):
-				secs = rig.tree.get_animation(src).length / DwarfRig.LOOP_SPEED * (3.0 if c[2] != "idle" else 1.0)  # (owner Nov 27: 3 whole steps, so the page doesn't restart every second)
+				var spd: float = {"walk": 1.6, "jog": 3.0, "sprint": 5.2}.get(c[2], 0.0)
+				# (owner Nov 27: 3 whole steps so the page doesn't restart every second; at the speed the game really
+				# plays the loop (DwarfRig.loop_rate: feet that grip), or the clip ends mid-step and jumps)
+				var one: float = rig.tree.get_animation(src).length / DwarfRig.loop_rate(spd)
+				secs = one * (maxf(3.0, ceilf(4.0 / one)) if c[2] != "idle" else 1.0)  # (whole loops, 4 s or more)
 		var anim := await _record(rig, c[0], secs, c[2])
 		lib.add_animation(c[0], anim)
 		print("RECORDED ", c[0], " ", anim.length, " s")
@@ -194,9 +198,9 @@ func _drive(rig: DwarfRig, what: String, t: float) -> void:
 		"walk":
 			rig.set_motion(1.6, true, false)
 		"jog":
-			rig.set_motion(4.0, true, false)
+			rig.set_motion(3.0, true, false)  # (exactly the jog: at 4 m/s it was half jog, half sprint, and the loop didn't join)
 		"sprint":
-			rig.set_motion(6.5, true, false)
+			rig.set_motion(5.2, true, false)
 		"air":  # standing, then a jump: off the ground for 0.65 s, then the landing
 			rig.set_motion(0.0, t < 0.0 or t > 0.65, false)
 		"roll":  # jogging, then a dodge roll as long as the game's (Combat.DODGE_TIME)
