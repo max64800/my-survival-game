@@ -418,19 +418,19 @@ for side in (1, -1):
 		return ray
 
 	for k in range(3):
-		along = 0.07 + 0.05 * k
+		along = 0.055 + 0.045 * k  # (round 8b: up under the roof's edge)
 		plate("chest_plate", arm_ray(along), 0.12 - 0.008 * k, 0.034, target=ARMS, off=0.024 - 0.005 * k, pexp=6,
 			point=0.0, dome=0.004, rivets=(160, 20), rigid=True)  # (round 8: stiff rings round the arm, stepping down)
 
 	def cap_ray(U, V, S0=S0):
 		# (round 8: the picture's shoulder plate: a curved roof over the shoulder, from the collar out over the arm;
 		# U = front to back, V = round the roof from the neck side to the arm side. Round 7's dome had dents.)
-		th = 0.62 + V / 0.12
+		th = 0.52 + V / 0.12  # (round 8b: smaller, ends over the arm, not out like a wing)
 		d = np.stack([side * np.sin(th), np.zeros_like(th), np.cos(th)], -1)
 		o = np.stack([np.full_like(U, S0[0] - side * 0.03), S0[1] - U, np.full_like(U, S0[2] - 0.02)], -1)
 		return o, d
 
-	plate("chest_plate", cap_ray, 0.13, 0.125, target=ARMS, off=0.03, pexp=4, dome=0.008, rigid=True,
+	plate("chest_plate", cap_ray, 0.125, 0.1, target=ARMS, off=0.014, pexp=4, dome=0.008, rigid=True,
 		rivets=(25, 155, 205, 335, 90))
 log("shoulders")
 
@@ -667,8 +667,8 @@ CLEAR = 0.03  # (the hat hair lies within ~1.8 cm of the egg; the helmet's insid
 # Round 8 (owner: "looks like a ball, not a helmet"): a lower round dome on top of the brow band, then a bell skirt that
 # drops straight and flares OUT at the bottom, a raised face guard round the eyes, and the back edge UP at 0.985 m so his
 # hair comes out under it (round 7's neck guard down at 0.875 m cut through the hair).
-H = dict(top=1.31, eq=1.125, bot=0.945, back_bot=0.985, flare=0.048, waist=0.012, guard=0.017, guard_phi=0.8,
-	eye=(1.062, 1.096), eye_phi=(0.15, 0.6), face_top=1.04, face_phi=0.98, nasal=0.15, nasal_low=0.985, brow=(1.1, 1.15))
+H = dict(top=1.31, eq=1.125, bot=0.945, back_bot=0.985, flare=0.048, waist=0.012, guard=0.03, guard_phi=0.85,
+	eye=(1.05, 1.09), eye_phi=(0.14, 0.6), face_top=1.035, face_phi=0.98, nasal=0.2, nasal_low=0.975, brow=(1.1, 1.15))
 RX, RY = 0.2, 0.198
 
 
@@ -723,7 +723,8 @@ for i in range(n_z - 1):
 			continue  # the face opening (the nasal bar stays)
 		eye = H["eye_phi"][0] < pf < H["eye_phi"][1] and H["eye"][0] < zc < H["eye"][1]
 		F.append((i * n_p + j, i * n_p + (j + 1) % n_p, (i + 1) * n_p + (j + 1) % n_p, (i + 1) * n_p + j))
-		MI.append(2 if eye else 0)  # (round 7: dark eye slits like the picture's; open ones showed his skin, bright)
+		guard = (pf < H["guard_phi"] and H["face_top"] < zc < H["eq"] - 0.004) or (pf < H["nasal"] / 2 and zc > H["nasal_low"])
+		MI.append(2 if eye else 1 if guard and zc < H["eq"] else 0)  # (round 8b: the face guard polished, its own plate)  # (round 7: dark eye slits like the picture's; open ones showed his skin, bright)
 top_i = len(HP.reshape(-1, 3))
 PTS = np.vstack([HP.reshape(-1, 3), [[0, SC[1], H["top"]]]])
 F += [((n_z - 1) * n_p + j, (n_z - 1) * n_p + (j + 1) % n_p, top_i) for j in range(n_p)]
