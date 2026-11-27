@@ -23,4 +23,4 @@ Decided Nov 20: **see `gems.md`** (9 gems, Rough / Cut / Polished, armor sockets
 Geodes would give Deep Onyx, Wind Amethyst, Edge Quartz and Storm Topaz.
 
 ## Open questions for the owner
-1. Which of the four rare finds to build, and in which order? (Armor sockets and the gem list: decided, see `gems.md`.)
+1. ~~Which of the four rare finds to build?~~ **Owner, Nov 27: geodes only for now** (see `abilities-quality-perks-plan.md` section 4). (Armor sockets and the gem list: decided, see `gems.md`.)

@@ -72,11 +72,11 @@ New things these need (not built yet): Axe bleeding (★25), Spear throw (★75)
 - Planned window layout (mock-up: https://claude.ai/artifact/MBTFW9LdXc4mA3jNNpvYWR): skills list on the left
   (click one to see its ★ perks, only one open at a time, never scrolls), the tree in the middle on the carved hall
   (the Level circle sits in the carved ring), perk details on the right. A perk opens once the one before it has a point.
-- Mostly passive perks. **Active perks** (diamonds on the page) go on keys **Z / G / T** (the first 3 you own,
-  in tree order) and recharge: Stone Stance, Whirlwind, Rapid Volley, Quick Fix, War Horn, Healing Brew, Clan Banner.
+- Mostly passive perks. **Active perks** (diamonds on the page) go on keys **Q / R / T** (you drag them there, owner
+  Nov 27: see `abilities-quality-perks-plan.md`) and recharge: Stone Stance, Whirlwind, Rapid Volley, Quick Fix, War Horn, Healing Brew, Clan Banner.
 - **Resetting perk points costs gold coins** (5 per level). Gold is found in old ruin chests; later monsters drop it too.
 - Old saves: perks from the old 4 trees are dropped and their points come back.
-- Rules: torches never go out. Total points to fill the tree: 90; max level still 30 (29 points), not decided.
+- Rules: torches never go out. Total points to fill the tree: 90; max level 91 (owner, Nov 27), so the whole tree fills slowly.
 
 ### Waiting on systems we don't have yet
 Deep Pockets (bag can't grow), Thrifty and Quick Fix (no tool wear / repairs), Chest Looter (chests are filled when
@@ -102,7 +102,5 @@ around you instead of being thrown; Shoulder to Shoulder only helps the player w
   (no spear throw). Crafting 25 only shows on bigger upgrade costs (2 → 2 after rounding).
 
 ## Still to plan
-- Max level / total perk points, which keys abilities go on (choosing), gold from monsters.
-- The unbuilt ★ perks above (each needs its system first).
-- How much skill you lose when you die (owner wants some, like Valheim).
-- Exact XP per action for each skill.
+- Decided Nov 27 (max level, ability keys, skill loss on death, the waiting perks): `abilities-quality-perks-plan.md`.
+- Gold from monsters. Exact XP per action for each skill (measure with the robots).

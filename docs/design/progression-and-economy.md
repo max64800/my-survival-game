@@ -305,28 +305,8 @@ You upgrade a tool you already own at the **Anvil** (the plan calls this "the fo
 
 ### 3.4 Quality (Q1–Q5)
 
-When you craft a tool, weapon or armor piece, the game rolls its quality once. The roll uses **the crafter's Smithing skill** (section 7). In co-op, whoever presses "craft" is the crafter.
-
-| Quality | Name shown | Main stat bonus | Look |
-|---|---|---|---|
-| Q1 | Plain | +0% | Normal |
-| Q2 | Fine | +4% | Small mark on the handle |
-| Q3 | Sturdy | +8% | Engraved lines |
-| Q4 | Superior | +13% | Engraved + faint shine |
-| Q5 | Masterwork | +20% | Glowing runic engraving, crafter's name on it |
-
-**Chance table** (each row adds up to 100%):
-
-| Smithing skill | Q1 | Q2 | Q3 | Q4 | Q5 |
-|---|---|---|---|---|---|
-| 0–9 | 70% | 25% | 5% | 0% | 0% |
-| 10–24 | 45% | 35% | 17% | 3% | 0% |
-| 25–39 | 25% | 35% | 30% | 9% | 1% |
-| 40–59 | 10% | 25% | 40% | 20% | 5% |
-| 60–79 | 0% | 15% | 35% | 35% | 15% |
-| 80–100 | 0% | 5% | 25% | 40% | 30% |
-
-Perks and runes that say "+5 Smithing for quality" just move you down this table sooner (they only count for the quality roll).
+**Replaced Nov 27 (owner): no random roll.** Colours grey → green → blue → purple → gold, set by the crafter's Crafting
+skill, plus reforging with boss trophies. Full rules: `abilities-quality-perks-plan.md` section 3.
 
 Named items found in ruins have fixed stats set by hand (combat doc / loot tables), not this roll.
 
