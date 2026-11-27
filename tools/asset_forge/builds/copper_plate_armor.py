@@ -1386,6 +1386,53 @@ if ENGRAVE:
 	HN = make("armor_head_horn", "helm_horn", [M_HAM, M_POL], thick=0,
 		outward=lambda c: c - _hcl[np.argmin(np.linalg.norm(_hcl - c, axis=1))])
 	log("horns", len(HN.data.polygons))
+NOSE = dict(top=1.1, bot=0.925, w_top=0.024, w_bot=0.011, out_top=0.006, out_mid=0.03, mid=1.045, ridge=0.006, rim=0.2)
+# (F914 Nov 27, owner: the nose guard "so black, looks like one line ... shouldn't be flat, a lot bigger", both metals:
+# a raised nose-shaped bar over the old thin nasal, from under the brow band down past it, its front sloping out like a
+# nose (seen from the side a wedge, not a line), hammered metal in the middle, a dark edge round it, rounded tip)
+
+
+def nose_guard():
+	"""A closed solid: cross-section rings from the top (tucked under the brow band) down to a rounded tip."""
+	zs_ = np.linspace(NOSE["top"], NOSE["bot"], 40)
+	rc = np.array([float(helm_r(np.array(math.pi), np.array(z))) for z in zs_])  # (the shell's front, by height)
+	back = np.array([rc[max(0, i - 6):i + 7].min() for i in range(len(zs_))]) - 0.007  # (always behind the shell)
+	t_ = (NOSE["top"] - zs_) / (NOSE["top"] - NOSE["mid"])
+	# (the front's distance out: from just over the band at the top, sloping out to out_mid at the nose, then even)
+	r_top = rc[0] + NOSE["out_top"]
+	r_mid = float(helm_r(np.array(math.pi), np.array(NOSE["mid"] - 0.02))) + NOSE["out_mid"] - 0.016
+	front = np.where(t_ < 1, r_top + (r_mid - r_top) * (1 - (1 - np.clip(t_, 0, 1)) ** 2), r_mid)
+	f_ = (zs_ - NOSE["top"]) / (NOSE["bot"] - NOSE["top"])
+	w = NOSE["w_top"] + (NOSE["w_bot"] - NOSE["w_top"]) * f_
+	w = w * np.sqrt(np.clip((1 - f_) / 0.08, 0, 1)) ** 0.6  # (the bottom rounds off to a tip)
+	w = np.maximum(w, 0.0015)
+	NU = 13
+	u = np.linspace(-1, 1, NU)
+	ring_pts = []
+	for k in range(len(zs_)):
+		d_front = front[k] + NOSE["ridge"] * (1 - np.abs(u) ** 1.7) - 0.002 * np.abs(u) ** 6
+		pts = [(u[j] * w[k], SC[1] - d_front[j], zs_[k]) for j in range(NU)]
+		pts += [(u[j] * w[k] * 0.96, SC[1] - back[k], zs_[k]) for j in range(NU - 1, -1, -1)]
+		ring_pts.append(pts)
+	P = np.array(ring_pts).reshape(-1, 3)
+	R = 2 * NU
+	F, MI = [], []
+	for k in range(len(zs_) - 1):
+		for j in range(R):
+			F.append((k * R + j, (k + 1) * R + j, (k + 1) * R + (j + 1) % R, k * R + (j + 1) % R))
+			MI.append(0 if j < NU - 1 and abs(u[j] + u[j + 1]) / 2 < 1 - NOSE["rim"] else 1)  # (dark edge + sides)
+	cap = len(P)
+	P = np.vstack([P, [P[:R].mean(0)], [P[-R:].mean(0)]])
+	F += [(cap, (j + 1) % R, j) for j in range(R)]
+	F += [(cap + 1, (len(zs_) - 1) * R + j, (len(zs_) - 1) * R + (j + 1) % R) for j in range(R)]
+	MI += [1] * (2 * R)
+	UV = np.stack([P[:, 0] / TILE, P[:, 2] / TILE], -1)
+	add("helm_nasal", P, F, UV, MI)
+
+
+nose_guard()
+HNS = make("armor_head_nasal", "helm_nasal", [M_HAM, M_POL], thick=0)
+log("nose guard", len(HNS.data.polygons))
 # (round 8, owner: "hair clipping through": every hair point under the shell is tucked in 1.2 cm inside it;
 # below the edge it hangs out free, as on the picture's helmet)
 hc = np.empty(len(HAIR.data.vertices) * 3)
@@ -1500,7 +1547,7 @@ bm_.to_mesh(HAIR.data)
 bm_.free()
 HAIR.data.update()
 log("back hair below the helmet edge removed: points", len(cut))
-for o in [o_ for o_ in (HM, HBD, HR, HN) if o_ is not None]:
+for o in [o_ for o_ in (HM, HBD, HR, HN, HNS) if o_ is not None]:
 	for vg in list(o.vertex_groups):
 		o.vertex_groups.remove(vg)
 	o.vertex_groups.new(name="Head").add(list(range(len(o.data.vertices))), 1.0, "REPLACE")
@@ -1716,7 +1763,7 @@ for nm, push, keep in (("body_hand_l", 0.004, None), ("body_hand_r", 0.004, None
 GG = join(gl, "armor_chest_gauntlet_glove")
 log("gauntlets", [(o.name, len(o.data.polygons)) for o in (GP, GR, GG)])
 
-ALL = [o_ for o_ in (CP, CS, CB, CR, LE, HM, HBD, HR, HN, HAIR, GP, GR, GG) if o_ is not None]
+ALL = [o_ for o_ in (CP, CS, CB, CR, LE, HM, HBD, HR, HN, HNS, HAIR, GP, GR, GG) if o_ is not None]
 for o in ALL:
 	o.parent = ARM
 	o.parent_type = "OBJECT"
