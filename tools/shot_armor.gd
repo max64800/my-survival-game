@@ -30,6 +30,8 @@ func _run() -> void:
 	var side := false  # (side=1: from his left, to see under the arms)
 	var hand := false  # (hand=1: close on his left hand and forearm, the gauntlet)
 	var metal := "copper"
+	var cam_at := PackedFloat64Array()
+	var turn_deg := NAN
 	for a in OS.get_cmdline_user_args():
 		if a.begins_with("out="):
 			out = a.trim_prefix("out=")
@@ -38,6 +40,10 @@ func _run() -> void:
 		hand = hand or a == "hand=1"
 		if a.begins_with("metal="):
 			metal = a.trim_prefix("metal=")
+		if a.begins_with("cam="):  # (cam=x,y,z,tx,ty,tz: the camera at x,y,z looking at tx,ty,tz)
+			cam_at = a.trim_prefix("cam=").split_floats(",")
+		if a.begins_with("turn="):  # (turn=<degrees>: how far he is turned)
+			turn_deg = a.trim_prefix("turn=").to_float()
 	root.size = Vector2i(1400, 1000)
 	var env := WorldEnvironment.new()
 	env.environment = Environment.new()
@@ -53,6 +59,8 @@ func _run() -> void:
 	var turn := 0.35 if back else PI + 0.35  # (he faces -Z)
 	if side:
 		turn = PI * 0.5
+	if not is_nan(turn_deg):
+		turn = deg_to_rad(turn_deg)
 	var cam := Camera3D.new()
 	cam.fov = 30
 	root.add_child(cam)
@@ -65,6 +73,8 @@ func _run() -> void:
 		cam.look_at_from_position(Vector3(0, 0.85, 3.0), Vector3(0, 0.72, 0))
 	if hand:
 		cam.look_at_from_position(Vector3(0.75, 0.75, 1.3), Vector3(0.28, 0.5, 0))
+	if cam_at.size() == 6:
+		cam.look_at_from_position(Vector3(cam_at[0], cam_at[1], cam_at[2]), Vector3(cam_at[3], cam_at[4], cam_at[5]))
 	for i in 40:
 		await process_frame
 	root.get_texture().get_image().save_png(out)
