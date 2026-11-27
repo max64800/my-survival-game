@@ -46,8 +46,7 @@ func _run() -> void:
 	var turn := 0.35 if back else PI + 0.35  # (he faces -Z)
 	if side:
 		turn = PI * 0.5
-	_dwarf(-0.42, "pic3d", turn)
-	_dwarf(0.42, "plate", turn)
+	_dwarf(0.0, "plate", turn)  # (the picture-to-3D test that stood beside it was removed Nov 27)
 	var cam := Camera3D.new()
 	cam.fov = 30
 	root.add_child(cam)

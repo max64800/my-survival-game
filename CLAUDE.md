@@ -16,8 +16,7 @@ Code layout, recorder details, how to run robots: `docs/CLAUDE-REFERENCE.md` (re
 - Only use assets licensed for commercial use (prefer CC0). Log every asset in `CREDITS.md`.
 - **Art style rule (owner):** every model (stations, gear, outfits, building pieces, materials) is made in the same style as the workbenches: hand-painted, chunky, no perfect boxes or circles, every part touching. Each building material gets its own design, not a reskin. Make ChatGPT pictures whenever they help, no need to ask.
 - **Model rules (owner): read the needed section of `docs/art/MODEL-RULES.md` before making or changing any model.** In short:
-  0. **Armor picture-to-3D test (owner OK Nov 26):** one exception to rule 1 below, for the copper armor only; read
-     `docs/art/PICTURE-TO-3D-RULES.md` first. The owner decides afterwards whether rule 1 changes.
+  0. The picture-to-3D armour test (Nov 26–27) is over: the owner OK'd the hand-built copy, so rule 1 stays as it is.
   1. No Play-Doh: every model is built in Blender by script: hand-built, or a free CC0 pack model reshaped and
      repainted to our style (never picture-to-3D as the final model).
   2. No shimmer: no two surfaces in the same place (join them or keep 1 cm apart).

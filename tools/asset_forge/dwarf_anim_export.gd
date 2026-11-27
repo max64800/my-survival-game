@@ -59,7 +59,7 @@ func _init() -> void:
 	holder.add_child(rig)
 	rig.build(Color(0.6, 0.45, 0.3))
 	for a in OS.get_cmdline_user_args():
-		if a.begins_with("look="):  # (F914: plate / pic3d / old copper helmet + chest)
+		if a.begins_with("look="):  # (F914: plate / old copper helmet + chest)
 			DwarfRig.armor_look = a.trim_prefix("look=")
 	for a in OS.get_cmdline_user_args():
 		if a.begins_with("wear="):

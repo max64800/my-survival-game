@@ -195,9 +195,10 @@ def material(name, rgb, metal, rough, col_img=None, nrm_img=None, nrm=1.0):
 M_HAM = material("copper_hammered", (0.75, 0.38, 0.2), 0.72, 0.24, HAM_COL, HAM_NRM, 0.55)  # (round 14, owner: the picture
 # "definitely has a shine": smoother (rough 0.36 -> 0.24), shallower dents (normal 0.9 -> 0.55); metal 0.72 keeps the
 # copper colour: at 0.85 + rough 0.2 it mirrored the dark room and turned grey)
-TRIM = {"black": (0.035, 0.022, 0.015), "gold": (0.17, 0.085, 0.016)}[OPT.get("trim", "black")]  # (round 17: trim=black|gold,
-# the owner compares the two, both matte)
-M_POL = material("copper_trim_dark", TRIM, 0.35, 0.8)  # (the raised borders, edges and bands; round 16,
+TRIM, TRIM_MET, TRIM_ROUGH = {"black": ((0.035, 0.022, 0.015), 0.35, 0.8),
+	"gold": ((0.5, 0.33, 0.06), 0.6, 0.5)}[OPT.get("trim", "black")]  # (round 17: trim=black|gold for the page;
+# owner picked black. Gold round 2: (0.17, 0.085, 0.016) fully matte was "too brown", so yellower with a soft sheen)
+M_POL = material("copper_trim_dark", TRIM, TRIM_MET, TRIM_ROUGH)  # (the raised borders, edges and bands; round 16,
 # owner: "make them darker, not as shiny, matte, maybe even black": near-black matte; was rubbed-bright copper)
 # (round 6 had (0.86, 0.47, 0.27), metal 0.9: in the game it mirrored the grey room and showed silver; the picture's are copper)
 M_RIV = material("copper_rivet", (0.7, 0.3, 0.13), 0.72, 0.2)
