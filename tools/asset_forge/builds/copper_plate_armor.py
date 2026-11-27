@@ -195,7 +195,9 @@ def material(name, rgb, metal, rough, col_img=None, nrm_img=None, nrm=1.0):
 M_HAM = material("copper_hammered", (0.75, 0.38, 0.2), 0.72, 0.24, HAM_COL, HAM_NRM, 0.55)  # (round 14, owner: the picture
 # "definitely has a shine": smoother (rough 0.36 -> 0.24), shallower dents (normal 0.9 -> 0.55); metal 0.72 keeps the
 # copper colour: at 0.85 + rough 0.2 it mirrored the dark room and turned grey)
-M_POL = material("copper_trim_dark", (0.035, 0.022, 0.015), 0.35, 0.8)  # (the raised borders, edges and bands; round 16,
+TRIM = {"black": (0.035, 0.022, 0.015), "gold": (0.17, 0.085, 0.016)}[OPT.get("trim", "black")]  # (round 17: trim=black|gold,
+# the owner compares the two, both matte)
+M_POL = material("copper_trim_dark", TRIM, 0.35, 0.8)  # (the raised borders, edges and bands; round 16,
 # owner: "make them darker, not as shiny, matte, maybe even black": near-black matte; was rubbed-bright copper)
 # (round 6 had (0.86, 0.47, 0.27), metal 0.9: in the game it mirrored the grey room and showed silver; the picture's are copper)
 M_RIV = material("copper_rivet", (0.7, 0.3, 0.13), 0.72, 0.2)
@@ -782,9 +784,8 @@ UVH = np.vstack([UVH, [[0, H["top"] / TILE]]])
 add("helm", PTS, F, UVH, MI)
 orient_sheets("helm", lambda c: np.array([0, SC[1], min(c[2], SC[2])]))
 M_SLIT = material("helm_slit_dark", (0.012, 0.008, 0.006), 0.0, 0.9)
-M_FACE = material("copper_face_polished", (0.8 * DARK, 0.33 * DARK, 0.14 * DARK), 0.72, 0.18)  # (round 16: the
-# face frame and cheek guards stay bright copper, so the dark eye slits show; the bands and edges went dark)
-HM = make("armor_head_plate", "helm", [M_HAM, M_FACE, M_SLIT], thick=0.005, bevel=0.0013)
+# (round 17, owner: the face frame and cheek guards get the edges' matte colour too; round 16 kept them bright copper)
+HM = make("armor_head_plate", "helm", [M_HAM, M_POL, M_SLIT], thick=0.005, bevel=0.0013)
 HBV = BVHTree.FromObject(HM, bpy.context.evaluated_depsgraph_get())
 log("helmet shell", len(HM.data.polygons))
 
