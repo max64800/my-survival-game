@@ -14898,3 +14898,10 @@ under the armpits, eye holes too deep, odd hair at the back, and braids that sta
 - Publishing: removing the old picture-model files from the page was refused because Claude had not read them this chat. They were left in place (the page no longer loads them); they get removed when the set is approved.
 
 **Checks:** the hand-built armour fit test passes.
+
+
+## 2026-11-27 18:45 — Commit slip: other chats' journal drafts (F914 chat)
+
+- Mistake: after merging the journal, Claude ran `git add journal-inbox` (the whole folder). That also committed five unfinished journal drafts from other chats, and they were pushed.
+- Fix: un-tracked them again with `git rm --cached` (the files stay on disk for their own chats) and pushed. None of them had personal paths in them.
+- Lesson: after merge_inbox, add only `JOURNAL.md` and your own inbox file by name, never the whole folder.
