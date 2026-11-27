@@ -15079,3 +15079,43 @@ related to F417 (9 FPS), or just other chats' Blender/Godot runs on the same PC.
 - F931 ("E to pick up" redesign, needs the owner's pick).
 - Install the round 12 sound picks.
 - Opus/design items: F924, F927, F928, F929, F940, F417.
+
+
+## Nov 27 — Bronze armour round 4: horns, knot crest, back panels, shoulder dent (F914)
+
+**What we did**
+- The owner liked round 3 ("nice"). They asked for small horns on the helmet and for the dark smudge on the shoulders to go. They also wanted the empty spaces on the back and on top of the helmet filled.
+- Owner's picks (multiple choice):
+  - short curved horns;
+  - raised knot frames beside the back medallion;
+  - a knot crest plus a front badge on the helmet;
+  - also fix copper's shoulder dent.
+- Built in `tools/asset_forge/builds/copper_plate_armor.py` (bronze only, except the dent fix):
+  - **Horns** (`horn()`, new mesh `armor_head_horn`): a curved tube from the upper side of the dome, out and up, about 12 cm long.
+    - Chunky, not perfectly round: a small wobble, plus growth ridges after the base.
+    - The base is sunk 9 mm into the shell, and a raised knot ring sits where it leaves the dome.
+  - **Knot crest + badge:** the plain strip over the top keeps its plate and gets a raised knot strip (2 mm higher than the others). A knot medallion sits on its front end, just above the brow band. Bronze drops the crest's row of big rivets; copper keeps it.
+  - **Back panels** (`knot_panel()` + `diamond()`): a rounded tall knot frame on each side of the back medallion, with a 3-step diamond inside. The steps take turns: green, bronze, green.
+    - Relief pieces can now have a colour per face, and use 4 materials: knot, medal, hammered, dark trim.
+  - **Shoulder dent:** the caps' skin weights are blended over 7 cm. The beard press skips the caps and the arm plates (the `NOPRESS` list) and fades out at the sides.
+- Copper was rebuilt with the dent fix only (nothing else changes for copper: every new part is behind `ENGRAVE`).
+- Checks:
+  - fit test passed;
+  - front, back and helmet close-up shots look right;
+  - the copper shoulder is smooth.
+- Page updated to v32.
+
+**Mistakes and hurdles**
+- **I misread the shoulder smudge twice.**
+  - First guess: the beard press. But the caps weren't pressed at all.
+  - Second try: limiting the press at the sides. That didn't help.
+  - The real cause: points at the cap's lower front followed the upper-arm bone, so the cap bent in when the arm moved.
+- **Finding the right blend size took 3 tries:**
+  - 3.5 cm still left the dent;
+  - 12 cm made the arm plates' rivets poke through;
+  - 7 cm worked.
+- **A crash on the first run:** a name was used before it existed (`NOPRESS` was defined after `plate()` used it). Moved it up.
+- **I wrote a test copper model into `assets/` by mistake.** Deleted it. Test outputs go to the scratchpad.
+- **The page needed three uploads:** each upload is capped at 64 MB, and copper changed too.
+- The page upload was refused once: the server wanted me to look at the old copper files first. Listing the page's files counted as looking.
+- A cleanup command was blocked by a safety check. The file path came from a shell variable that could have been empty. I rewrote it so it stops if the variable is empty.
