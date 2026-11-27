@@ -295,7 +295,11 @@ func _process(delta: float) -> void:
 				if done[2] and storage:
 					left = AutoSmelt.store(st, storage, done[0], left)  # self-running furnaces fill a chest
 				if left > 0:
-					spawn_drop(done[0], left, st.global_position + Vector3.UP * 1.2)
+					# F932 (owner, Nov 27: "I came back and got nothing"): it waits, still, on top of the station
+					# instead of bouncing off somewhere you can't see it.
+					var id := _next_drop_id
+					_next_drop_id += 1
+					_ev_spawn_drop.rpc(id, done[0], left, ready_spot(st), Vector3.ZERO)
 			if feed_now and storage and st.kind in AutoSmelt.KINDS:
 				AutoSmelt.feed(st, storage)
 			if st.tick_water(delta):
@@ -2995,6 +2999,11 @@ func _host_remove_glow(spot: Dictionary, mined := true) -> void:
 	_start_regrow(spot)
 	var k: Dictionary = GlowPlacer.KINDS[spot.kind]
 	spawn_drop(k.item, k.count[0], spot.pos + spot.normal * 0.5)
+
+
+## Where a finished slow job (leather, ingots, a stew) waits: lying on top of the station that made it.
+static func ready_spot(st: Station) -> Vector3:
+	return st.global_position + Vector3.UP * (Station.size_of(st.kind).y + 0.15)
 
 
 func spawn_drop(item_id: String, count: int, pos: Vector3) -> void:

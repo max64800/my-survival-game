@@ -972,3 +972,23 @@ func _floor_y(p: Vector3, y: float) -> float:
 	while h > y - 3.0 and world.sdf_smooth(Vector3(p.x, h, p.z)) > 0.0:
 		h -= 0.05
 	return h
+
+
+## F932 (owner, Nov 27): wing leather went into the Tanning Rack, it started, and nothing came out.
+func test_tanning_rack_gives_leather() -> void:
+	await _setup(42)
+	auth._ev_place_station(8, "tanning_rack", player.global_position + Vector3(1.5, 0, 0), 0.0)
+	ps.seen["wing_leather"] = true
+	ps.inventory.add("wing_leather", 4)
+	check(auth.request_craft(1, "leather_from_wing", 8), "tanning started")
+	check_eq(ps.inventory.count_of("wing_leather"), 2, "2 wing leather went in")
+	var st: Station = auth.stations[8]
+	check_eq(st.jobs.size(), 1, "one job waiting")
+	st.jobs[0].left = 0.05
+	await tree.create_timer(0.3).timeout
+	var made := auth._drops.values().filter(func(d): return d.item_id == "leather")
+	check_eq(made.size(), 1, "leather came out")
+	if made.size() == 1:
+		check(made[0].freeze, "it lies still instead of bouncing away")
+		check(made[0].global_position.distance_to(GameAuthority.ready_spot(st)) < 0.05, "it waits on top of the rack")
+	_teardown()

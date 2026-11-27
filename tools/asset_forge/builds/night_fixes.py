@@ -122,20 +122,35 @@ def tanning_rack():
 	bpy.context.view_layer.update()
 	o.data.transform(o.matrix_world)
 	o.matrix_world.identity()
-	# lacing: from the hide edge out to the frame, every few hand-widths
+	# lacing (F932, F82 said 3x): every rope starts ON the hide, just inside its real edge, and ends in a frame log.
 	def at(t):
 		return y0 + lean * t, Hh * t
-	for k in range(5):
-		t = 0.18 + k * 0.16
+	hw, hh = Wd * 0.75, Hh * 0.66
+	slant = math.hypot(lean, Hh)
+	outline = kit.hide_outline(hw, hh, seed=5)
+
+	def on_hide(i, inset=0.035):
+		x, z = outline[i % len(outline)]
+		d = math.hypot(x, z)
+		x, z = x * (d - inset) / d, z * (d - inset) / d
+		t = 0.5 + z / slant  # how far up the frame this point sits
 		yy, zz = at(t)
-		for s_ in (-1, 1):
-			log((s_ * Wd / 2, yy, zz), (s_ * Wd * 0.34, yy, zz), 0.011, kit.tex_mat("rope"), seg=5, rings=1, ends=False, bend=0)
-	for k in range(4):
-		x = -Wd * 0.27 + k * Wd * 0.18
-		for (t0, t1) in ((0.08, 0.2), (0.92, 0.8)):
-			y_a, z_a = at(t0)
-			y_b, z_b = at(t1)
-			log((x, y_a, z_a), (x, y_b, z_b), 0.011, kit.tex_mat("rope"), seg=5, rings=1, ends=False, bend=0)
+		return (x, yy, zz), t
+	n = len(outline)
+	for i in (n - 3, n - 1, 1, 3):  # right side, between the leg flaps (5 lie at 0/360, flaps at 45)
+		for mirror in (False, True):
+			j = (n // 2 - i) % n if mirror else i  # the same spot on the left side
+			p, t = on_hide(j)
+			side = -1 if mirror else 1
+			log(p, (side * Wd / 2, p[1], p[2]), 0.011, kit.tex_mat("rope"), seg=5, rings=1, ends=False, bend=0)
+	for i in (n // 4 - 2, n // 4, n // 4 + 2, 3 * n // 4 - 2, 3 * n // 4, 3 * n // 4 + 2):  # top and bottom edges
+		p, t = on_hide(i)
+		yb, zb = at(0.92 if t > 0.5 else 0.08)
+		log(p, (p[0], yb, zb), 0.011, kit.tex_mat("rope"), seg=5, rings=1, ends=False, bend=0)
+	for i in (n // 8, 3 * n // 8, 5 * n // 8, 7 * n // 8):  # the four leg flaps pull out to the frame corners
+		p, t = on_hide(i, inset=0.03)
+		yc, zc = at(0.92 if t > 0.5 else 0.08)
+		log(p, (math.copysign(Wd / 2, p[0]), yc, zc), 0.011, kit.tex_mat("rope"), seg=5, rings=1, ends=False, bend=0)
 	sy, sz = at(0.62)
 	sx = Wd / 2 + 0.07
 	log((Wd / 2, sy, sz), (sx, sy, sz - 0.07), 0.01, kit.tex_mat("rope"), seg=5, rings=1, ends=False, bend=0)

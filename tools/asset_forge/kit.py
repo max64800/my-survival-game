@@ -445,17 +445,24 @@ def fire_spot(loc, size=1.0):
 	return o
 
 
-def hide(w, h, loc, material, thick=0.02, seed=3):
-	"""A stretched animal hide: an uneven outline with four leg flaps, flat and slightly wavy (XZ plane)."""
+def hide_outline(w, h, seed=3, n=40):
+	"""The real edge of a hide made by hide(w, h, seed=...): n (x, z) points round it, point i at angle 360*i/n degrees.
+	Tie ropes to these (F932: ropes aimed at w/2 stopped 5 cm short, the hide's edge is at about 0.8 * w/2)."""
 	r = random.Random(seed)
 	pts = []
-	n = 40
 	for i in range(n):
 		a = 2 * math.pi * i / n
 		k = 1.0 + 0.08 * math.sin(a * 3 + 1) + r.uniform(-0.04, 0.04)
 		for la in (math.pi / 4, 3 * math.pi / 4, 5 * math.pi / 4, 7 * math.pi / 4):
 			k += 0.28 * math.exp(-((math.atan2(math.sin(a - la), math.cos(a - la))) / 0.16) ** 2)
 		pts.append((math.cos(a) * w / 2 * k * 0.8, math.sin(a) * h / 2 * k * 0.8))
+	return pts
+
+
+def hide(w, h, loc, material, thick=0.02, seed=3):
+	"""A stretched animal hide: an uneven outline with four leg flaps, flat and slightly wavy (XZ plane)."""
+	n = 40
+	pts = hide_outline(w, h, seed, n)
 	verts, faces = [], []
 	for side in (-1, 1):
 		verts.append((loc[0], loc[1] + side * thick / 2, loc[2]))
