@@ -2487,6 +2487,15 @@ func _take_sip(ps: PlayerState, slot_i: int) -> void:
 
 
 ## Eating or drinking the item in one bag slot (the hotbar's right click, or a right click in the bag: owner F827).
+const RAW_HINT_GAP := 120.0  ## seconds between two "raw food only fills you up" hints
+var _raw_hint_at := {}  ## peer -> when they last got it
+
+
+## Raw food (a Glowcap, bat meat…) fills your belly but gives no buff: only cooked dishes do (F936).
+static func raw_food_hint(id: String) -> bool:
+	return Items.kind(id) == "food" and id != "bandage" and not Foods.is_buff_food(id) and not Foods.is_purge(id) 		and not Foods.is_drink(id) and int(Items.info(id).get("hunger", 0)) > 0
+
+
 func _eat(ps: PlayerState, peer_id: int, id: String, slot_i: int) -> String:
 	if id == "bandage":  # (owner, Nov 20: "you can just spam bandages": one every BANDAGE_COOLDOWN s)
 		if ps.boosts.has("bandage_cooldown") and ps.boosts.bandage_cooldown.until > now():
@@ -2508,6 +2517,9 @@ func _eat(ps: PlayerState, peer_id: int, id: String, slot_i: int) -> String:
 			ps.boosts.erase(m)  # the host's food fight boosts go too
 	elif Foods.is_buff_food(id):
 		ps.meals[id] = now() + Foods.minutes_of(id) * 60.0
+	elif raw_food_hint(id) and now() - float(_raw_hint_at.get(peer_id, -1e9)) > RAW_HINT_GAP:
+		_raw_hint_at[peer_id] = now()  # F936 (owner, Nov 27: "eating a Glowcap puts no buff on the right")
+		tell(peer_id, "Raw food only fills you up. Cook it at a campfire for a buff.")
 	if Foods.is_buff_food(id) and ps.progress.has_star("cooking", 100):
 		heal(peer_id, 10.0)  # Cooking ★100: your cooked food heals a little
 	if peer_id == local_peer_id():

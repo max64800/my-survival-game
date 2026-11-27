@@ -278,6 +278,25 @@ func test_eat_from_hotbar() -> void:
 	_teardown()
 
 
+## F936 (owner, Nov 27): a raw Glowcap gave no buff and nothing said why. Raw food only fills you; a line says to cook it.
+func test_raw_food_says_cook_it_for_a_buff() -> void:
+	check(GameAuthority.raw_food_hint("glowcap"), "a raw Glowcap gets the hint")
+	check(GameAuthority.raw_food_hint("bat_meat"), "raw bat meat gets the hint")
+	check(not GameAuthority.raw_food_hint("dish_glowcap_skewer"), "a cooked dish gives a buff, no hint")
+	check(not GameAuthority.raw_food_hint("bandage"), "a bandage is no meal")
+	check(not GameAuthority.raw_food_hint("waterskin_clean"), "water is no meal")
+	await _setup(42)
+	ps.inventory.add("glowcap", 2)
+	auth.request_select_slot(1, _slot_of("glowcap"))
+	ps.vitals.hunger = 20
+	check_eq(auth.request_use(1, Vector3.INF, Vector3.ZERO, 0.0), "ate", "ate the Glowcap")
+	check(auth._raw_hint_at.has(1), "the hint was given")
+	var first: float = auth._raw_hint_at[1]
+	auth.request_use(1, Vector3.INF, Vector3.ZERO, 0.0)
+	check_eq(auth._raw_hint_at[1], first, "not again right away")
+	_teardown()
+
+
 func test_waterskin_has_five_sips() -> void:
 	await _setup(42)
 	ps.inventory.add("waterskin_clean", 1)
