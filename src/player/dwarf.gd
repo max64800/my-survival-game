@@ -439,6 +439,7 @@ func _physics_process(delta: float) -> void:
 	floor_max_angle = deg_to_rad(STAIRS_FLOOR_ANGLE if _on_stairs else 52.0)
 	move_and_slide()
 	_on_stairs = on_steep_stairs(self)
+	_slide_off_small_things(delta)
 	_stepped_down = on_floor and not is_on_floor() and velocity.y <= 0.01 and not ladder and _try_step_down()
 	if shoved:  # (only for this step: added every frame and kept, it piled up and threw you 100 m, F234)
 		velocity.x -= _shove.x
@@ -806,6 +807,32 @@ func _on_swing_impact() -> void:
 	auth.ask_hit(hit.position, hit.normal)
 
 
+## F919 (owner, Nov 27: "you can walk on top of small things like the box that gives bolts... it doesn't look good"):
+## small loot boxes and crates are marked "small_thing". You bump into their sides, never step up onto them, and if
+## you jump on top you slide off.
+const SLIDE_OFF_SPEED := 3.5
+
+
+static func is_small_thing(o: Object) -> bool:
+	return o is Node and (o as Node).has_meta("small_thing")
+
+
+func _slide_off_small_things(_delta: float) -> void:
+	if not is_on_floor():
+		return
+	for i in get_slide_collision_count():
+		var c := get_slide_collision(i)
+		var o := c.get_collider()
+		if is_small_thing(o) and c.get_normal().y > 0.7:
+			var shape := c.get_collider_shape() as Node3D  # (the loot body sits at the world's middle; its box doesn't)
+			var away := global_position - (shape.global_position if shape else (o as Node3D).global_position)
+			away.y = 0.0
+			if away.length() < 0.05:
+				away = -model.global_transform.basis.z if model else Vector3.FORWARD
+			global_position += away.normalized() * SLIDE_OFF_SPEED * get_physics_process_delta_time()
+			return
+
+
 ## Walked into something low (a ledge, the edge of a dug hole)? If there's room
 ## above it and floor on top, hop up onto it, like climbing a stair.
 func _try_step_up(motion: Vector3) -> void:
@@ -823,6 +850,8 @@ func _try_step_up(motion: Vector3) -> void:
 		return  # nothing to stand on
 	if hit.get_normal().angle_to(Vector3.UP) > floor_max_angle:
 		return  # too steep to stand on
+	if is_small_thing(hit.get_collider()):
+		return  # F919: a crate is something you bump into, not a step
 	var y0 := global_position.y
 	global_position = ahead.origin + hit.get_travel()
 	_step_dy = clampf(_step_dy - (global_position.y - y0), -STEP_HEIGHT, 0.0)  # F781: the body pops up, the look glides

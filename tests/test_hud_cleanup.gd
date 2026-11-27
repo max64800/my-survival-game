@@ -63,3 +63,12 @@ func test_parry_is_a_spark_not_words() -> void:
 	check(sparks.size() >= 3, "a star of sparks (and two streaks)")
 	check(flash != null and flash.light_energy > 0.0, "a flash of light")
 	at.free()
+
+
+## F931 (owner, Nov 27): the "E to ..." prompt is a stone key cap + the thing's name + what E does, on a gold-edged plaque.
+func test_aim_prompt_is_key_cap_and_name() -> void:
+	check(Hud.aim_parts("Chest · E to open") == ["Chest", "Open", true], "a chest: name, action, key cap")
+	check(Hud.aim_parts("Door · E to close") == ["Door", "Close", true], "a door")
+	check(Hud.aim_parts("Your bed") == ["Your bed", "", false], "no key cap when E does nothing")
+	var src := FileAccess.get_file_as_string("res://src/ui/hud.gd")
+	check(src.contains('UiKit.style("tooltip"') and src.contains('"AimPrompt"'), "a dark wooden plaque with a gold edge")

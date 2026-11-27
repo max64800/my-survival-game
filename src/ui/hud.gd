@@ -19,7 +19,10 @@ signal pause_pressed(what: String)
 var peer_id := 1
 var seed_text := ""
 
-var _aim_label: Label
+var _aim_label: Label  ## F931: the name on the aim plaque
+var _aim_box: PanelContainer
+var _aim_key: PanelContainer
+var _aim_action: Label
 var _hotbar: HBoxContainer
 var _hotbar_home: Control  ## where the hotbar lives while playing (bottom of the screen)
 var _bag_panel: PanelContainer
@@ -132,11 +135,40 @@ func _build() -> void:
 	cross.add_theme_constant_override("outline_size", 4)
 	root.add_child(cross)
 
-	_aim_label = _label(root, 16)
-	_aim_label.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
-	_aim_label.position += Vector2(-100, 26)
-	_aim_label.custom_minimum_size = Vector2(200, 0)
-	_aim_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	# F931 (owner picked "key stone + name", Nov 27): a small stone key cap with "E", then the thing's name and
+	# what E does, on a dark wooden plaque with a gold edge like the menus. Sits just under the crosshair.
+	_aim_box = PanelContainer.new()
+	_aim_box.name = "AimPrompt"
+	_aim_box.add_theme_stylebox_override("panel", UiKit.style("tooltip", 8.0, 16.0))
+	_aim_box.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_aim_box.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP)
+	_aim_box.anchor_top = 0.5
+	_aim_box.anchor_bottom = 0.5
+	_aim_box.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	_aim_box.offset_top = 30.0
+	_aim_box.visible = false
+	root.add_child(_aim_box)
+	var aim_row := HBoxContainer.new()
+	aim_row.add_theme_constant_override("separation", 10)
+	aim_row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_aim_box.add_child(aim_row)
+	_aim_key = PanelContainer.new()
+	_aim_key.add_theme_stylebox_override("panel", UiKit.style("slot", 2.0, 9.0))
+	_aim_key.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_aim_key.custom_minimum_size = Vector2(34, 34)
+	aim_row.add_child(_aim_key)
+	var cap := UiKit.label(_aim_key, Controls.key_name("interact"), 17, UiKit.AMBER)
+	cap.add_theme_font_override("font", UiKit.heading_font())
+	cap.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	cap.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	var words := VBoxContainer.new()
+	words.add_theme_constant_override("separation", -2)
+	words.alignment = BoxContainer.ALIGNMENT_CENTER
+	words.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	aim_row.add_child(words)
+	_aim_label = UiKit.label(words, "", 16, UiKit.AMBER)
+	_aim_label.add_theme_font_override("font", UiKit.heading_font())
+	_aim_action = UiKit.label(words, "", 14, UiKit.TEXT)
 
 
 	# Crossbow reloading: a bar in the middle of the screen, under the crosshair (owner, Nov 20). Owner F573 (Nov 21):
@@ -492,6 +524,18 @@ func _build_gear_panel(root: Control) -> void:
 			_gear_names[i] = name_l
 	UiKit.divider(box)
 	_equip_title = UiKit.label(box, "", 16)
+
+
+## F931: "Chest · E to open" -> ["Chest", "Open", true]: the name, what the key does, and whether to show the key cap.
+static func aim_parts(nm: String) -> Array:
+	if not nm.contains("· "):
+		return [nm, "", false]
+	var name_part := nm.get_slice("· ", 0).strip_edges()
+	var rest := nm.substr(nm.find("· ") + 2).strip_edges()
+	if rest.begins_with("E to "):
+		rest = rest.substr(5)
+		return [name_part, rest.left(1).to_upper() + rest.substr(1), true]
+	return [name_part, rest, false]
 
 
 func _label(parent: Node, size: int) -> Label:
@@ -1411,10 +1455,15 @@ func _process(delta: float) -> void:
 		# No names or hit counts for what you're aiming at (owner F134: other games don't; you find out by
 		# digging it and reading it in your bag). Only what a key does: "E to open", "E to use"...
 		if info.is_empty() or info.kind in ["rock", "glow"]:
-			_aim_label.text = ""
+			_aim_box.visible = false
 		else:
-			var nm: String = info.name
-			_aim_label.text = nm.get_slice("· ", 1) if nm.contains("· ") else nm
+			var parts := aim_parts(info.name)
+			_aim_label.text = parts[0]
+			_aim_action.text = parts[1]
+			_aim_action.visible = parts[1] != ""
+			_aim_key.visible = parts[2]
+			_aim_box.visible = true
+			_aim_box.reset_size()
 	_fps_label.text = "%d FPS" % Engine.get_frames_per_second()
 	if build_mode and build_mode.active() and build_mode.blueprint:
 		_build_label.text = "Blueprint: %s (%s)\nQ turn · left click place (a blue build site) · right click or B: back to single pieces" % [build_mode.blueprint.name, BuildMenu._cost_text(build_mode.blueprint.cost())]

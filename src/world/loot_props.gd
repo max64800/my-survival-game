@@ -60,6 +60,7 @@ const RUIN_PLANS := {"tower": RuinTower.PLAN, "outpost": RuinOutpost.OUTPOST_PLA
 	"cliff_galleries": RuinCliffGalleries.PLAN_PATH}
 
 var auth: GameAuthority
+const SMALL_HEIGHT := 1.1  ## loot shorter than this is a "small thing" you can't stand on (F919)
 var props := {}          ## key -> {model, xform: Transform3D, label, node: StaticBody3D, inst: Node3D, looted: bool}
 var _root: Node3D
 var _check := 0.0
@@ -125,6 +126,8 @@ func place(key: String, model: String, xform: Transform3D, label := "") -> void:
 		whole = box if first else whole.merge(box)
 		first = false
 	DungeonBuild.add_boxes(body, model, xform, whole)
+	if (xform.basis * whole.size).abs().y < SMALL_HEIGHT:
+		body.set_meta("small_thing", true)  # F919: bump into it, don't stand on it (Dwarf.is_small_thing)
 	var id := model_id(model)
 	props[key] = {model = model, xform = xform, label = label if label != "" else String(NAMES.get(id, "Loot")), node = body,
 		inst = inst, looted = false}

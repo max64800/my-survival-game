@@ -263,3 +263,12 @@ func test_the_spyhole_is_see_through() -> void:
 	for p in [Vector3(0.35, 1.0, 0), Vector3(-0.35, 1.0, 0), Vector3(0, 0.5, 0), Vector3(0, 1.5, 0)]:
 		check(_ray(t, Vector3(p.x, p.y, 2), Vector3(p.x, p.y, -2)), "the wall at %s is solid" % p)
 	_teardown()
+
+
+## F919 (owner, Nov 27): you could walk on top of small things like the bolt crate.
+func test_small_loot_is_not_a_step() -> void:
+	_setup()
+	var lp := auth.loot_props
+	lp.place("d:test:9", "decor/rt_arrow_crate_spill.glb", Transform3D(Basis.IDENTITY, Vector3(2, 0, 0)))
+	check(Dwarf.is_small_thing(lp.props["d:test:9"].node), "the bolt crate is a small thing (bump, don't stand)")
+	check(not Dwarf.is_small_thing(null), "nothing isn't")
