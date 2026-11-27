@@ -324,6 +324,49 @@ def medallion(group, ray, sheet, c, rad, nr=30, na=100):
 	RELIEF.setdefault(group, []).append((P, UV, True, 1, pc))
 
 
+HORN_RING = (0.0115, 0.0275)  # (where the knot ring round a horn's base starts and ends, metres along it)
+
+
+def horn_tube(group, ctrl, side, r0, CL, ridge_from=0.036):
+	"""A horn along the cubic curve ctrl (4 points; the first sunk inside what it grows from): r0 thick at the base,
+	tapering to a point, a slight wobble (not perfectly round), growth ridges from ridge_from on, a raised knot ring
+	round the base (HORN_RING). Adds its centre line to CL (for the knot ring's outward side)."""
+	t = np.linspace(0, 1, 400)[:, None]
+	cur = sum(c_ * w_ for c_, w_ in zip(ctrl, ((1 - t) ** 3, 3 * (1 - t) ** 2 * t, 3 * (1 - t) * t ** 2, t ** 3)))
+	L_ = np.concatenate([[0.0], np.cumsum(np.linalg.norm(np.diff(cur, axis=0), axis=-1))])
+	S = np.unique(np.concatenate([np.linspace(0, L_[-1] - 0.002, 52), list(HORN_RING)]))
+	Cn = np.stack([np.interp(S, L_, cur[:, k]) for k in range(3)], -1)
+	T = np.gradient(Cn, axis=0)
+	T /= np.linalg.norm(T, axis=-1)[:, None]
+	u = np.array([0.0, 0.0, -1.0])  # (seam on the underside)
+	us = []
+	for k in range(len(S)):  # (parallel transport: no twist)
+		u = u - T[k] * np.dot(u, T[k])
+		u /= np.linalg.norm(u)
+		us.append(u)
+	U_ = np.array(us)
+	V_ = np.cross(T, U_)
+	NA = 20
+	a = np.linspace(0, 2 * np.pi, NA + 1)  # (last column repeats the first: the picture's seam)
+	f = S / S[-1]
+	base_r = r0 * (1 - f) ** 0.8 + 0.0028 * f
+	ridge = 0.045 * np.clip((S - ridge_from) / 0.015, 0, 1) * np.cos(2 * np.pi * S / 0.011) ** 2
+	wob = 1 + 0.035 * np.cos(3 * a + side) + 0.02 * np.cos(2 * a + 1.0)
+	R_ = base_r[:, None] * (1 + ridge[:, None]) * wob[None, :]
+	X = Cn[:, None] + R_[..., None] * (np.cos(a)[None, :, None] * U_[:, None] + np.sin(a)[None, :, None] * V_[:, None])
+	tip = Cn[-1] + T[-1] * 0.004
+	N1 = NA + 1
+	F = [(i * N1 + j, i * N1 + j + 1, (i + 1) * N1 + j + 1, (i + 1) * N1 + j) for i in range(len(S) - 1) for j in range(NA)]
+	ti = len(S) * N1
+	F += [((len(S) - 1) * N1 + j, (len(S) - 1) * N1 + j + 1, ti) for j in range(NA)]
+	UVh = np.stack(np.broadcast_arrays((a / (2 * np.pi) * 0.12 / TILE)[None, :], (S / TILE)[:, None]), -1).reshape(-1, 2)
+	add(group, np.vstack([X.reshape(-1, 3), [tip]]), F, np.vstack([UVh, [[0.06 / TILE, S[-1] / TILE]]]), [0] * len(F))
+	i0, i1 = list(S).index(HORN_RING[0]), list(S).index(HORN_RING[1])
+	rows = X[[i0, i1], :NA]
+	knot_strip(group, rows, rows - Cn[[i0, i1], None], [0.0, 1.0], True)
+	CL.append(Cn)
+
+
 DIA_STEP = 0.0017  # (each step of the stepped diamonds stands 1.7 mm over the one round it)
 
 
@@ -740,6 +783,7 @@ def neck_ray(S, V):
 band("chest_plate", neck_ray, 2 * math.pi, NECK[1], off=0.012, border=0.008, rivet_every=0.9, engrave=True)
 log("collar")
 # shoulders: a big cap over each shoulder, three lames down the upper arm (the upper always outside)
+SPIKE_V, SPIKE_CL, SPIKE_AT = 0.0, [], []  # (bronze: where on the cap the spike stands; its centre lines; its bases)
 for side in (1, -1):
 	S0 = np.array(ARM.matrix_world @ ARM.data.bones[f"upperarm_{'l' if side > 0 else 'r'}"].head_local)
 	a = math.radians(ANGLE)
@@ -770,9 +814,18 @@ for side in (1, -1):
 		o = np.stack([np.full_like(U, S0[0] - side * 0.03), S0[1] - U, np.full_like(U, S0[2] - 0.02)], -1)
 		return o, d
 
-	plate("chest_plate", cap_ray, 0.125, 0.1, target=ARMS, off=0.016, pexp=4, dome=0.018, rigid=True,  # (round 14: rounder;
+	CAP = plate("chest_plate", cap_ray, 0.125, 0.1, target=ARMS, off=0.016, pexp=4, dome=0.018, rigid=True,  # (round 14: rounder;
 		# a bigger cap (0.14 x 0.115) stood 9 cm off like a wing)
 		rivets=(25, 155, 205, 335, 90), nopress=True)
+	if ENGRAVE:  # (bronze round 5, owner: "add similar spikes on the shoulders, a little bit thicker": a horn from the
+		# cap's crown, out and curving up, 2.6 cm thick at the base (the helmet's are 1.9))
+		o_, d_ = cap_ray(np.zeros((1, 1)), np.full((1, 1), SPIKE_V))
+		n = d_[0, 0] / np.linalg.norm(d_[0, 0])
+		B = o_[0, 0] + n * lay(o_, d_, sheet_bvh(CAP), 0.0)[0, 0]
+		out = np.array([side, 0.0, 0.0])
+		ctrl = [B - 0.009 * n, B + 0.04 * n, B + 0.03 * n + 0.08 * out, B + 0.025 * n + 0.09 * out + np.array([0, 0, 0.075])]
+		horn_tube("chest_spike", ctrl, side, 0.026, SPIKE_CL)  # (out over the arm, then curling up like the helmet's)
+		SPIKE_AT.append(B)
 log("shoulders")
 
 # ---------------------------------------------------------------- beard over the plates: press the front back under it
@@ -960,6 +1013,12 @@ def torso_centre(c):
 orient_sheets("chest_plate", torso_centre)
 orient_sheets("chest_belt", torso_centre)
 CP = make("armor_chest_plate", "chest_plate", mats(M_HAM, M_POL), beard=True)
+CS = None
+if SPIKE_CL:
+	_scl = np.vstack(SPIKE_CL)
+	CS = make("armor_chest_spike", "chest_spike", [M_HAM, M_POL], thick=0,
+		outward=lambda c: c - _scl[np.argmin(np.linalg.norm(_scl - c, axis=1))])
+	log("shoulder spikes", len(CS.data.polygons))
 CB = make("armor_chest_belt", "chest_belt", [M_BELT, M_POL, M_BELT], thick=0.006, beard=True)
 CR = rivets("armor_chest_rivet", RIVETS.get("chest_plate", []) + RIVETS.get("chest_belt", []))
 co = verts(CR)[0]
@@ -1036,8 +1095,39 @@ def bind(o, nn=8, soft=0.01, blur=0.035):
 	o.data.update()
 
 
+CP_POSED = verts(CP)[0].copy()
 for o in (CP, CB, CR):
 	bind(o)
+
+
+def bind_like(o, src, src_posed, anchors):
+	"""Every point of o takes the finished bones of src's point nearest its anchor (the nearest of anchors), so o
+	moves as one stiff piece with that spot of src (the shoulder spikes with their cap)."""
+	skd = kdtree.KDTree(len(src_posed))
+	for k, q in enumerate(src_posed):
+		skd.insert(Vector(q), k)
+	skd.balance()
+	names = {g.index: g.name for g in src.vertex_groups}
+	pco = verts(o)[0]
+	rest = np.empty_like(pco)
+	groups = {}
+	A = np.asarray(anchors)
+	for i, p in enumerate(pco):
+		j = skd.find(Vector(A[np.argmin(np.linalg.norm(A - p, axis=1))]))[1]
+		M = Matrix(((0, 0, 0, 0),) * 4)
+		for g in src.data.vertices[j].groups:
+			b = names[g.group]
+			if b not in groups:
+				groups[b] = o.vertex_groups.new(name=b)
+			groups[b].add([i], g.weight, "REPLACE")
+			M = M + SKIN[b] * g.weight
+		rest[i] = np.array(M.inverted() @ Vector(p))
+	o.data.vertices.foreach_set("co", rest.ravel())
+	o.data.update()
+
+
+if CS is not None:
+	bind_like(CS, CP, CP_POSED, SPIKE_AT)
 log("chest bones copied")
 pose_arms(0)
 
@@ -1279,40 +1369,7 @@ def horn(side):
 	if n[0] * side < 0:
 		n = -n
 	ctrl = [B - 0.009 * n, B + 0.045 * n, B + np.array([side * 0.08, -0.012, 0.035]), B + np.array([side * 0.088, -0.022, 0.098])]
-	t = np.linspace(0, 1, 400)[:, None]
-	cur = sum(c_ * w_ for c_, w_ in zip(ctrl, ((1 - t) ** 3, 3 * (1 - t) ** 2 * t, 3 * (1 - t) * t ** 2, t ** 3)))
-	L_ = np.concatenate([[0.0], np.cumsum(np.linalg.norm(np.diff(cur, axis=0), axis=-1))])
-	S = np.unique(np.concatenate([np.linspace(0, L_[-1] - 0.002, 52), [0.0115, 0.0275]]))
-	Cn = np.stack([np.interp(S, L_, cur[:, k]) for k in range(3)], -1)
-	T = np.gradient(Cn, axis=0)
-	T /= np.linalg.norm(T, axis=-1)[:, None]
-	u = np.array([0.0, 0.0, -1.0])  # (seam on the underside)
-	us = []
-	for k in range(len(S)):  # (parallel transport: no twist)
-		u = u - T[k] * np.dot(u, T[k])
-		u /= np.linalg.norm(u)
-		us.append(u)
-	U_ = np.array(us)
-	V_ = np.cross(T, U_)
-	NA = 20
-	a = np.linspace(0, 2 * np.pi, NA + 1)  # (last column repeats the first: the picture's seam)
-	f = S / S[-1]
-	base_r = 0.019 * (1 - f) ** 0.8 + 0.0028 * f
-	ridge = 0.045 * np.clip((S - 0.036) / 0.015, 0, 1) * np.cos(2 * np.pi * S / 0.011) ** 2
-	wob = 1 + 0.035 * np.cos(3 * a + side) + 0.02 * np.cos(2 * a + 1.0)
-	R_ = base_r[:, None] * (1 + ridge[:, None]) * wob[None, :]
-	X = Cn[:, None] + R_[..., None] * (np.cos(a)[None, :, None] * U_[:, None] + np.sin(a)[None, :, None] * V_[:, None])
-	tip = Cn[-1] + T[-1] * 0.004
-	N1 = NA + 1
-	F = [(i * N1 + j, i * N1 + j + 1, (i + 1) * N1 + j + 1, (i + 1) * N1 + j) for i in range(len(S) - 1) for j in range(NA)]
-	ti = len(S) * N1
-	F += [((len(S) - 1) * N1 + j, (len(S) - 1) * N1 + j + 1, ti) for j in range(NA)]
-	UVh = np.stack(np.broadcast_arrays((a / (2 * np.pi) * 0.12 / TILE)[None, :], (S / TILE)[:, None]), -1).reshape(-1, 2)
-	add("helm_horn", np.vstack([X.reshape(-1, 3), [tip]]), F, np.vstack([UVh, [[0.06 / TILE, S[-1] / TILE]]]), [0] * len(F))
-	i0, i1 = list(S).index(0.0115), list(S).index(0.0275)
-	rows = X[[i0, i1], :NA]
-	knot_strip("helm_horn", rows, rows - Cn[[i0, i1], None], [0.0, 1.0], True)
-	HORN_CL.append(Cn)
+	horn_tube("helm_horn", ctrl, side, 0.019, HORN_CL)
 
 
 HN = None
@@ -1639,7 +1696,7 @@ for nm, push, keep in (("body_hand_l", 0.004, None), ("body_hand_r", 0.004, None
 GG = join(gl, "armor_chest_gauntlet_glove")
 log("gauntlets", [(o.name, len(o.data.polygons)) for o in (GP, GR, GG)])
 
-ALL = [o_ for o_ in (CP, CB, CR, LE, HM, HBD, HR, HN, HAIR, GP, GR, GG) if o_ is not None]
+ALL = [o_ for o_ in (CP, CS, CB, CR, LE, HM, HBD, HR, HN, HAIR, GP, GR, GG) if o_ is not None]
 for o in ALL:
 	o.parent = ARM
 	o.parent_type = "OBJECT"
