@@ -94,3 +94,18 @@ func test_round_6_and_7_sounds() -> void:
 		for a: Dictionary in m.get("attacks", []):
 			if a.get("warn_sound") != null:
 				check(Sfx._variants(a.warn_sound).size() >= 1, "%s: warning sound %s exists" % [a.name, a.warn_sound])
+
+
+## Owner, Nov 27: F925 a bat's bite rang like a sword ('ding'); F937 cooking sounded like repairing; F934 skill-ups were
+## too arcade-like. Sound round 12: beasts land with a body hit, the campfire sizzles, skill-ups are a small real sound.
+func test_bites_cooking_and_skill_ups_have_their_own_sounds() -> void:
+	for kind: String in ["cave_bat", "cave_spider", "rock_beetle"]:
+		var s := MonsterManager.you_hit_sound(kind, 6.0)
+		check(s != "hit" and s != "hit_heavy", "%s bites with a body hit, not a sword (%s)" % [kind, s])
+		check(Sfx.has(s), "%s: its bite sound exists" % kind)
+	check_eq(MonsterManager.you_hit_sound("lost_miner", 6.0), "hit", "an armed skeleton still lands a weapon hit")
+	check_eq(MonsterManager.you_hit_sound("ghost_lord", 20.0), "hit_heavy", "a big armed blow is heavy")
+	check(GameAuthority.craft_sound_name("campfire") != "craft" or not Sfx.has("cook"), "the campfire sizzles once 'cook' is in")
+	check_eq(GameAuthority.craft_sound_name("workbench"), "craft", "the workbench still hammers")
+	check(Sfx.has(GameAuthority.craft_sound_name("campfire")), "the campfire's sound exists")
+	check(Sfx.has(Sfx.pick("skill_up", "level_up")), "a skill-up has a sound")

@@ -43,6 +43,16 @@ static func play(name: String, at: Vector3, volume_db: float = 0.0, pitch: float
 	p.finished.connect(p.queue_free)
 
 
+## Is there a sound file by this name? (A new sound can be wired before its file is picked: play `fallback` until then.)
+static func has(name: String) -> bool:
+	return not _variants(name).is_empty()
+
+
+## The name if its sound exists, else the fallback (sound round 12: cook / bitten / skill_up).
+static func pick(name: String, fallback: String) -> String:
+	return name if has(name) else fallback
+
+
 ## A flat sound (menus, your own pickups).
 static func ui(name: String, volume_db: float = -4.0, pitch: float = 1.0) -> void:
 	var tree := Engine.get_main_loop() as SceneTree

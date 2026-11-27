@@ -87,7 +87,9 @@ static func icon(s: String) -> Texture2D:
 
 func _show_skill(p: Progression, s: String) -> void:
 	_skill = s
-	Sfx.ui("level_up", -4.0)  # treasure chest reveal (owner's pick, sound round 10, Nov 26)
+	# F934 (owner, Nov 27: "way too arcade-like"): a skill going up plays a small, quiet real sound; only the big
+	# Level-up keeps the treasure chest reveal (round 10).
+	Sfx.ui(Sfx.pick("skill_up", "level_up"), -6.0)
 	_name.text = "%s %d!" % [Progression.SKILL_INFO[s][0], p.skill_level[s]]
 	_pic.texture = icon(s)
 	_pic.visible = _pic.texture != null

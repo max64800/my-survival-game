@@ -1169,7 +1169,7 @@ func _judge_incoming() -> void:
 		match result.result:
 			"parry": _parry_feel(m, dwarf)
 			"block": Sfx.ui("block_thud", -4.0)  # a normal block: a dull thud (F870); a perfect parry rings
-			"hit": Sfx.ui("hit_heavy" if result.damage >= 15 else "hit", -2.0)
+			"hit": Sfx.ui(you_hit_sound(m.kind if m else "", result.damage), -2.0)
 		defended.emit(result)
 		if result.result == "parry":
 			ask_parried(hit.uid, result.stun)
@@ -1497,6 +1497,19 @@ static func hurt_sound(kind: String) -> String:
 
 
 ## F854 (owner, Nov 25: "the mace makes a sword sound"): blunt weapons land with a dull knock and crunch.
+## Creatures that bite, claw or ram you with their own body (no weapon in hand).
+const BEASTS := ["cave_bat", "rock_beetle", "great_rock_beetle", "cave_spider", "rock_snail"]
+
+
+## The sound when a creature's blow lands on YOU. F925 (owner, Nov 27: "getting hit by a bat sounds like a 'ding'"):
+## the old "hit" is a sword landing, so a bite rang like metal. Beasts now land with a soft body hit
+## ("bitten", sound round 12; the mace's dull knock until it is picked); armed creatures keep the weapon sounds.
+static func you_hit_sound(kind: String, damage: float) -> String:
+	if kind in BEASTS:
+		return Sfx.pick("bitten", "hit_blunt")
+	return "hit_heavy" if damage >= 15 else "hit"
+
+
 func hit_sound(peer: int, heavy: bool) -> String:
 	var ps: GameAuthority.PlayerState = auth.get_player(peer) if auth and peer != 0 else null
 	var w := Combat.weapon_of(ps.selected_item()) if ps else ""

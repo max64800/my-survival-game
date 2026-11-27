@@ -2722,13 +2722,19 @@ var _craft_sfx_at := -10.0
 var _craft_sfx_extra := 0
 
 
-func _craft_sound() -> void:
+## F937 (owner, Nov 27: "cooking at a campfire sounds like fixing something"): the campfire sizzles instead.
+static func craft_sound_name(station: String) -> String:
+	return Sfx.pick("cook", "craft") if station == "campfire" else "craft"
+
+
+func _craft_sound(station: String = "") -> void:
+	var sound := craft_sound_name(station)
 	var delay := craft_sound_delay(Time.get_ticks_msec() / 1000.0)
 	if delay == 0.0:
-		Sfx.ui("craft", 0.0)
+		Sfx.ui(sound, 0.0)
 	elif delay > 0.0 and is_inside_tree():
 		var vol := -4.0 - 2.0 * _craft_sfx_extra
-		get_tree().create_timer(delay).timeout.connect(Sfx.ui.bind("craft", vol, randf_range(0.86, 1.1)))
+		get_tree().create_timer(delay).timeout.connect(Sfx.ui.bind(sound, vol, randf_range(0.86, 1.1)))
 
 
 ## When this craft's sound plays: 0 = now, > 0 = that many seconds later, -1 = not at all (the batch already rang).
@@ -2808,7 +2814,7 @@ func request_craft(peer_id: int, recipe_id: String, station_id: int = 0) -> bool
 			spawn_drop(back, left, _chest(ps))
 	var skill := "cooking" if r.station == "campfire" else "crafting"
 	if peer_id == local_peer_id():
-		_craft_sound()
+		_craft_sound(r.station)
 	if Items.stack_size(r.output) == 1 and (peer_id == local_peer_id() or multiplayer.get_peers().has(peer_id)):
 		# F561 (owner, Nov 21: "I crafted a wooden shield without the resources"): say what it took from the bag.
 		var used := []
