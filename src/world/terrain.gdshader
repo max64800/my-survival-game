@@ -244,7 +244,7 @@ void fragment() {
 		int id = clamp(int(ids[k] + 0.5), 0, 15);
 		vec4 a;
 		vec3 n;
-		float slice = float((id == 14 ? 1 : (id == 7 ? 2 : id)) * LOOKS) + look;  // old dwarf stone: the stone look, darker (below); 7 the path: dirt
+		float slice = float((id == 14 ? 1 : (id == 7 ? 2 : id)) * LOOKS) + look;  // old dwarf stone: the stone look, darker (below); 7 the road: dirt under its sand
 		triplanar(slice, p, bw, wn, a, n);
 		if (look_mix > 0.01) {  // only where two looks meet: read the next look too
 			vec4 a2;
@@ -257,35 +257,21 @@ void fragment() {
 			a.rgb *= vec3(0.62, 0.6, 0.6);
 		}
 		if (id == 7) {
-			// The old road (F900, owner Nov 25: "a grey brick road that leads to each place", was dirt): grey bricks
-			// laid in rows (each row half a brick on), worn round at the edges, each its own shade, with dark earth in
-			// the joints and here and there a brick gone. The stone look gives each brick its grain. On the floor
-			// only (the sides of a bump stay earth).
-			vec4 sa;
-			vec3 sn;
-			triplanar(float(LOOKS) + look, p, bw, wn, sa, sn);
-			const vec2 BRICK = vec2(0.6, 0.3);
-			vec2 q = v_world.xz / BRICK;
-			float row = floor(q.y);
-			q.x += mod(row, 2.0) * 0.5;
-			vec2 cb = vec2(floor(q.x), row);
-			vec2 f = fract(q);
-			vec2 e = min(f, 1.0 - f) * BRICK;  // metres to the brick's edges
-			float edge = min(e.x, e.y) - vnoise(v_world * 7.0) * 0.025;  // (uneven, worn edges)
-			float hb = hash(vec3(cb, 3.7));
-			float gone = step(0.94, hash(vec3(cb, 9.1)));
-			float brick = smoothstep(0.012, 0.03, edge) * (1.0 - gone);
-			vec3 grey = vec3(dot(sa.rgb, vec3(0.3, 0.4, 0.3))) * vec3(0.95, 0.98, 1.06) * mix(1.0, 1.4, hb);
-			grey = mix(grey, grey * vec3(1.06, 1.0, 0.9), step(0.82, hash(vec3(cb, 5.3))));  // a few warmer ones
-			vec3 joint = a.rgb * 0.3;
+			// The old road (F940, owner Nov 27: "a sand road", was grey bricks F900, dirt before that): packed pale sand
+			// over the earth, fine grain, faint wind ripples and a few dark pebbles, a little darker where feet wore it
+			// down the middle. On the floor only (the sides of a bump stay earth).
+			float grain = vnoise(v_world * 9.0) * 0.6 + vnoise(v_world * 23.0) * 0.4;
+			float ripple = sin(dot(v_world.xz, vec2(2.3, 1.1)) * 3.0 + vnoise(v_world * 1.3) * 5.0) * 0.5 + 0.5;
+			float blotch = vnoise(v_world * 0.6);
+			vec3 sand = mix(vec3(0.70, 0.60, 0.43), vec3(0.80, 0.70, 0.52), blotch);
+			sand *= mix(0.88, 1.06, grain) * mix(0.96, 1.03, ripple);
+			float pebble = step(0.86, vnoise(v_world * 6.0)) * step(0.5, hash(floor(v_world * 6.0)));
+			sand = mix(sand, sand * vec3(0.55, 0.52, 0.5), pebble);
 			float up = smoothstep(0.5, 0.8, wn.y);
-			a.rgb = mix(a.rgb, mix(joint, grey, brick), up);
-			// rounded worn edges: the normal tips away from the brick's middle near its edge
-			vec2 c = (f - 0.5) * BRICK;
-			vec2 away = abs(c.x) / BRICK.x > abs(c.y) / BRICK.y ? vec2(sign(c.x), 0.0) : vec2(0.0, sign(c.y));
-			float bevel = (1.0 - smoothstep(0.0, 0.07, edge)) * (1.0 - gone);
-			vec3 bn = normalize(mix(sn, wn, 0.5) + vec3(away.x, 0.0, away.y) * bevel * 0.9);
-			n = normalize(mix(n, bn, up));
+			a.rgb = mix(a.rgb, sand, up);
+			a.a = 0.0;
+			vec3 sn = normalize(wn + vec3(vnoise(v_world * 23.0) - 0.5, 0.0, vnoise(v_world * 23.0 + 7.0) - 0.5) * 0.25);
+			n = normalize(mix(n, sn, up));
 		}
 		col += a.rgb * ws[k];
 		emit += GLOW[id] * a.a * ws[k];

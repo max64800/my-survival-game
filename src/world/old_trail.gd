@@ -14,6 +14,9 @@ class_name OldTrail
 ## (CaveMaker.on_trail, the placement rule).
 
 const STEP := 1.5  ## metres between samples along the path
+const PULL_STOPS := 12  ## F940: a straight stretch may skip this many stops at most
+const PULL_LENGTH := 45.0  ## and be at most this long (metres, flat)
+const PULL_FLOOR := 2.0  ## the floor under a straight stretch may be this far off its straight line
 const SNAP := 3.5  ## tunnel ends this close (with open air between) count as one stop (ledges, ramps, side tunnels)
 const CLIMB := 3.0  ## each metre up or down costs as much as this many metres walked
 const DROP := 4.5  ## a sample whose floor is further below the tunnel's middle line than this is over a drop
@@ -155,23 +158,41 @@ static func plan(maker: CaveMaker) -> Dictionary:
 				back[v] = u
 				_push(heap, [c, v])
 	var used := {}  # Vector2i(a, b) roads on the path
+	var chains: Array = []  # each way as its stops, from the place back to where it meets the path (or the start)
 	for gi in goals.size():
 		var t := goal_stop[gi]
 		if t < 0 or cost[t] == INF:
 			continue
 		out.ends.append(goals[gi])
+		var chain := PackedInt32Array([t])
 		while back[t] >= 0:
 			var k := Vector2i(mini(t, back[t]), maxi(t, back[t]))
 			if used.has(k):
 				break  # the rest of the way back is already on the path
 			used[k] = true
 			t = back[t]
+			chain.append(t)
+		if chain.size() > 1:
+			chains.append(chain)
+	# F940 (owner, Nov 27: "it bends about"): each way is pulled tight like a string. From each stop it runs straight
+	# to the furthest later stop it can see through open air with steady floor below, so it no longer zig-zags from
+	# tunnel end to tunnel end (or into every cave's middle and out again). It still only bends where the cave does.
+	var roads: Array = []  # [stop a, stop b, across a cave's floor]
+	for chain: PackedInt32Array in chains:
+		var i := 0
+		while i < chain.size() - 1:
+			var j := mini(chain.size() - 1, i + PULL_STOPS)
+			while j > i + 1 and not _straight_ok(maker, pos[chain[i]], pos[chain[j]]):
+				j -= 1
+			var room := true
+			for m in range(i, j):
+				room = room and in_room.has(Vector2i(mini(chain[m], chain[m + 1]), maxi(chain[m], chain[m + 1])))
+			roads.append([chain[i], chain[j], room])
+			i = j
 	# 3. Down onto the floor, leaving out built ground, columns and drops.
-	var roads: Array = used.keys()
-	roads.sort()  # (the same order on every computer)
-	for k: Vector2i in roads:
-		var a: Vector3 = pos[k.x]
-		var b: Vector3 = pos[k.y]
+	for road: Array in roads:
+		var a: Vector3 = pos[road[0]]
+		var b: Vector3 = pos[road[1]]
 		var flat := Vector3(b.x - a.x, 0.0, b.z - a.z)
 		var n := maxi(1, ceili(flat.length() / STEP))
 		var dir := flat.normalized() if flat.length() > 0.1 else Vector3.FORWARD
@@ -181,7 +202,7 @@ static func plan(maker: CaveMaker) -> Dictionary:
 				continue  # the middle line runs in rock here (a pinched tunnel)
 			var fl := _floor(maker, l)
 			var fall := l.y - fl.y
-			if fall > DROP and not (fall < ROOM_DROP and in_room.has(k)) and not (fall < RUIN_DROP and maker.is_reserved(fl, 15.0)):
+			if fall > DROP and not (fall < ROOM_DROP and road[2]) and not (fall < RUIN_DROP and maker.is_reserved(fl, 15.0)):
 				continue
 			if maker.is_reserved(fl, 1.5) or maker._in_column(fl, 1.5) or maker.in_dungeon_stone(fl):
 				continue
@@ -190,6 +211,27 @@ static func plan(maker: CaveMaker) -> Dictionary:
 			out.points.append(fl)
 			out.along.append(dir)
 	return out
+
+
+## True when the road may run straight from a to b (two stops' middle lines): open air all the way (no rock between,
+## no stone column), no longer than PULL_LENGTH, and the floor below never more than PULL_FLOOR off the straight line
+## between the two ends' floors (no cutting across a pit, over a ledge or up a wall).
+static func _straight_ok(maker: CaveMaker, a: Vector3, b: Vector3) -> bool:
+	var d := b - a
+	if Vector2(d.x, d.z).length() > PULL_LENGTH:
+		return false
+	var fa := _floor(maker, a).y
+	var fb := _floor(maker, b).y
+	var n := maxi(2, ceili(d.length()))
+	for s in range(1, n):
+		var t := float(s) / n
+		var l := a.lerp(b, t)
+		if maker.sdf_at(l) <= 0.4:
+			return false
+		var fl := _floor(maker, l)
+		if absf(fl.y - lerpf(fa, fb, t)) > PULL_FLOOR or maker._in_column(fl, 1.0):
+			return false
+	return true
 
 
 ## The floor under l, like CaveMaker.find_floor (the first rock spot, here within 5 cm of the top) but quicker: down in

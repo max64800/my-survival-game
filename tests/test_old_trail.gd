@@ -133,3 +133,18 @@ func _path_near(m: CaveMaker, p: Vector3, d: float, h: float) -> bool:
 		if Vector2(q.x - p.x, q.z - p.z).length() < d and absf(q.y - p.y) < h:
 			return true
 	return false
+
+
+## F940 (owner, Nov 27: "it bends about"): the road is pulled tight, so it runs in long straight stretches.
+func test_road_runs_in_long_straight_stretches() -> void:
+	var was := CaveMaker.layout
+	for sd in [42, 7]:
+		var plan := OldTrail.plan(_maker(sd))
+		var runs := 1
+		for i in range(1, plan.along.size()):
+			if plan.along[i] != plan.along[i - 1]:
+				runs += 1
+		var metres: float = plan.points.size() * OldTrail.STEP / runs
+		print("TRAIL seed %d: %d straight stretches, %.1f m each on average" % [sd, runs, metres])
+		check(metres >= 12.0, "seed %d: straight stretches %.1f m long on average (12+)" % [sd, metres])
+	CaveMaker.use_layout(was)
