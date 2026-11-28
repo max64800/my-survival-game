@@ -382,6 +382,23 @@ func _keep_out(sw: Dictionary, sm: Vector3, delta: float) -> Vector3:
 ## came up through the path): up to where the rock ends, at most 5 m (the march would stop at once in rock, so
 ## "down from a point in rock" would have said the floor is right there).
 func _floor_under(p: Vector3) -> float:
+	# F337 (Nov 28): each look walks down through the cave shape (4-6 ms a frame with just 2 swarms near), but a swarm
+	# moves only ~7 cm between looks: the answer is kept per 1 m box (from its middle), so most looks cost nothing.
+	var key := Vector3i(p.floor())
+	var known = _floor_cache.get(key)
+	if known != null:
+		return known
+	if _floor_cache.size() > 50000:
+		_floor_cache.clear()
+	var y := _floor_under_now(Vector3(key) + Vector3(0.5, 0.5, 0.5))
+	_floor_cache[key] = y
+	return y
+
+
+var _floor_cache := {}  ## Vector3i (1 m box) -> the ground's height under its middle
+
+
+func _floor_under_now(p: Vector3) -> float:
 	if _maker.sdf_at(p) >= 0.05:
 		var fl := GlowPlacer._march(_maker, p, Vector3.DOWN, 14.0)
 		return fl.y if fl != Vector3.INF else -INF

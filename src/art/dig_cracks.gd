@@ -38,6 +38,12 @@ static func hit(parent: Node, point: Vector3, normal: Vector3, hits: int, needed
 	_current.visible = true
 
 
+## Draw the crack pictures now (while the loading screen shows), not on the first rock hit (F337: ~40 ms hiccup).
+static func warm_up() -> void:
+	if _textures.is_empty():
+		_make_textures()
+
+
 ## The rock broke (or the spot is gone): no more cracks.
 static func clear() -> void:
 	if _current and is_instance_valid(_current):

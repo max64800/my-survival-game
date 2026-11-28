@@ -1048,6 +1048,9 @@ func _process(delta: float) -> void:
 		Fx.burst(self, Vector3(0, -5000, 0), Color.GRAY, 16, 4.0)
 		FreezeWatch.time_part("dust warm-up", t)
 		t = Time.get_ticks_usec()
+		DigCracks.warm_up()  # F337: the crack pictures took ~40 ms on your first rock hit
+		FreezeWatch.time_part("crack pictures", t)
+		t = Time.get_ticks_usec()
 		dwarf.set_physics_process(true)
 		hud.set_loading(false)
 		FreezeWatch.time_part("hiding the loading screen", t)
