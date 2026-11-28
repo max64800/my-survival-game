@@ -35,7 +35,10 @@ const KINDS := {
 	# (braids: livelier again, owner Nov 17 evening: "the animation was a little bit better on the front beard before".
 	# Halfway back to the noon swing (bend 20, stiff 0.15): all the way stretched the beard by the middle braid up to
 	# 18x in mining (sheets); halfway measures the same as the tamer setting)
-	"braid": {"stiff": 0.17, "drag": 0.27, "radius": 0.04, "bend": 16.0, "air": 1.0},  # (radius: the thicker braids' half-depth + a gap)
+	# (F943, owner Nov 28: "when he's running it fully detaches; only the ends should flop": the braids now lie on the
+	# chest, the top half stays put (loose_from: free from half way down), and the drag works on the resting place, not
+	# the world (air 1 was a headwind that lifted the whole braid off his chest))
+	"braid": {"stiff": 0.17, "drag": 0.27, "radius": 0.04, "bend": 16.0, "air": 0.35, "loose_from": 0.45},  # (radius: the thicker braids' half-depth + a gap)
 	# (back hair: livelier again, owner Nov 17 evening: "it barely moves"; it lies on the shirt now, so it sways, no visor)
 	"back": {"stiff": 0.14, "drag": 0.24, "radius": 0.035, "bend": 11.0, "air": 0.0},  # (radius: the hair layer's half-thickness)
 	"cloth": {"stiff": 0.22, "drag": 0.3, "radius": 0.02, "bend": 14.0, "air": 0.35},  # (the shirt hem: a light sway and bounce, Nov 18)
@@ -83,7 +86,9 @@ func setup(chains: Dictionary, colliders: Array, head: int, head_rest: Transform
 		var hs: Array = heights.get(name, [])
 		var lies: Array = under.get(name, [])
 		# (the back hair and the clothes' springy strips both rest on the body and move with it, swaying a little)
-		var is_back := (name.begins_with("hair_back") or name.begins_with("cloth_")) and hs.size() == bones.size() 				and lies.size() == joints.size()
+		# (F943, owner Nov 28: the braids came off the chest when he ran; now they lie on the chest like the back hair on
+		# the back, and only their ends flop: see "loose")
+		var is_back := (name.begins_with("hair_back") or name.begins_with("cloth_") or name.begins_with("hair_braid")) 				and hs.size() == bones.size() and lies.size() == joints.size()
 		for i in joints.size():
 			var h: float = 0.0
 			if is_back:
@@ -97,8 +102,16 @@ func setup(chains: Dictionary, colliders: Array, head: int, head_rest: Transform
 		for i in bones.size():
 			var d: Vector3 = (joints[i + 1] - joints[i]).normalized()
 			along_y.append(((bind_rot[i] as Quaternion).inverse() * d).dot(Vector3.UP) > 0.98)
+		# how free each joint is to swing: 1 everywhere, but a braid's upper part stays on the chest (F943): free only from
+		# loose_from of the way down, growing to fully free at the tip
+		var loose := []
+		var from: float = float(kind.get("loose_from", 0.0))
+		for i in joints.size():
+			var f := float(i) / float(joints.size() - 1)
+			var x2 := clampf((f - from) / maxf(1.0 - from, 1e-3), 0.0, 1.0) if from > 0.0 else 1.0
+			loose.append(x2 * x2 * (3.0 - 2.0 * x2))
 		_chains.append({"name": name, "bones": bones, "joints": joints, "bind_rot": bind_rot, "kind": kind, "on_back": on_back,
-			"under": lies if is_back else [], "pinned": pinned, "along_y": along_y,
+			"under": lies if is_back else [], "pinned": pinned, "along_y": along_y, "loose": loose,
 			"p": [], "prev": [], "was": [], "ready": false})
 
 
@@ -203,14 +216,15 @@ func _step(sk: Skeleton3D, to_world: Transform3D, head_moved: Transform3D, head_
 			if above_rest.angle_to(above_now) > 1e-4:
 				ref = Quaternion(above_rest, above_now) * ref
 		var now: Vector3 = p[i]
-		var carried: Vector3 = (targets[i] - (was[i] as Vector3)) * still  # (how far its resting place moved this frame)
+		var lo: float = float((ch.loose as Array)[i])  # (1 = swings freely; 0 = stays where it rests, F943)
+		var carried: Vector3 = (targets[i] - (was[i] as Vector3)) * lerpf(1.0, still, lo)  # (how far its resting place moved this frame)
 		var next: Vector3 = now + carried + (now - (prev[i] as Vector3) - carried) * keep + Vector3.DOWN * GRAVITY * delta * delta
-		next = next.lerp((p[i - 1] as Vector3) + shape, pull)
+		next = next.lerp((p[i - 1] as Vector3) + shape, lerpf(0.85, pull, lo))
 		prev[i] = now
 		for _pass in 2:
 			var dir: Vector3 = next - (p[i - 1] as Vector3)
 			dir = dir.normalized() if dir.length() > 1e-6 else ref
-			var max_bend := deg_to_rad(float(kind.bend))
+			var max_bend := deg_to_rad(float(kind.bend) * lerpf(0.15, 1.0, lo))
 			if ref.angle_to(dir) > max_bend:
 				var axis := ref.cross(dir)
 				if axis.length() > 1e-6:

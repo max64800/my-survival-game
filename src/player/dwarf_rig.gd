@@ -26,6 +26,9 @@ var use_body := BODY_ON or "newdwarf" in OS.get_cmdline_user_args()
 ## With the hand-built body the head keeps only this much of each animation's neck and head turning: it sits right on
 ## the shoulders with a big beard on the chest, so a full human nod pushed the face into the chest (F183).
 const BODY_HEAD_FOLLOW := 0.35
+## How far the hand-built dwarf's chest and shoulders lean back on every move (F943, owner Nov 28: "he is slouching so much"),
+## degrees: DwarfProportions.set_stand_tall.
+const BODY_STAND_TALL := 10.0
 const BODY_ARM_GAP := 8.0  ## degrees the thick arms hang out from the body (F916, Nov 26; DwarfProportions.set_arm_gap)
 const LIBS := {"": "res://assets/characters/anims/UAL1.glb", "b": "res://assets/characters/anims/UAL2.glb"}
 const CROSSBOW_LIB := "res://assets/anim/crossbow_kaykit.res"  ## "c/": Aim, Shoot, Reload, Reload1H (KayKit, chat 17)
@@ -286,6 +289,7 @@ func build(tint: Color) -> void:
 	if use_body and ResourceLoader.exists(BODY):
 		prop.head_follow = BODY_HEAD_FOLLOW
 		prop.set_arm_gap(skeleton, BODY_ARM_GAP)
+		prop.set_stand_tall(skeleton, BODY_STAND_TALL, -0.6)
 		pass  # prop.no_skew(skeleton): off, it broke the arms (owner, Nov 17); see DwarfProportions.no_skew  # (the sword swing stretched his head flat: see there)
 	proportions = prop
 	# Weight (Nov 19, "heavy + chunky"): follow-through, waddle, breathing, landing squash. After the shaping,
@@ -607,7 +611,8 @@ func _hair_on_shirt(src: Node, built: Dictionary, model_to_skel: Transform3D) ->
 	var arm := ["clavicle", "upperarm", "lowerarm", "hand", "thumb", "index", "middle", "ring", "pinky"]
 	for chain: String in built:
 		var at_list: Array = built[chain]
-		if not (chain.begins_with("hair_back") or chain.begins_with("cloth_")) or at_list.size() < 2:
+		# (F943: the braids too: below the chin they lie on the chest, like the beard round them, not hang from the head)
+		if not (chain.begins_with("hair_back") or chain.begins_with("cloth_") or chain.begins_with("hair_braid")) or at_list.size() < 2:
 			continue
 		var spots := at_list.duplicate()
 		spots.append(at_list[-1] + (at_list[-1] - at_list[-2]))  # (the last bone's tip, as HairSwing places it)

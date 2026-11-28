@@ -320,8 +320,31 @@ if CLOTHES:  # (the clothes of round 3, kept for when they go on over the bare b
 # ---- hands (clay): a thick palm, three chunky fingers and a thumb (owner, F183: "3 chunky fingers plus a thumb, like a
 # cartoon turtle, is fine"), each finger along its bones (the third along the middle of the ring and little-finger bones,
 # so it bends with both), knuckles on the back of the hand
+def etube(cl, a, b, r0, r1, sv, sw):
+	"""A tube with an oval cross-section: sv times as wide up-down and sw times front-back (for an arm held out in the
+	rest pose, up-down is its width seen from the front once it hangs, front-back is its depth seen from the side)."""
+	a, b = np.array(a, np.float32), np.array(b, np.float32)
+	ba = b - a
+	pu, pv, pw = cl.U - a[0], cl.V - a[1], cl.W - a[2]
+	t = np.clip((pu * ba[0] + pv * ba[1] + pw * ba[2]) / float(ba @ ba), 0.0, 1.0)
+	r = r0 + (r1 - r0) * t
+	return (np.sqrt((pu - ba[0] * t) ** 2 + ((pv - ba[1] * t) / sv) ** 2 + ((pw - ba[2] * t) / sw) ** 2) - r) * min(sv, sw)
+
+
+WRIST_END = 0.045   # the forearm (torso clay) ends this far up from the wrist; its round end stays inside the stub
+WRIST_STUB = 0.085  # the hand's wrist piece runs this far up the forearm, a hair thinner there, so it fades into it
+
+
+def forearm_r(el, wr, at):
+	"""The forearm's round radius at a point between the elbow and the wrist (the torso's tube: 6 cm -> 3.9 cm)."""
+	t = min(max((at - el).length / max((wr - el).length, 1e-6), 0.0), 1.0)
+	return 0.06 + (0.039 - 0.06) * t
+
+
 for side in ("l", "r"):
 	wr = B(f"hand_{side}")
+	el_ = B(f"lowerarm_{side}")
+	stub = wr + (el_ - wr).normalized() * WRIST_STUB
 	chains = {f: [B(f"{f}_0{k}_{side}") for k in (1, 2, 3)] + [B(f"{f}_04_leaf_{side}")] for f in ("index", "middle", "ring", "pinky", "thumb")}
 	# two fat fingers and a thumb, like a cartoon turtle's (owner, Nov 18): one along the index and middle bones, one along
 	# the ring and little-finger bones, so each bends with both
@@ -331,7 +354,7 @@ for side in ("l", "r"):
 	# (Nov 21, F549, owner: "hands too big, very wide fingers"): slimmer fingers and palm, same length (fists still close
 	# round the tools); was spread 1.1, fingers 0.029, palm 0.032 thick and 0.03 past the knuckles
 	fingers = [[Vector((p.x, m.y + (p.y - m.y) * 1.05, p.z)) for p, m in zip(f, mids)] for f in fingers]  # (chunky fists)
-	pts = [p for c in chains.values() for p in c] + [wr] + [p for f in fingers for p in f]
+	pts = [p for c in chains.values() for p in c] + [wr, stub] + [p for f in fingers for p in f]
 	lo = Vector([min(p[i] for p in pts) - 0.06 for i in range(3)])
 	hi = Vector([max(p[i] for p in pts) + 0.06 for i in range(3)])
 	cl = clay((lo.x, lo.z, lo.y), (hi.x, hi.z, hi.y), 0.0025)
@@ -340,6 +363,15 @@ for side in ("l", "r"):
 	along = (mid - wr).length
 	cl.add(cl.ell(QV(wr.lerp(mid, 0.55)), (along * 0.57, 0.027, (knuck[1] - knuck[0]).length / 2 + 0.02)), 0.012)  # the palm (flatter: Nov 18)
 	cl.add(cl.ell(QV(wr.lerp(mid, 0.1)), (0.032, 0.026, 0.033)), 0.02)                                          # the wrist end
+	# (F943) the wrist: a piece of forearm in the hand's own skin, from inside the forearm (1.5 mm thinner than it, so the
+	# two surfaces meet at a shallow angle, like the ankle) down to a slim wrist, joined to the palm with a wide fillet
+	# (two pieces: up the forearm it grows from 1.5 mm inside to 1.5 mm over the forearm's round end, which it covers,
+	# then it narrows to the wrist)
+	we_ = wr + (el_ - wr).normalized() * WRIST_END
+	r_we = forearm_r(el_, wr, we_) + 0.0015
+	cl.add(etube(cl, QV(stub), QV(we_), forearm_r(el_, wr, stub) - 0.0015, r_we, 0.9, 1.05), 0.01)
+	cl.add(etube(cl, QV(we_), QV(wr), r_we, 0.036, 0.9, 1.05), 0.022)
+	cl.add(cl.ell(QV(wr + (el_ - wr).normalized() * 0.012 + Vector((0, 0.03, 0.0))), (0.012, 0.01, 0.011)), 0.008)  # the wrist bone's knob
 	for k, f in enumerate(fingers):
 		r0 = 0.022
 		f = [f[0].lerp(wr, 0.25)] + f[1:]  # (from inside the palm)
@@ -459,17 +491,6 @@ def groove(cl, pts, front, depth=0.003, width=0.01, n=2):
 	press(cl, [(on_surf(cl, *P[i], front), on_surf(cl, *P[i + 1], front), prof[i]) for i in range(m)], depth, width)
 
 
-def etube(cl, a, b, r0, r1, sv, sw):
-	"""A tube with an oval cross-section: sv times as wide up-down and sw times front-back (for an arm held out in the
-	rest pose, up-down is its width seen from the front once it hangs, front-back is its depth seen from the side)."""
-	a, b = np.array(a, np.float32), np.array(b, np.float32)
-	ba = b - a
-	pu, pv, pw = cl.U - a[0], cl.V - a[1], cl.W - a[2]
-	t = np.clip((pu * ba[0] + pv * ba[1] + pw * ba[2]) / float(ba @ ba), 0.0, 1.0)
-	r = r0 + (r1 - r0) * t
-	return (np.sqrt((pu - ba[0] * t) ** 2 + ((pv - ba[1] * t) / sv) ** 2 + ((pw - ba[2] * t) / sw) ** 2) - r) * min(sv, sw)
-
-
 # Sewn-on square patches over old holes (owner, Nov 18): (piece, x, height, front?, half-width, half-height, tilt (rad),
 # colour against the cloth). Raised ~3 mm with crisp edges; painted another shade with dashed stitches round the edge.
 # (owner, Nov 18: brown patches of different sizes round the shirt too, one on the chest where he drew it)
@@ -503,6 +524,9 @@ if not CLOTHES:
 	# Now the front runs nearly straight from the collar down to the stomach, so the chest is deep but has no underside.)
 	cl = clay((-0.72, 0.09, -0.36), (0.72, 1.0, 0.33))
 	cl.add(loft(cl, TORSO), 0.012)
+	# the neck's base (F943): a short, thick column from the chest up into the head's neck (dwarf_head: 7 cm round, from
+	# 0.88 m), wider at the bottom, so bare skin shows round the neck between the collar and the beard
+	cl.add(cl.tube(Q(0.0, 0.85, 0.025), Q(0.0, 0.97, 0.025), 0.088, 0.071), 0.045)
 	# (no stomach lump either: its round edge made a ball low on the front. The front is one flat slab, like a breastplate.)
 	for s in (-1, 1):
 		cl.add(cl.ell(Q(s * 0.088, 0.36, 0.11), (0.1, 0.098, 0.098)), 0.04)                # buttock (round, sticking out: Nov 18)
@@ -514,7 +538,10 @@ if not CLOTHES:
 		inward = -s
 		d, f_ = el - sh, wr - el
 		# the slope from the neck to the shoulder (trapezius) and the round shoulder muscle
-		cl.add(cl.tube(Q(s * 0.05, 0.925, 0.035), QV(sh + Vector((inward * 0.07, 0.04, 0.04))), 0.074, 0.08), 0.05)  # (F916: bigger)
+		# (F943, owner Nov 28: "fix his neck muscles, what is this?": it started by the neck at 0.925 m, so its round top
+		# stood up as a bump behind the neck, in the new neck hole. Now it starts lower and beside the neck, and a thick
+		# neck base flares into it: one smooth curve from the neck down to the shoulder)
+		cl.add(cl.tube(Q(s * 0.065, 0.885, 0.03), QV(sh + Vector((inward * 0.07, 0.04, 0.04))), 0.068, 0.08), 0.05)  # (F916: bigger)
 		cl.add(cl.ell(QV(sh + Vector((inward * 0.0, 0.016, 0.01))), (0.124, 0.116 * 0.8, 0.108 * 1.15)), 0.045)  # (owner: even bigger)  # (F916: big shoulders)  # (round; narrow from the front, deeper from the side: Nov 18)
 		# upper arm with the biceps in front and the triceps behind, the elbow
 		cl.add(etube(cl, QV(sh), QV(el), 0.086, 0.068, 0.9, 1.05), 0.025)  # (F916: thick strong arms)  # (owner Nov 18: 20% narrower from the front, 15% deeper from the side)
@@ -522,10 +549,11 @@ if not CLOTHES:
 		cl.add(cl.ell(QV(sh + d * 0.42 + Vector((0, 0.026, 0.0))), (0.09, 0.064 * 0.9, 0.064 * 1.05)), 0.025)
 		cl.add(cl.ell(QV(el + Vector((0, 0.012, 0))), (0.052, 0.058 * 0.9, 0.056 * 1.05)), 0.02)
 		# the forearm: thick by the elbow, tapering to a clear wrist (owner Nov 18: "the forearms are still too large")
-		cl.add(etube(cl, QV(el), QV(wr), 0.06, 0.039, 0.9, 1.05), 0.02)
+		# (F943, owner Nov 28: "make the transition to his wrist smoother": the forearm's round end stood thicker than the
+		# hand and left a step. Now it ends inside the hand's wrist piece, which carries on up the forearm: WRIST_STUB)
+		we = wr + (el - wr).normalized() * WRIST_END
+		cl.add(etube(cl, QV(el), QV(we), 0.06, forearm_r(el, wr, we), 0.9, 1.05), 0.02)
 		cl.add(cl.ell(QV(el + f_ * 0.3 + Vector((0, 0, 0.004))), (0.076, 0.056 * 0.9, 0.056 * 1.05)), 0.025)
-		cl.add(cl.ell(QV(wr), (0.024, 0.031, 0.036)), 0.015)
-		cl.add(cl.ell(QV(wr + Vector((0, 0.022, 0.0))), (0.012, 0.011, 0.011)), 0.006)  # the wrist bone's knob
 		# hip, thigh, knee and kneecap, shin and calf muscle
 		th, kn, an = B(f"thigh_{side}"), B(f"calf_{side}"), B(f"foot_{side}")
 		cl.add(cl.tube(QV(th + Vector((s * 0.012, 0, 0))), QV(kn + Vector((0, 0, 0.03))), 0.106, 0.066), 0.05)  # (F916: thick legs)  # (tapers into the knee)
@@ -598,10 +626,16 @@ if not CLOTHES:
 	off = 0.016 + 0.014 * np.clip((0.52 - up_) / 0.1, 0, 1)  # (F916: less flare, so the waist shows; was 0.026)
 	off = off + 0.002 * np.clip((np.abs(x_) - 0.22) / 0.05, 0, 1)
 	arms = np.maximum(x_ - sl["l"], sl["r"] - x_) if sl["l"] > 0 else np.maximum(x_ - sl["r"], sl["l"] - x_)
-	sc.D = np.maximum(np.maximum(shell_of(sc, off), hem - up_), np.maximum(arms, up_ - 0.915)).astype(np.float32)
+	# the neck hole (F943, owner Nov 28: "his shoulders near the neck are not covered by the t-shirt"): the shirt used to
+	# stop at one height (0.915 m), so the shoulder slopes rising to the neck stuck out bare. Now only an oval round the
+	# neck is cut out (> 0 = cut away), and the shirt runs up the shoulder slopes to it.
+	nb = (HC.y - sc.W) - 0.01  # (front/back from the neck's middle)
+	neck = np.minimum(0.09 * (1.0 - np.sqrt((x_ / 0.12) ** 2 + (nb / 0.105) ** 2)), up_ - 0.845)  # (a bit of neck skin shows)
+	sc.D = np.maximum(np.maximum(shell_of(sc, off), hem - up_), np.maximum(arms, np.maximum(neck, up_ - 1.0))).astype(np.float32)
 	sc.add(np.maximum(lip(sc, off, up_ - hem - 0.006, 0.009), arms), 0.005)                     # the hem
 	sc.add(np.maximum(lip(sc, off, arms + 0.004, 0.006), hem - up_), 0.004)                     # the sleeve ends (thin: Nov 18)
-	sc.add(np.maximum(lip(sc, off, up_ - 0.909, 0.009), arms), 0.005)                           # the collar
+	sc.add(np.maximum(lip(sc, off, neck + 0.006, 0.009), np.maximum(arms, up_ - 1.0)), 0.005)  # the collar, round the neck hole
+	del nb, neck
 	for pt in PATCHES:  # sewn-on patches: a raised square of cloth 3 mm over the shirt
 		if pt[0] == "shirt":
 			box = patch_box(x_, up_, (HC.y - sc.W) < 0, pt)
@@ -669,7 +703,10 @@ if not CLOTHES:
 		fc.add(fc.tube(Q(an.x, 0.085, an.y - 0.004), Q(an.x + out * 0.004, 0.04, an.y - 0.115), 0.034, 0.024), 0.03)  # instep
 		fc.add(fc.ell(Q(an.x + out * 0.006, 0.025, an.y - 0.112), (0.06, 0.025, 0.04)), 0.025)            # ball of the foot
 		for tx, tz, r in ((-0.021, -0.162, 0.027), (0.023, -0.152, 0.025)):  # two chunky toes, a bit like a lizard's (owner, Nov 18)
-			fc.add(fc.ell(Q(an.x + out * tx, 0.02, an.y + tz), (r * 0.9, r * 0.8, r * 1.45)), 0.004)
+			# (F943, owner Nov 28: "the transition to his toes smoother": they were stuck on with a 4 mm fillet, a sharp
+			# crease; now a wide one, and the split between the toes is cut back in at the front below)
+			fc.add(fc.ell(Q(an.x + out * tx, 0.02, an.y + tz), (r * 0.9, r * 0.8, r * 1.45)), 0.014)
+		fc.cut(fc.ell(Q(an.x + out * 0.001, 0.024, an.y - 0.19), (0.0035, 0.03, 0.045)), 0.005)          # between the toes
 		fc.cut(fc.ell(Q(an.x - out * 0.05, 0.0, an.y - 0.05), (0.026, 0.02, 0.05)), 0.012)               # the arch
 		fc.keep((0.0 - HC.z) - fc.V, 0.003)  # (the sole flat on the floor)
 		finish(fc.mesh(f"foot_{side}", skin, PARTS), 5000)
@@ -948,6 +985,49 @@ if torso_o is not None:
 				gg.add([v.index], w, "REPLACE")
 				names_s[gg.index] = gg.name
 		print("DWARF shirt hem on its springy strips:", len(CLOTH_CHAINS))
+	# (F943) the hand's wrist piece up the forearm bends exactly like the forearm skin it lies on (the torso point
+	# nearest each of its points), blended in over the first 2.5 cm above the wrist, so no gap opens when the hand turns
+	for o in meshes:
+		if not o.name.startswith("body_hand_"):
+			continue
+		side = o.name[len("body_hand_")]
+		wr, el_ = B(f"hand_{side}"), B(f"lowerarm_{side}")
+		up_arm = (el_ - wr).normalized()
+		names_h = {vg.index: vg.name for vg in o.vertex_groups}
+		n_copied = 0
+		# (and it shades like the forearm skin too: its facing is the nearest torso point's, blended in the same way, so
+		# no light-dark line shows where the two skins cross, Nov 28 render)
+		to_h = o.matrix_world.to_3x3().inverted()
+		t_rot = torso_o.matrix_world.to_3x3()
+		nors = []
+		for v in o.data.vertices:
+			p = o.matrix_world @ v.co
+			q = min(max((p - wr).dot(up_arm) / 0.025, 0.0), 1.0)
+			m = q * q * (3 - 2 * q)
+			nt = Vector((0.0, 0.0, 0.0))
+			for _c, i_, d_ in tkd.find_n(p, 8):  # (the nearest few, or the coarse torso's facings show as blotches)
+				nt += tv[i_].normal / max(d_, 0.002)
+			nt = to_h @ (t_rot @ nt.normalized())
+			nors.append(tuple(v.normal.lerp(nt, m).normalized()))
+		o.data.normals_split_custom_set_from_vertices(nors)
+		for v in o.data.vertices:
+			p = o.matrix_world @ v.co
+			q = min(max((p - wr).dot(up_arm) / 0.025, 0.0), 1.0)
+			m = q * q * (3 - 2 * q)
+			if m <= 0.0:
+				continue
+			ws = {names_h[g.group]: g.weight * (1 - m) for g in v.groups if g.weight > 0}
+			for g in tv[tkd.find(p)[1]].groups:
+				if g.weight > 0:
+					ws[tnames[g.group]] = ws.get(tnames[g.group], 0.0) + g.weight * m
+			for g in list(v.groups):
+				o.vertex_groups[names_h[g.group]].remove([v.index])
+			for n_, w in ws.items():
+				gg = o.vertex_groups.get(n_) or o.vertex_groups.new(name=n_)
+				gg.add([v.index], w, "REPLACE")
+				names_h[gg.index] = gg.name
+			n_copied += 1
+		print("DWARF wrist piece follows the forearm:", o.name, n_copied)
 # The head, hair and beard: the face and the top of the head ride on the Head bone. Lower down, the beard and the hair on
 # the back follow the shirt they lie on (its bones, copied from the nearest shirt point), blended in over 10 cm under the
 # chin. (Owner, F183: all on the head bone, the long beard swung through the belly when the head moved: the Head bone
@@ -1183,6 +1263,19 @@ if BODYREV:
 		scene.render.filepath = path
 		bpy.ops.render.render(write_still=True)
 		shots.append(path)
+	# close-ups (F943): the collar from above the shoulder, a wrist and a foot
+	wr_w = arm.matrix_world @ arm.pose.bones["hand_l"].head
+	ft_w = arm.matrix_world @ arm.pose.bones["foot_l"].head
+	for tag, aim, off, scale in (("neck", Vector((0, 0.0, 0.93)), Vector((1.4, -3.0, 2.4)), 0.5),
+			("wrist", wr_w, Vector((-1.0, -3.0, 0.4)), 0.26), ("foot", ft_w + Vector((0, -0.08, 0)), Vector((-1.6, -3.0, 1.6)), 0.3)):
+		cam.data.ortho_scale = scale
+		cam.location = aim + off
+		cam.rotation_euler = (aim - cam.location).to_track_quat("-Z", "Y").to_euler()
+		path = str(Path(BODYREV).with_name(Path(BODYREV).stem + f"_{tag}.png"))
+		scene.render.filepath = path
+		bpy.ops.render.render(write_still=True)
+		shots.append(path)
+	cam.data.ortho_scale = 1.32
 	print("BODY_REVIEW", shots)
 	if FAST and not FAST_GLB:
 		print("DWARF_FAST_DONE")

@@ -62,6 +62,12 @@ var _gap_frame := {}    ## bone -> its parent's rest frame (to tell how far down
 var _gap_down := Vector3.DOWN  ## "down" along the body, in skeleton space
 var arm_gap_on := true  ## off while both hands hold a great weapon (DwarfRig.set_motion); the gap eases in and out
 var _gap_amount := 1.0
+## Standing tall (F943, owner Nov 28: "he has his head forward and he is slouching so much, a little more straight"):
+## the chest and shoulders lean back on top of every move (set_stand_tall), the neck tips the face back down a little.
+var _tall := {}          ## bone -> the extra turn, in its parent's frame
+var _tall_anim := {}
+var _tall_written := {}
+var _tall_neck := Quaternion.IDENTITY  ## neck_01's counter-turn (in its parent's frame), folded into the head turn
 var _turn_anim := {}     ## bone -> the rotation the animation wrote
 var _turn_written := {}  ## bone -> the rotation we wrote (to tell if the animation wrote a new one)
 var _pos := {}    ## bone index -> new local position
@@ -228,6 +234,42 @@ func _rest_global(sk: Skeleton3D, i: int, changed: bool) -> Transform3D:
 	return t
 
 
+## Lean the chest (spine_02) and the shoulders (spine_03) back by `degrees` in all, on top of every move, and tip the
+## neck forward by `neck_share` of that, so the head comes back over the hips without looking up at the roof.
+func set_stand_tall(sk: Skeleton3D, degrees: float, neck_share: float) -> void:
+	var ul := sk.find_bone("upperarm_l")
+	var ur := sk.find_bone("upperarm_r")
+	var head := sk.find_bone("Head")
+	if mini(ul, mini(ur, head)) < 0:
+		return
+	var side := _rest_global(sk, ur, true).origin - _rest_global(sk, ul, true).origin
+	side.y = 0.0
+	side = side.normalized()
+	var head_at := _rest_global(sk, head, true).origin
+	for pair in [["spine_02", 0.45], ["spine_03", 0.55], ["neck_01", -neck_share]]:
+		var b := sk.find_bone(pair[0])
+		if b < 0:
+			continue
+		var at := _rest_global(sk, b, true).origin
+		var ang := deg_to_rad(degrees) * float(pair[1])
+		# turning which way takes the head backward (from the skeleton itself, never guessed)?
+		var fwd := Vector3.UP.cross(side)
+		var ball := sk.find_bone("ball_l")
+		var foot := sk.find_bone("foot_l")
+		if ball >= 0 and foot >= 0 and fwd.dot(_rest_global(sk, ball, true).origin - _rest_global(sk, foot, true).origin) < 0.0:
+			fwd = -fwd
+		var moved := (head_at - at).rotated(side, 0.1) - (head_at - at)
+		if moved.dot(-fwd) < 0.0:
+			ang = -ang
+		var parent := sk.get_bone_parent(b)
+		var pb := _rest_global(sk, parent, true).basis.orthonormalized() if parent >= 0 else Basis()
+		var q := Quaternion((pb.inverse() * side).normalized(), ang)
+		if pair[0] == "neck_01":
+			_tall_neck = q
+		else:
+			_tall[b] = q
+
+
 func _process_modification_with_delta(_delta: float) -> void:
 	var sk := get_skeleton()
 	if sk == null:
@@ -243,7 +285,15 @@ func _process_modification_with_delta(_delta: float) -> void:
 				_turn_anim[i] = now
 			var rest := sk.get_bone_rest(i).basis.get_rotation_quaternion()
 			_turn_written[i] = rest.slerp(_turn_anim[i], head_follow)
+			if i == _turners[0] and sk.get_bone_name(i) == "neck_01":
+				_turn_written[i] = (_tall_neck * _turn_written[i]).normalized()
 			sk.set_bone_pose_rotation(i, _turn_written[i])
+	for i in _tall:  # standing tall: like the arm gap, added to what the animation wrote, never twice
+		var now := sk.get_bone_pose_rotation(i)
+		if not (_tall_written.has(i) and now.is_equal_approx(_tall_written[i])):
+			_tall_anim[i] = now
+		_tall_written[i] = (_tall[i] * _tall_anim[i]).normalized()
+		sk.set_bone_pose_rotation(i, _tall_written[i])
 
 	_gap_amount = move_toward(_gap_amount, 1.0 if arm_gap_on else 0.0, _delta * 4.0)
 	for i in _gap:  # the arm gap: like the head turn, add it to what the animation wrote, never twice
