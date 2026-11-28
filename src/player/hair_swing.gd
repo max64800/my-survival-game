@@ -42,7 +42,8 @@ const KINDS := {
 	# freer from a fifth of the way down)
 	# (owner, Nov 28 evening, picture: the whole braid from the face down must sway, not only the ends: 70% free at the
 	# top, fully free at the tip)
-	"braid": {"stiff": 0.17, "drag": 0.27, "radius": 0.04, "bend": 16.0, "air": 0.35, "loose_from": 0.05, "loose_min": 0.7},  # (radius: the thicker braids' half-depth + a gap)
+	# (owner, Nov 28 night, picture: "the upper part of the beard is still not moving": 95% free at the top now)
+	"braid": {"stiff": 0.17, "drag": 0.27, "radius": 0.04, "bend": 16.0, "air": 0.35, "loose_from": 0.05, "loose_min": 0.95},  # (radius: the thicker braids' half-depth + a gap)
 	# (back hair: livelier again, owner Nov 17 evening: "it barely moves"; it lies on the shirt now, so it sways, no visor)
 	"back": {"stiff": 0.14, "drag": 0.24, "radius": 0.035, "bend": 11.0, "air": 0.0},  # (radius: the hair layer's half-thickness)
 	"cloth": {"stiff": 0.22, "drag": 0.3, "radius": 0.02, "bend": 14.0, "air": 0.35},  # (the shirt hem: a light sway and bounce, Nov 18)

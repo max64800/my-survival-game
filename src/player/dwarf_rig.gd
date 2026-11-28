@@ -395,7 +395,16 @@ func _wear_body(path: String) -> void:
 ## SKIN_COVER just outside them (along the skin's own outward direction). The arms past the sleeves, the neck and
 ## everything else stay. Done once (the cut skin is shared by every dwarf).
 const SKIN_COVER := 0.045  ## m
+## (F943, owner Nov 28 night: skin showed through the loose shirt round the waist when he ran: there the shirt hangs
+## further out, so on the belly and back the skin is left out up to SKIN_COVER_LOW under it; the neck and arms keep 4.5 cm)
+const SKIN_COVER_LOW := 0.08  ## m
+const SKIN_COVER_LOW_Y := 0.9  ## m: below this height (rest pose, arms out) the deeper cover counts...
+const SKIN_COVER_LOW_X := 0.28  ## m: ...and only this close to the middle (the arms stick out past it)
+## (F943: once the cut worked, you could see into the sleeves: the skin is kept this far in from the shirt's openings,
+## the sleeve ends, the collar and the hem; the shirt's outermost points mark them)
+const SKIN_KEEP_AT_OPENINGS := 0.07  ## m
 static var _cut_skin: Mesh
+static var _skin_cut_count := 0  ## (for the tests: how many skin triangles the shirt hides)
 func _hide_skin_under_shirt(src: Node) -> void:
 	var skin := src.find_child("body_torso*", true, false) as MeshInstance3D
 	var shirt := src.find_child("body_shirt", true, false) as MeshInstance3D
@@ -419,10 +428,18 @@ func _hide_skin_under_shirt(src: Node) -> void:
 	for sf in shirt.mesh.get_surface_count():
 		for v: Vector3 in shirt.mesh.surface_get_arrays(sf)[Mesh.ARRAY_VERTEX]:
 			var p := shirt_x * v
-			var k := Vector3i((p / SKIN_COVER).floor())
-			if not cells.has(k):
-				cells[k] = PackedVector3Array()
-			(cells[k] as PackedVector3Array).append(p)
+			var k := Vector3i((p / SKIN_COVER_LOW).floor())
+			# (F943: a packed array is copied when read out of a dictionary, so appending to it changed only the copy
+			# and every cell stayed empty: no skin was ever cut. Put it back after adding)
+			var cell: PackedVector3Array = cells.get(k, PackedVector3Array())
+			cell.append(p)
+			cells[k] = cell
+	var lo := Vector3.INF
+	var hi := -Vector3.INF
+	for cell: PackedVector3Array in cells.values():
+		for q in cell:
+			lo = lo.min(q)
+			hi = hi.max(q)
 	var out := ArrayMesh.new()
 	var cut := 0
 	for sf in skin.mesh.get_surface_count():
@@ -434,9 +451,11 @@ func _hide_skin_under_shirt(src: Node) -> void:
 		for i in verts.size():
 			var p := skin_x * verts[i]
 			var nrm := (skin_x.basis * normals[i]).normalized() if i < normals.size() else Vector3.ZERO
-			var k := Vector3i((p / SKIN_COVER).floor())
+			var k := Vector3i((p / SKIN_COVER_LOW).floor())
+			var reach := SKIN_COVER_LOW if p.y < SKIN_COVER_LOW_Y and absf(p.x) < SKIN_COVER_LOW_X else SKIN_COVER
 			var hit := false
-			for dx in [-1, 0, 1]:
+			var keep_open := absf(p.x) > hi.x - SKIN_KEEP_AT_OPENINGS 					or p.y > hi.y - SKIN_KEEP_AT_OPENINGS or p.y < lo.y + SKIN_KEEP_AT_OPENINGS
+			for dx in ([] if keep_open else [-1, 0, 1]):
 				for dy in [-1, 0, 1]:
 					for dz in [-1, 0, 1]:
 						var c: Variant = cells.get(k + Vector3i(dx, dy, dz))
@@ -444,7 +463,7 @@ func _hide_skin_under_shirt(src: Node) -> void:
 							continue
 						for q: Vector3 in c:
 							var d := q - p
-							if d.length() < SKIN_COVER and d.dot(nrm) > 0.5 * d.length():
+							if d.length() < reach and d.dot(nrm) > 0.5 * d.length():
 								hit = true
 								break
 						if hit:
@@ -476,6 +495,7 @@ func _hide_skin_under_shirt(src: Node) -> void:
 	_cut_skin = out
 	skin.mesh = out
 	print_verbose("dwarf: %d skin triangles under the shirt left out" % cut)
+	_skin_cut_count = cut
 
 
 ## Moves a mesh made around the dwarf's rest pose (the hand-built body, or armor made over it) onto our skeleton,

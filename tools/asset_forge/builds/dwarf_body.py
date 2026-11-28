@@ -334,6 +334,8 @@ def etube(cl, a, b, r0, r1, sv, sw):
 
 WRIST_END = 0.045   # the forearm (torso clay) ends this far up from the wrist; its round end stays inside the stub
 WRIST_STUB = 0.085  # the hand's wrist piece runs this far up the forearm, a hair thinner there, so it fades into it
+BRAID_BLEND = 0.05  # a braid hands over from the face to its swing bones over its top this far (F943: was 0.07, the top hardly moved)
+FINGER_LEN = 0.8    # how long the fingers are past the knuckle, of their bones' length (F943: was 1.0)
 
 
 def forearm_r(el, wr, at):
@@ -355,6 +357,8 @@ for side in ("l", "r"):
 	# (Nov 21, F549, owner: "hands too big, very wide fingers"): slimmer fingers and palm, same length (fists still close
 	# round the tools); was spread 1.1, fingers 0.029, palm 0.032 thick and 0.03 past the knuckles
 	fingers = [[Vector((p.x, m.y + (p.y - m.y) * 1.05, p.z)) for p, m in zip(f, mids)] for f in fingers]  # (chunky fists)
+	# (F943, owner Nov 28 evening: "too long fingers, make them shorter") each finger 20% shorter past its knuckle
+	fingers = [[f[0]] + [f[0] + (p - f[0]) * FINGER_LEN for p in f[1:]] for f in fingers]
 	pts = [p for c in chains.values() for p in c] + [wr, stub] + [p for f in fingers for p in f]
 	lo = Vector([min(p[i] for p in pts) - 0.06 for i in range(3)])
 	hi = Vector([max(p[i] for p in pts) + 0.06 for i in range(3)])
@@ -803,9 +807,11 @@ if not FAST:
 			tint = "tint"
 		hi.data.materials.clear()
 		hi.data.materials.append(dh.cs.paint_material(f"paint_{o.name}", base=pp["base"], dark=pp["dark"], light=pp["light"],
-			strokes=0.09 if cloth else 0.05, top_light=0.12, edge=0.25, key=0.28, seed=3, tint_attr=tint))
+			strokes=0.09 if cloth else 0.05, top_light=0.12, edge=0.25, key=0.28, seed=3, tint_attr=tint,
+			ao_local=True))  # (F943, owner Nov 28 night: black spots on the back: the shirt shaded the body and shorts under it
+			# almost black, which showed when the shirt moved; and the hair painted dark smudges on the shirt. Each part shades only itself now)
 		dh.cs.uv_only(o)
-		dh.cs.bake(hi, o, pp["size"], f"{o.name}_baked", ext=0.01)
+		dh.cs.bake(hi, o, pp["size"], f"{o.name}_baked", ext=pp.get("ext", 0.01))
 		bpy.data.objects.remove(hi, do_unlink=True)
 		print("DWARF painted", o.name, mname)
 if REVIEW:
@@ -1178,7 +1184,7 @@ for cname, (bd, joints, parent) in CHAINS.items():
 		if bd is not None:  # the whole braid (blended in over its top 7 cm: a 3 cm hand-over stretched 10x when swinging)
 			if braid_owner.get(vi) != cname:
 				continue
-			m = smooth01(s / 0.07) * (1.0 - smooth01((d - bd["reach"]) / (bd["reach"] * 0.6)))
+			m = smooth01(s / BRAID_BLEND) * (1.0 - smooth01((d - bd["reach"]) / (bd["reach"] * 0.6)))
 		else:  # the back hair: ALL of it behind the skull, from the crown's back down, goes with its nearest strand
 			v_, w_ = p.z - dh.C.z, dh.C.y - p.y
 			share = back_owner.get(vi, {}).get(cname, 0.0)

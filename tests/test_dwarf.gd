@@ -280,12 +280,22 @@ func test_braid_tufts_swing_when_moving() -> void:
 		if not (ch.under as Array).is_empty() and String(ch.get("name", "")).begins_with("hair_back"):
 			back = ch
 	check(not back.is_empty(), "the back hair lies on the shirt below the head (owner, Nov 17: 'a stiff visor')")
+	var braid: Dictionary = {}
+	for ch: Dictionary in swing._chains:
+		if String(ch.get("name", "")) == "hair_braid_m":
+			braid = ch
+	check(not braid.is_empty(), "the middle braid is a swing chain")
 	var lifted := 0.0
+	var upper := 0.0  # (how far the braid's upper third swings off its resting place)
 	for i in 30:  # dash forward, then stop
 		holder.position.z -= 0.12 if i < 15 else 0.0
 		await tree.process_frame
 		if not back.is_empty() and not (back.was as Array).is_empty():
 			lifted = maxf(lifted, ((back.p as Array)[-1] as Vector3).distance_to((back.was as Array)[-1]))
+		if not braid.is_empty() and not (braid.was as Array).is_empty():
+			upper = maxf(upper, ((braid.p as Array)[2] as Vector3).distance_to((braid.was as Array)[2]))
+	# (F943, owner Nov 28 evening, picture: "the upper part of the beard is still not moving")
+	check(upper > 0.01, "the braid's upper part swings too, not only the ends (%.1f cm)" % (upper * 100.0))
 	check(swing.biggest_swing > 3.0, "the hair swings when he moves (%.1f degrees)" % swing.biggest_swing)
 	# (its drag used to work against the world: running blew the ponytail out flat behind him like a headwind; it may
 	# sway several cm when he starts and stops: owner, Nov 17 evening, "it barely moves")
