@@ -105,7 +105,7 @@ Fixed items get ~~crossed out~~, never deleted, so we can see the whole history.
 
 **Nov 28 play test 2 (owner, while playing):**
 - [ ] **F956. Choose which bolts to shoot: holding R when the crossbow is already loaded opens a wheel of your bolt types.** *From: you (PC, Nov 28, play test 2). Said: 1×*
-- [ ] **F961. Some spiders and bats (the other creature types) have weird glowing butts, sometimes purple, sometimes red.** *From: you (PC, Nov 28, play test 2). Said: 1×*
+- [ ] **F961. Some spiders and bats (the other creature types) have weird glowing butts, sometimes purple, sometimes red.** *From: you (PC, Nov 28, play test 2). Said: 1×* 🛠 in progress (Nov 28 play test fixes, Nov 28)
 - [ ] **F962. Aiming high to shoot bats is very hard: the camera sits right in his shoulder or in the middle, and in a tall cave you can't aim high enough to hit bats near the ceiling.** (F927 was the aim-and-look-up fix, Nov 27: see Things that keep coming back.) *From: you (PC, Nov 28, play test 2). Said: 1×*
 - [ ] **F966. Copper and tin ore are hard to spot: change how they look.** Tin is somewhat OK, copper was never seen. *From: you (PC, Nov 28, play test 2). Said: 1×*
 - [ ] **F967. Bats and beetles lose track in the caves: bats bob up and down instead of attacking, beetles get stuck on a rock instead of going over it.** *From: you (PC, Nov 28, play test 2). Said: 1×*
