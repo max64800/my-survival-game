@@ -819,6 +819,47 @@ func test_dead_creature_turns_to_stone_and_is_mined() -> void:
 	_teardown()
 
 
+## F952 (owner, Nov 28): "I cannot mine snails that I've killed" (one of them could be mined, the others not).
+## Dead snails (one killed hiding in its shell) turn to stone, and a pickaxe aimed at each from every side finds it.
+func test_dead_snails_can_be_mined() -> void:
+	await _setup()
+	var ms: Array = []
+	for i in 3:
+		ms.append(_spawn("rock_snail", Vector3(-4.0 + 4.0 * i, 0, 3.0)))
+	for i in 5:
+		await tree.physics_frame
+	(ms[2] as Monster).shell_left = 5.0  # (this one dies hiding in its shell)
+	for m: Monster in ms:
+		auth.monsters._kill(m, 1)
+	for i in 480:
+		await tree.physics_frame
+	var space := player.get_world_3d().direct_space_state
+	check_eq(auth.monsters.statues.size(), 3, "3 snail statues")
+	for id: int in auth.monsters.statues.keys():
+		var body: Node3D = Statue.nodes.get(id)
+		check(is_instance_valid(body) and body.has_meta("statue"), "snail %d turned to stone" % id)
+		var at := Statue.where(id, auth.monsters.statues[id].pos)
+		var missed := []
+		for k in 8:
+			var dir := Vector3(cos(k * TAU / 8.0), 0, sin(k * TAU / 8.0))
+			var from := at + dir * 2.0 + Vector3.UP * 1.2  # (a dwarf looks down at it)
+			var q := PhysicsRayQueryParameters3D.create(from, at)  # (to its middle: the swing's aim stops at the first thing)
+			q.collision_mask = World.TERRAIN_LAYER | Monster.MONSTER_LAYER | Ragdoll.LAYER
+			var hit := space.intersect_ray(q)
+			if hit.is_empty() or Statue.id_of(hit.collider) != id:
+				missed.append([k, "nothing" if hit.is_empty() else str(hit.collider.name), at, body.global_position if is_instance_valid(body) else Vector3.INF])
+		check(missed.is_empty(), "snail %d: a pickaxe finds it from every side (missed %s)" % [id, missed])
+	# Its shell rolled 12 m down a slope from its foot (left where it died): standing at the shell still mines it.
+	var id0: int = auth.monsters.statues.keys()[0]
+	var shell: Node3D = Statue.nodes.get(id0)
+	check(not (shell.get_meta("left", []) as Array).is_empty(), "the snail's foot was left where it died")
+	shell.global_position += Vector3(12.0, 0, 0)
+	player.global_position = shell.global_position + Vector3(0, -0.5, 1.5)
+	check(Statue.where(id0, Vector3.ZERO).distance_to(shell.global_position) < 1.0, "the mining spot is the shell, not halfway to its foot")
+	check(auth.monsters.request_hit_statue(1, id0) != "too_far", "standing at the rolled-away shell, the pickaxe reaches it")
+	_teardown()
+
+
 ## F369 (owner, Nov 19): the first bat killed never turned to stone, but could still be mined. Shot off its high
 ## roost, it fell metres AFTER the stone began; the stone spreads from a start point, and that point stayed up in the
 ## air, so it never reached the body. Now the start point falls with it.

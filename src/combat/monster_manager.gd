@@ -1609,7 +1609,7 @@ func request_hit_statue(peer_id: int, id: int) -> String:
 		return "gone"
 	var at: Vector3 = Statue.where(id, st.pos + Vector3.UP * 0.4)  # where the stone body lies now (it fell after dying)
 	var chest: Vector3 = ps.node.global_position + Vector3.UP * 1.1
-	if chest.distance_to(at) > GameAuthority.REACH + STATUE_REACH:
+	if Statue.distance_to(id, chest, at) > GameAuthority.REACH + STATUE_REACH:  # (F952: to its nearest stone, not its middle)
 		return "too_far"
 	if Items.kind(ps.selected_item()) != "pickaxe":
 		auth._tell_feedback(peer_id, {state = "no_tool", point = at, why = "Stone! Use a pickaxe."})

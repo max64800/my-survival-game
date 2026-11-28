@@ -28,23 +28,23 @@ static func claim(corpse: Node3D, id: int) -> void:
 
 
 ## The body's meshes, with parts left lying beside it (the snail's foot).
-static func _meshes(corpse: Node3D) -> Array:
+static func _meshes(corpse: Node3D, with_left := true) -> Array:
 	var out: Array = corpse.find_children("*", "MeshInstance3D", true, false)
-	for f in corpse.get_meta("left", []):
+	for f in corpse.get_meta("left", []) if with_left else []:
 		if is_instance_valid(f):
 			out.append(f)
 	return out
 
 
 ## Its middle and size (world), from all its meshes.
-static func _bounds(corpse: Node3D) -> AABB:
+static func _bounds(corpse: Node3D, with_left := true) -> AABB:
 	if corpse.has_meta("bone_box"):
 		return corpse.get_meta("bone_box")  # (a pile of bones: where they really lie)
 	if not corpse.find_children("*", "Skeleton3D", true, false).is_empty():
 		return bone_box(corpse)
 	var box := AABB()
 	var first := true
-	for mi: MeshInstance3D in _meshes(corpse):
+	for mi: MeshInstance3D in _meshes(corpse, with_left):
 		var b := mi.global_transform * mi.get_aabb()
 		box = b if first else box.merge(b)
 		first = false
@@ -120,7 +120,25 @@ static func hit(id: int, hits: int, needed: int) -> void:
 ## air falls metres after dying: the mining sparks and the loot belong where it lies (owner, Nov 19).
 static func where(id: int, fallback: Vector3) -> Vector3:
 	var c: Node3D = nodes.get(id)
-	return _bounds(c).get_center() if is_instance_valid(c) and not _meshes(c).is_empty() else fallback
+	if not is_instance_valid(c) or _meshes(c).is_empty():
+		return fallback
+	# (the body itself, not the snail's foot left where it died: F952, its shell can roll far from it)
+	return _bounds(c, _meshes(c, false).is_empty()).get_center()
+
+
+## How far `p` is from the nearest bit of statue `id`'s stone (or from `fallback` if it isn't drawn here). F952 (owner,
+## Nov 28: "I cannot mine snails that I've killed"): the snail's foot stays where it died and its shell rolls away,
+## sometimes far down a slope, so the middle of both (where) could be out of reach while you stood at the shell.
+static func distance_to(id: int, p: Vector3, fallback: Vector3) -> float:
+	var c: Node3D = nodes.get(id)
+	if not is_instance_valid(c) or _meshes(c).is_empty():
+		return p.distance_to(fallback)
+	var best := INF
+	var boxes: Array = [_bounds(c)] if c.has_meta("bone_box") else _meshes(c).map(
+		func(mi: MeshInstance3D) -> AABB: return mi.global_transform * mi.get_aabb())
+	for b: AABB in boxes:
+		best = minf(best, p.distance_to(p.clamp(b.position, b.end)))
+	return best
 
 
 ## Gone: mined (it bursts into chunks) or left too long (it crumbles to dust and sinks).
