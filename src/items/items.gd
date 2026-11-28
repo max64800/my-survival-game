@@ -72,6 +72,8 @@ const DATA := {
 	"waterskin_empty": {name = "Waterskin (empty)", stack = 1, color = Color(0.5, 0.4, 0.3), short = "Ws", kind = "waterskin"},
 	"waterskin_dirty": {name = "Waterskin (pool water)", stack = 1, color = Color(0.45, 0.5, 0.35), short = "Ws", kind = "drink", thirst = 25, upset = 0.3, empties_to = "waterskin_empty"},
 	"waterskin_clean": {name = "Waterskin (clean)", stack = 1, color = Color(0.35, 0.6, 0.9), short = "Ws", kind = "drink", thirst = 35, sips = 5, empties_to = "waterskin_empty"},
+	# F963 (owner, Nov 28: "no drink you can craft at the start"): moss boiled in pool water at the campfire; you keep the skin
+	"waterskin_moss_tea": {name = "Waterskin (moss tea)", stack = 1, color = Color(0.45, 0.55, 0.3), short = "Mt", kind = "drink", thirst = 40, sips = 5, empties_to = "waterskin_empty"},
 	"water_bucket": {name = "Bucket of Clean Water", stack = 20, color = Color(0.3, 0.55, 0.95), short = "Wb", kind = "drink", thirst = 35},
 	# --- refined
 	"plank_root": {name = "Rootwood Plank", color = Color(0.65, 0.48, 0.3), short = "Pl"},

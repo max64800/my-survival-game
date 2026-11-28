@@ -2523,7 +2523,7 @@ func _eat(ps: PlayerState, peer_id: int, id: String, slot_i: int) -> String:
 	if not ps.meal_fits(id, now()):  # every slot of that sort is taken (owner F824)
 		tell(peer_id, ("You've had a drink already" if Foods.is_drink(id) else "You're full") + ": wait for one to wear off, or drink Gutweed Tea to empty your belly.")
 		return "full"
-	if id == "waterskin_clean" or id == "waterskin_dirty":
+	if id in ["waterskin_clean", "waterskin_dirty", "waterskin_moss_tea"]:
 		_take_sip(ps, slot_i)
 	elif not ps.inventory.remove(id, 1):
 		return ""

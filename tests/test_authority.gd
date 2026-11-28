@@ -309,6 +309,22 @@ func test_waterskin_has_five_sips() -> void:
 	_teardown()
 
 
+## F963 (owner, Nov 28): an easy first drink. Moss Tea is known from the start: 2 moss + a pool-water skin at the
+## campfire; 5 sips, and you keep the waterskin.
+func test_moss_tea_is_the_easy_first_drink() -> void:
+	await _setup(42)
+	check("moss_tea" in Recipes.for_station("campfire"), "made at the campfire")
+	check(Recipes.is_unlocked("moss_tea", {}, {}), "known from the start")
+	ps.inventory.add("waterskin_moss_tea", 1)
+	auth.request_select_slot(1, _slot_of("waterskin_moss_tea"))
+	for i in 5:
+		ps.vitals.thirst = 0
+		auth.request_use(1, Vector3.INF, Vector3.ZERO, 0.0)
+	check_eq(ps.inventory.count_of("waterskin_empty"), 1, "you keep the waterskin after 5 sips")
+	check_near(ps.vitals.thirst, 40.0, 0.01, "each sip +40")
+	_teardown()
+
+
 func test_craft_campfire_and_place_it() -> void:
 	await _setup(42)
 	ps.inventory.add("stone", 5)

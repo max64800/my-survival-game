@@ -185,6 +185,7 @@ const LIST := {
 	"boots_shell": {station = "armoury_bench", inputs = {shell_piece = 3, leather = 1}, output = "boots_shell", count = 1, unlock = ["shell_piece"]},
 	"dish_stalk_steak": {station = "campfire", inputs = {mushroom_flesh = 2}, output = "dish_stalk_steak", count = 1, seconds = 10, unlock = ["mushroom_flesh"]},
 	"dish_ember_skewer": {station = "campfire", inputs = {beetle_meat = 1, ember_morel = 2}, output = "dish_ember_skewer", count = 1, seconds = 10, unlock = ["ember_morel"]},
+	"moss_tea": {station = "campfire", inputs = {moss = 2, waterskin_dirty = 1}, output = "waterskin_moss_tea", count = 1, seconds = 10, unlock = []},  # F963: the easy first drink, known from the start
 	"boil_water": {station = "campfire", inputs = {waterskin_dirty = 1}, output = "waterskin_clean", count = 1, seconds = 10, unlock = ["waterskin_dirty"]},
 	# --- cooking pot (20 s)
 	"dish_tuber_mash": {station = "campfire", level = 2, inputs = {root_tuber = 3, water_bucket = 1}, output = "dish_tuber_mash", count = 1, seconds = 20, unlock = "ruin"},
