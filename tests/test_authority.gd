@@ -1076,3 +1076,33 @@ func test_read_a_page_from_a_chest() -> void:
 	chest.free()
 	me.free()
 	a.free()
+
+
+## F417 (Nov 28): digs waiting for far-away rock (from a save, or a friend's game) cost almost nothing each frame, and
+## when that rock loads they still happen in the order they were made (a dig, then a fill = solid again).
+func test_waiting_digs_are_cheap_and_keep_their_order() -> void:
+	await _setup(42)
+	var far := player.global_position + Vector3(120.0, 0.0, 0.0)
+	check(not world.is_ready_at(far), "that rock isn't loaded yet")
+	auth._queue_pending_dig(Vector4(far.x, far.y, far.z, GameAuthority.pack_dig(9, 1.5)))
+	auth._queue_pending_dig(Vector4(far.x, far.y, far.z, GameAuthority.pack_fill(Mat.STONE, 1.5)))
+	var other := player.global_position + Vector3(-120.0, 0.0, 40.0)
+	for i in 6000:  # a few big ruins' worth, further away still
+		var p := other + Vector3(randf() * 40.0, randf() * 15.0, randf() * 40.0)
+		auth._queue_pending_dig(Vector4(p.x, p.y, p.z, GameAuthority.pack_dig(9, 1.1)))
+	auth._apply_pending_digs()
+	check_eq(auth.pending_dig_count(), 6002, "they all wait")
+	await tree.process_frame
+	var t0 := Time.get_ticks_usec()
+	for k in 10:
+		auth._apply_pending_digs()
+	var ms := (Time.get_ticks_usec() - t0) / 10000.0
+	check(ms < 2.0, "waiting costs under 2 ms a frame (%.2f ms)" % ms)
+	player.global_position = far
+	for k in 600:
+		await tree.process_frame
+		if auth.pending_dig_count() <= 6000:
+			break
+	check_eq(auth.pending_dig_count(), 6000, "the 2 near ones went once their rock loaded")
+	check(world.sdf_at(far) < 0.0, "dig, then fill: the spot is solid again (%.2f)" % world.sdf_at(far))
+	_teardown()

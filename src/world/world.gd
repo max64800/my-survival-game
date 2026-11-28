@@ -205,6 +205,46 @@ func apply_dig(center: Vector3, radius: float, tool_tier: int = 0) -> Dictionary
 	return counts
 
 
+## F417 (Nov 28): many world-made digs at once (a ruin clearing one patch of rock): the rock is copied once, the balls
+## are cut by the voxel library's own fast code (each ball the same as apply_dig with tool tier 9), and pasted once,
+## so that patch rebuilds its shape once instead of once for every 30 balls. Rock no tool can dig (dwarf-made walls,
+## the world's edge) in there: ball by ball the slow way, so it stays.
+func apply_world_digs(centers: PackedVector3Array, radius: float) -> void:
+	if centers.is_empty():
+		return
+	var lo := Vector3i((centers[0] - Vector3.ONE * (radius + 1.0)).floor())
+	var hi := Vector3i((centers[0] + Vector3.ONE * (radius + 1.0)).ceil())
+	for c in centers:
+		lo = lo.min(Vector3i((c - Vector3.ONE * (radius + 1.0)).floor()))
+		hi = hi.max(Vector3i((c + Vector3.ONE * (radius + 1.0)).ceil()))
+	var size := hi - lo + Vector3i.ONE
+	if not _tool.is_area_editable(AABB(Vector3(lo), Vector3(size))):
+		for c in centers:
+			apply_dig(c, radius, 9)
+		return
+	var buf := VoxelBuffer.new()
+	buf.create(size.x, size.y, size.z)
+	buf.set_channel_depth(VoxelBuffer.CHANNEL_INDICES, VoxelBuffer.DEPTH_8_BIT)
+	var mask := (1 << VoxelBuffer.CHANNEL_SDF) | (1 << VoxelBuffer.CHANNEL_INDICES)
+	_tool.copy(lo, buf, mask)
+	var mats := buf.get_channel_as_byte_array(VoxelBuffer.CHANNEL_INDICES)
+	if mats.is_empty():  # (all one material: the library keeps just that one value)
+		mats.append(buf.get_voxel(0, 0, 0, VoxelBuffer.CHANNEL_INDICES))
+	for m in Mat.MIN_TIER:
+		if Mat.MIN_TIER[m] > 9 and mats.has(m):
+			for c in centers:
+				apply_dig(c, radius, 9)
+			return
+	var cut := buf.get_voxel_tool()
+	cut.channel = VoxelBuffer.CHANNEL_SDF
+	cut.mode = VoxelTool.MODE_REMOVE
+	for c in centers:
+		cut.do_sphere(c - Vector3(lo), radius)
+	_tool.paste(lo, buf, mask)
+	for c in centers:
+		changed.emit(c, radius)
+
+
 ## Turns these rock voxels into air (a cave-in). Border rock is left alone.
 ## Returns how many voxels of each material fell: {Mat.STONE: 40, ...}
 func remove_voxels(points: PackedVector3Array) -> Dictionary:

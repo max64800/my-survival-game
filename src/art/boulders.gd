@@ -234,6 +234,9 @@ func _make(i: int) -> void:
 
 ## Rock dug (or filled) near a boulder: once the new rock is solid, it settles again, so digging under one never leaves
 ## it floating (owner, Nov 19: "yes"). Every computer sees the same dig, so every computer drops it the same way.
+var _settle_asked := {}  ## rock -> when it was last asked to settle (F417)
+
+
 func _on_rock_changed(center: Vector3, radius: float) -> void:
 	for i in _rocks.size():
 		var r: Dictionary = _rocks[i]
@@ -242,6 +245,12 @@ func _on_rock_changed(center: Vector3, radius: float) -> void:
 		var reach := radius + 1.6 * float(r.scale)
 		if Vector2(r.pos.x - center.x, r.pos.z - center.z).length() > reach or center.y > (r.pos as Vector3).y + float(r.sink) + reach:
 			continue
+		# F417 (Nov 28): a ruin digs 1000+ balls in one frame: one set of settles is enough for all of them (it was 3
+		# timers per ball, 4000 settles at once a moment later)
+		var now := Time.get_ticks_msec()
+		if now - int(_settle_asked.get(i, -100000)) < 250:
+			continue
+		_settle_asked[i] = now
 		for wait in [0.3, 1.0, 2.5]:  # (the new rock's shape is ready a moment after the dig)
 			get_tree().create_timer(wait).timeout.connect(_settle.bind(i, 10.0))
 

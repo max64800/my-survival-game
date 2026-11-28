@@ -239,6 +239,9 @@ func _settle_column(cid: int, deeper := 0.0) -> void:
 
 
 ## Rock dug (or filled) near a column: once the new rock is solid it settles again, like the boulders.
+var _settle_asked := {}  ## rock -> when it was last asked to settle (F417)
+
+
 func _on_rock_changed(center: Vector3, radius: float) -> void:
 	for cid in _columns:
 		var c := column(cid)
@@ -248,6 +251,12 @@ func _on_rock_changed(center: Vector3, radius: float) -> void:
 		var reach := radius + float(c.width) * 1.5 + 1.0
 		if Vector2(p.x - center.x, p.z - center.z).length() > reach or center.y > p.y + reach:
 			continue
+		# F417 (Nov 28): a ruin digs 1000+ balls in one frame: one set of settles is enough for all of them (it was 3
+		# timers per ball, 4000 settles at once a moment later)
+		var now := Time.get_ticks_msec()
+		if now - int(_settle_asked.get(cid, -100000)) < 250:
+			continue
+		_settle_asked[cid] = now
 		for wait in [0.3, 1.0, 2.5]:  # (the new rock's shape is ready a moment after the dig)
 			get_tree().create_timer(wait).timeout.connect(_settle_column.bind(cid, 10.0))
 

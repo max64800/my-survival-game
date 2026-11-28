@@ -472,6 +472,9 @@ static func small_points(at: Vector3, trn: int) -> Array:
 	return out
 
 
+var _sorted: Array[String] = []  ## which carve lists are in patch order already
+
+
 func _process(delta: float) -> void:
 	if _state == "wait":
 		_check -= delta
@@ -488,12 +491,10 @@ func _process(delta: float) -> void:
 		var big := _state == "carve"
 		var list: Array = _carve if big else _small
 		var r := CARVE_RADIUS if big else SMALL_R
-		var n := 0
-		while not list.is_empty() and n < CARVES_PER_FRAME:
-			var c: Vector3 = list.pop_back()
-			if auth.world.sdf_at(c) < r:
-				auth._host_dig(c, 9, r, true)  # tier 9: any rock gives way (it's the world making room)
-				n += 1
+		if not _sorted.has(_state):  # one patch of rock a frame (F417)
+			sort_patches(list)
+			_sorted.append(_state)
+		carve_patch(auth, list, r)
 		if list.is_empty():
 			_state = "small" if big else "build"
 		return

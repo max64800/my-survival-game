@@ -69,7 +69,6 @@ const CRYSTAL_REGROW_TIME := 5400.0  ## 90 minutes (owner F406)
 var _drops: Dictionary = {}  ## drop_id -> Drop
 var _next_drop_id := 1
 var _drop_extra := {}  ## host: drop_id -> the whole slot a thrown item came from (wear, upgrades, gems), F825
-var _pending_digs: Array[Vector4] = []  ## digs waiting for that part of the cave to load
 var _fuel_sync := 0.0
 var _auto_timer := 0.0
 const REST_FOR_COZY := 5.0
@@ -2990,7 +2989,8 @@ func _host_dig(center: Vector3, tool_tier: int = 0, radius: float = DIG_RADIUS, 
 		for spot in glow.spots_near(center, maxf(DIG_RADIUS, radius) + 0.9):
 			_host_remove_glow(spot, not world_made)
 	var counts := world.apply_dig(center, radius, tool_tier)
-	Sfx.play("dig_break", center, -6.0)
+	if not world_made:  # (the world making room is quiet, F417)
+		Sfx.play("dig_break", center, -6.0)
 	if builder:
 		builder.reanchor_near(center, radius)
 		builder.queue_check(center, radius)
@@ -3037,39 +3037,167 @@ func _send_inventory(peer_id: int) -> void:
 		_rpc_inventory.rpc_id(peer_id, ps.inventory.to_data(), ps.selected_slot)
 
 
+## F417 (Nov 28): many world-made digs in one go (a ruin clearing one patch of rock), quietly: the rock rebuilds its
+## shape once for the whole patch. Saved and sent like normal digs (as one message).
+func host_world_digs(centers: PackedVector3Array, radius: float) -> void:
+	if centers.is_empty():
+		return
+	if glow:
+		for c in centers:
+			for spot in glow.spots_near(c, maxf(DIG_RADIUS, radius) + 0.9):
+				_host_remove_glow(spot, false)
+	world.apply_world_digs(centers, radius)
+	var edits := PackedVector4Array()
+	var box := AABB(centers[0], Vector3.ZERO)
+	for c in centers:
+		box = box.expand(c)
+		if builder:
+			builder.reanchor_near(c, radius)
+		var edit := Vector4(c.x, c.y, c.z, pack_dig(9, radius))
+		edit_log.append(edit)
+		edits.append(edit)
+	if builder:  # one strength check for the whole patch (one per ball queued hundreds)
+		builder.queue_check(box.get_center(), box.size.length() / 2.0 + radius)
+	_ev_world_digs.rpc(edits)
+
+
+@rpc("authority", "reliable")
+func _ev_world_digs(edits: PackedVector4Array) -> void:
+	for e in edits:
+		edit_log.append(e)
+		_queue_pending_dig(e)
+	_apply_pending_digs()
+
+
 # ================================================================== 3. EVERYONE UPDATES
 
 ## Dig event for the other players (the host already dug when it decided).
 @rpc("authority", "reliable")
 func _ev_dig(edit: Vector4) -> void:
-	Sfx.play("dig_break", Vector3(edit.x, edit.y, edit.z), -6.0)
+	if edit.w >= 0.0 and unpack_dig(edit.w).x < 9:  # (tier 9 = the world making room: quiet, F417)
+		Sfx.play("dig_break", Vector3(edit.x, edit.y, edit.z), -6.0)
 	edit_log.append(edit)
-	_pending_digs.append(edit)
+	_queue_pending_dig(edit)
 	_apply_pending_digs()
 
 
 func _apply_pending_digs() -> void:
-	if _pending_digs.is_empty() or world == null:
+	if world == null or (_wait_try.is_empty() and _wait_count == 0):
 		return
-	var still: Array[Vector4] = []
-	for e in _pending_digs:
-		var c := Vector3(e.x, e.y, e.z)
-		var tr := unpack_dig(absf(e.w))
-		# Digs alone could go in any order, but a fill and a dig in the same place can't: anything near an edit that is
-		# still waiting waits too, so they always happen in the order they were made.
-		var behind := false
-		for w in still:
-			if c.distance_to(Vector3(w.x, w.y, w.z)) < tr.y + unpack_dig(absf(w.w)).y + 1.0:
-				behind = true
-				break
-		if not behind and world.is_ready_at(c, tr.y + 1.0):
-			if e.w < 0.0:
-				world.apply_fill(c, tr.y, int(tr.x))
-			else:
-				world.apply_dig(c, tr.y, int(tr.x))
+	if not _wait_hooked and world.terrain:
+		_wait_hooked = true
+		world.terrain.block_loaded.connect(func(b: Vector3i) -> void: _wait_loaded.append(b))
+	if not _wait_loaded.is_empty():  # rock that just loaded: try the edits there again
+		var size := float(world.terrain.get_data_block_size())
+		var pad := Vector3.ONE * (_wait_reach + 1.0)
+		for b in _wait_loaded:
+			_wait_gather(Vector3(b) * size - pad, Vector3(b + Vector3i.ONE) * size + pad)
+		_wait_loaded.clear()
+	_wait_sweep_some()
+	while not _wait_try.is_empty():
+		var batch := _wait_try.values()
+		_wait_try.clear()
+		batch.sort_custom(func(x: Array, y: Array) -> bool: return x[0] < y[0])
+		for item in batch:
+			_wait_try_one(item[0], item[1])
+
+
+## F417 (Nov 28): digs waiting for their part of the cave to load (from the save, or sent by the host before this
+## player's cave was there) sit in 4 m boxes, and only the ones where something changed are tried again. Trying all of
+## them every frame, each against every other, took 0.25 s a frame with 2 far-away ruins waiting, 1.5 s with 4.
+const WAIT_BOX := 4.0
+var _wait := {}  ## box -> {order number: edit}
+var _wait_box_of := {}  ## order number -> its box
+var _wait_count := 0
+var _wait_next := 0  ## the next edit's order number
+var _wait_reach := 0.0  ## the biggest waiting ball
+var _wait_try := {}  ## order number -> [order number, edit] to try this frame
+var _wait_loaded: Array[Vector3i] = []  ## rock blocks the cave loaded since the last frame
+var _wait_hooked := false
+var _wait_sweep: Array = []  ## boxes the slow safety sweep still has to look at
+
+
+func _queue_pending_dig(edit: Vector4) -> void:
+	_wait_try[_wait_next] = [_wait_next, edit]
+	_wait_next += 1
+
+
+## Digs alone could go in any order, but a fill and a dig in the same place can't: an edit waits while an older one it
+## touches is still waiting, so they always happen in the order they were made.
+func _wait_try_one(order: int, e: Vector4) -> void:
+	var c := Vector3(e.x, e.y, e.z)
+	var tr := unpack_dig(absf(e.w))
+	if not _wait_older_touching(c, tr.y, order) and world.is_ready_at(c, tr.y + 1.0):
+		if _wait_box_of.has(order):
+			var key: Vector3i = _wait_box_of[order]
+			_wait[key].erase(order)
+			if _wait[key].is_empty():
+				_wait.erase(key)
+			_wait_box_of.erase(order)
+			_wait_count -= 1
+		if e.w < 0.0:
+			world.apply_fill(c, tr.y, int(tr.x))
 		else:
-			still.append(e)
-	_pending_digs = still
+			world.apply_dig(c, tr.y, int(tr.x))
+		# younger edits that were waiting behind this one may go now
+		var pad := Vector3.ONE * (tr.y + _wait_reach + 1.0)
+		_wait_gather(c - pad, c + pad, order)
+	elif not _wait_box_of.has(order):
+		var key := Vector3i((c / WAIT_BOX).floor())
+		if not _wait.has(key):
+			_wait[key] = {}
+		_wait[key][order] = e
+		_wait_box_of[order] = key
+		_wait_count += 1
+		_wait_reach = maxf(_wait_reach, tr.y)
+
+
+## True if an older waiting edit touches the ball at `c` (radius `r`).
+func _wait_older_touching(c: Vector3, r: float, order: int) -> bool:
+	var span := Vector3.ONE * (r + _wait_reach + 1.0)
+	var lo := Vector3i(((c - span) / WAIT_BOX).floor())
+	var hi := Vector3i(((c + span) / WAIT_BOX).floor())
+	for x in range(lo.x, hi.x + 1):
+		for y in range(lo.y, hi.y + 1):
+			for z in range(lo.z, hi.z + 1):
+				var box: Dictionary = _wait.get(Vector3i(x, y, z), {})
+				for o in box:
+					if o < order:
+						var w: Vector4 = box[o]
+						if c.distance_to(Vector3(w.x, w.y, w.z)) < r + unpack_dig(absf(w.w)).y + 1.0:
+							return true
+	return false
+
+
+## Puts the waiting edits between `lo` and `hi` (younger than `after`) on this frame's try list.
+func _wait_gather(lo: Vector3, hi: Vector3, after := -1) -> void:
+	var a := Vector3i((lo / WAIT_BOX).floor())
+	var b := Vector3i((hi / WAIT_BOX).floor())
+	var d := b - a + Vector3i.ONE
+	if d.x * d.y * d.z > _wait.size():  # a big area: going through the waiting boxes is quicker than the area's
+		for key: Vector3i in _wait:
+			if key.x >= a.x and key.x <= b.x and key.y >= a.y and key.y <= b.y and key.z >= a.z and key.z <= b.z:
+				_wait_gather_box(key, after)
+		return
+	for x in range(a.x, b.x + 1):
+		for y in range(a.y, b.y + 1):
+			for z in range(a.z, b.z + 1):
+				_wait_gather_box(Vector3i(x, y, z), after)
+
+
+func _wait_gather_box(key: Vector3i, after: int) -> void:
+	var box: Dictionary = _wait.get(key, {})
+	for o in box:
+		if o > after:
+			_wait_try[o] = [o, box[o]]
+
+
+## A slow safety sweep: one box each frame is tried again anyway, in case a "rock loaded" message was missed.
+func _wait_sweep_some() -> void:
+	if _wait_sweep.is_empty():
+		_wait_sweep = _wait.keys()
+	for i in mini(1, _wait_sweep.size()):
+		_wait_gather_box(_wait_sweep.pop_back(), -1)
 
 
 ## Roots (thin and big) grow back after REGROW_TIME (owner, Nov 15, F106); crystals after CRYSTAL_REGROW_TIME (owner F406,
@@ -3419,7 +3547,7 @@ func load_snapshot(snap: Dictionary) -> void:
 		plant_regrow[int(id)] = float(snap.plant_regrow[id])
 	for c in snap.edits:
 		edit_log.append(c)
-		_pending_digs.append(c)
+		_queue_pending_dig(c)
 	for d in snap.drops:
 		_ev_spawn_drop(d[0], d[1], d[2], d[3], Vector3.ZERO)
 		if d.size() > 4 and d[4] is Dictionary and not d[4].is_empty():
@@ -3805,7 +3933,7 @@ func drop_count() -> int:
 
 
 func pending_dig_count() -> int:
-	return _pending_digs.size()
+	return _wait_count + _wait_try.size()
 
 
 func _chest(ps: PlayerState) -> Vector3:

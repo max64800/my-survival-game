@@ -158,12 +158,10 @@ func _process(_delta: float) -> void:
 			_state = "done"
 			queue_free()
 		"carve":
-			var n := 0
-			while not _carve.is_empty() and n < CARVES_PER_FRAME:
-				var c: Vector3 = _carve.pop_back()
-				if auth.world.sdf_at(c) < CARVE_RADIUS:
-					auth._host_dig(c, 9, CARVE_RADIUS, true)  # tier 9: any rock gives way (it's the world making room)
-					n += 1
+			if not _carve_sorted:
+				sort_patches(_carve)
+				_carve_sorted = true
+			carve_patch(auth, _carve, CARVE_RADIUS)
 			if _carve.is_empty():
 				_state = "build"
 		"build":
@@ -173,6 +171,32 @@ func _process(_delta: float) -> void:
 
 
 ## The floor under `p`: the cave's own rock (the tower only carves ABOVE its ground line, so the ground the
+var _carve_sorted := false
+
+
+## F417 (Nov 28): digs the room one 16 m patch of rock a frame (the rock rebuilds its shape in patches like that):
+## 30 balls a frame made the same few patches rebuild over and over, 7-9 FPS for 20 s. Pops the next patch's balls
+## off `list` (put in patch order by sort_patches first), skips the ones already in the air, and digs them all at once.
+static func carve_patch(authority: GameAuthority, list: Array, radius: float) -> void:
+	if list.is_empty():
+		return
+	var patch := _patch_of(list.back())
+	var balls := PackedVector3Array()
+	while not list.is_empty() and _patch_of(list.back()) == patch:
+		var c: Vector3 = list.pop_back()
+		if authority.world.sdf_at(c) < radius:
+			balls.append(c)
+	authority.host_world_digs(balls, radius)
+
+
+static func sort_patches(list: Array) -> void:
+	list.sort_custom(func(a: Vector3, b: Vector3) -> bool: return _patch_of(a) < _patch_of(b))
+
+
+static func _patch_of(p: Vector3) -> Vector3i:
+	return Vector3i((p / 16.0).floor())
+
+
 ## rubble lies on is still the cave's), found from a little above so higher ground doesn't bury it.
 func _floor_at(p: Vector3) -> float:
 	return auth.world.maker.find_floor(p.x, p.z, p.y + 2.5).y
