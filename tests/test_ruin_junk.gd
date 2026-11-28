@@ -17,11 +17,16 @@ const FREE_CLEAR := 0.9   # the free-standing camp's middle from every building 
 const PATHS := {"tower": [Vector2(0.0, 3.0), Vector2(0.0, 12.0)], "outpost": [Vector2(-0.27, 13.0), Vector2(-0.27, 25.0)],
 	"brewhall": [Vector2(-5.0, 5.5), Vector2(-5.0, 14.0)], "spire": [Vector2(0.0, 3.0), Vector2(0.0, 12.0)],
 	"cliff_galleries": [Vector2(-2.0, 9.0), Vector2(-2.0, 16.0)], "smeltery": [Vector2(1.0, 9.0), Vector2(1.0, 16.0)],
-	"pillar_spiral": [Vector2(-7.0, 18.0), Vector2(-7.0, 27.0)], "manor": [Vector2(1.0, 7.0), Vector2(1.0, 11.0)]}
+	"pillar_spiral": [Vector2(-7.0, 18.0), Vector2(-7.0, 27.0)], "manor": [Vector2(1.0, 7.0), Vector2(1.0, 11.0)],
+	"prow_hall": [Vector2(3.0, 7.0), Vector2(3.0, 21.0)],
+	"twin_gate": [Vector2(0.0, 13.0), Vector2(0.0, 22.5)]}
 ## More ways in (the Cliff Galleries' shed steps; the Smeltery's second yard steps and the furnace's door).
 const MORE_PATHS := {"cliff_galleries": [[Vector2(-18.0, 9.0), Vector2(-18.0, 16.0)]],
 	"smeltery": [[Vector2(9.0, 9.0), Vector2(9.0, 16.0)], [Vector2(-19.7, 6.0), Vector2(-19.7, 16.0)]],
-	"manor": [[Vector2(-14.0, -4.0), Vector2(-19.5, -4.0)], [Vector2(7.0, -5.0), Vector2(7.0, -9.5)]]}
+	"manor": [[Vector2(-14.0, -4.0), Vector2(-19.5, -4.0)], [Vector2(7.0, -5.0), Vector2(7.0, -9.5)]],
+	"prow_hall": [[Vector2(13.0, 7.0), Vector2(13.0, 21.0)]],
+	"twin_gate": [[Vector2(0.0, 5.0), Vector2(0.0, -5.0)], [Vector2(-11.0, 3.0), Vector2(-11.0, -5.0)],
+		[Vector2(11.0, 3.0), Vector2(11.0, -5.0)]]}
 ## The ruins whose catalogue pieces are their own set (prefix); the grand ruins (F976) use the shared catalogue.
 const OWN_SET := {"tower": "rt_", "outpost": "ro_", "brewhall": "rb_", "spire": "rs_"}
 ## Each ruin's game class (its Rebuilding Chest spots).
@@ -35,6 +40,8 @@ static func _kind(n: String) -> RuinTower:
 		"smeltery": return RuinSmeltery.new(null)
 		"pillar_spiral": return RuinPillarSpiral.new(null)
 		"manor": return RuinManor.new(null)
+		"prow_hall": return RuinProwHall.new(null)
+		"twin_gate": return RuinTwinGate.new(null)
 	return null
 ## The catalogue decor ("cat", owner Nov 21: "the rules are fluid") stands free in the room, not hugging a wall, and keeps
 ## less room: this much from a doorway's middle (the gateway: 1.8), stairs 0.5 (the tool: from the piece's outline).

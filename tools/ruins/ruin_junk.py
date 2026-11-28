@@ -175,6 +175,40 @@ RUINS = {
 		"out_pool": ["rubble_brick", "rubble_wood", "beam_snapped", "rags", "bones", "crate_stack", "timber_stack", "keg",
 			"torch_dropped", "furn_bucket_wood", "urn_broken"],
 	},
+	"prow_hall_ruin": {
+		"seed": 653,
+		"yard": False,
+		"props": True,
+		"out_reach": 30.0,
+		"camp_reach": 30.0,
+		"out_want": (6, 8),
+		"out_box": [(-1.0, 17.0, 8.0, 21.0)],   # (RuinProwHall.carve_points: the yard dug in front of the prow)
+		"paths": [[(3.0, 7.0), (3.0, 21.0)], [(13.0, 7.0), (13.0, 21.0)]],
+		"keep": [(0.0, 13.0), (16.0, 13.0), (0.0, 15.0), (16.0, 15.0), (-1.0, 11.0), (17.0, 11.0)],
+		"pool": ["helmet", "shield_iron", "shield_wood", "spear_broken", "sword_snapped", "axe_head", "armour_pile",
+			"rags", "lantern", "meal", "candles", "bones", "scrap", "rubble_brick", "crate_stack", "keg",
+			"bedroll_rotten", "torch_dropped", "cookpot_tipped"],
+		"out_pool": ["rubble_brick", "beam_snapped", "rags", "shield_wood", "spear_broken", "bones", "crate_stack",
+			"keg", "helmet", "armour_pile", "torch_dropped"],
+	},
+	"twin_gate_ruin": {
+		"seed": 621,
+		"yard": False,
+		"props": True,
+		"out_reach": 30.0,
+		"camp_reach": 30.0,
+		"out_want": (8, 10),
+		# (RuinTwinGate.carve_points: the yard in front of the grand stair, where the right tower fell, the drill yard)
+		"out_box": [(-9.0, 13.0, 15.0, 22.5), (13.0, 25.0, -2.0, 15.0), (-12.0, 12.0, -5.0, 3.0)],
+		"paths": [[(0.0, 13.0), (0.0, 22.5)], [(0.0, 5.0), (0.0, -5.0)], [(-11.0, 3.0), (-11.0, -5.0)],
+			[(11.0, 3.0), (11.0, -5.0)]],
+		"keep": [(8.5, 16.5), (-8.0, 16.5), (8.5, 18.5), (-7.5, 18.5), (7.5, 15.6), (-7.5, 15.6)],
+		"pool": ["helmet", "shield_iron", "shield_wood", "spear_broken", "sword_snapped", "axe_head", "armour_pile",
+			"rags", "lantern", "meal", "candles", "bones", "scrap", "rubble_brick", "crate_stack", "keg",
+			"bedroll_rotten", "torch_dropped", "cookpot_tipped"],
+		"out_pool": ["rubble_brick", "beam_snapped", "rags", "shield_wood", "spear_broken", "bones", "crate_stack",
+			"keg", "helmet", "armour_pile", "torch_dropped", "sword_snapped"],
+	},
 }
 REPEAT = {"candles", "meal", "cookpot_tipped"}   # (owner: one of each kind per room; candles and pots may repeat)
 
@@ -277,6 +311,23 @@ DECOR = {
 		A("dish_rack", "wall", up=1.0), A("spice_shelf", "wall", up=1.0), A("candle_wall_shelf", "wall", up=1.2),
 		A("mug_rack", "wall", up=1.2), A("table_overturned", "mid"), A("chandelier_fallen", "mid"),
 		A("firewood_rack", "ground"), A("mg_wheelbarrow", "ground"), A("mg_water_butt", "ground"),
+	],
+	# A Stonehold castle (its plan has the feast tables, a map table and an armour bench): soldiers' things, racks and
+	# banners on the walls, a split war drum and a fallen shield wall, a broken cart and a training post in the yard.
+	"prow_hall_ruin": [
+		A("hs_spear_rack", "wall"), A("hs_helm_shelf", "wall"), A("mg_guard_cot", "wall"), A("mg_guard_cot", "wall"),
+		A("mg_armour_stand", "wall"), A("hs_order_banner", "wall"), A("th_weapon_rack", "wall"),
+		A("mg_helmet_pegs", "wall", up=1.2), A("crossed_swords", "wall", up=1.5), A("map_torn_wall", "wall", up=1.2),
+		A("war_drum_split", "mid"), A("hs_fallen_shield_wall", "mid"), A("mg_spear_rack_fallen", "mid"),
+		A("lw_cart_jammed", "ground"), A("hs_shield_pell", "ground"),
+	],
+	# Two towers, a gatehouse and barracks (its plan is already full of bunks, racks and banners): only a few more,
+	# a fallen shield wall and a split drum, weapon racks, a broken cart where the tower fell.
+	"twin_gate_ruin": [
+		A("hs_helm_shelf", "wall"), A("mg_armour_stand", "wall"), A("th_weapon_rack", "wall"),
+		A("mg_helmet_pegs", "wall", up=1.2), A("map_torn_wall", "wall", up=1.2, hi=3.5), A("hs_spear_rack", "wall"),
+		A("war_drum_split", "mid"), A("hs_fallen_shield_wall", "mid"), A("mg_spear_rack_fallen", "mid"),
+		A("lw_cart_jammed", "ground"),
 	],
 	# (the Kiln House on its lump, the Rock Shrine on the high shelf: x0, x1, z0, z1 in its box)
 	# A town round a rock column: house things in the four houses and the Ring Hall, pots and moulds in the Kiln House,

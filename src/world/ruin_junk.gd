@@ -15,7 +15,8 @@ const PLANS := {"tower": RuinTower.PLAN, "outpost": RuinOutpost.OUTPOST_PLAN, "b
 	"spire": RuinSpire.PLAN_PATH,
 	# F976 (owner, Nov 28): the grand ruins too (built into cave shapes: their ground junk lies on their own cave floor)
 	"cliff_galleries": RuinCliffGalleries.PLAN_PATH, "smeltery": RuinSmeltery.PLAN_PATH,
-	"pillar_spiral": RuinPillarSpiral.PLAN_PATH, "manor": RuinManor.PLAN_PATH}
+	"pillar_spiral": RuinPillarSpiral.PLAN_PATH, "manor": RuinManor.PLAN_PATH,
+	"prow_hall": RuinProwHall.PLAN_PATH, "twin_gate": RuinTwinGate.PLAN_PATH}
 ## 2 (Nov 21): the catalogue decor joined the lists; a ruin whose junk is older is made again.
 const JUNK_V := 2
 const CHECK_EVERY := 1.0
