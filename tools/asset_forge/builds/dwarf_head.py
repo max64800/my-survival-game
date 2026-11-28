@@ -338,12 +338,18 @@ SKULL = [
 	(-0.090, 0.088, 0.094, 0.080), (-0.116, 0.068, 0.090, 0.064), (-0.136, 0.040, 0.066, 0.044)]
 
 
+# (F943, owner Nov 28 night, picture: "his eyes look different ways" and "they are too deep now": each eye looked 8%
+# outward; now both look at one spot about 1.5 m in front of him (3% inward), and they sit 6 mm further forward)
+EYE_TOE = -0.03  # sideways part of each eye's look line (minus = toward the nose)
+EYE_FWD = 0.066  # m: how far in front of the skull's middle the eyeballs sit (was 0.06)
+
+
 def eye_centre(s):
-	return Hd(s * 0.046, 0.003, 0.06)
+	return Hd(s * 0.046, 0.003, EYE_FWD)
 
 
 def eye_look(s):
-	return Dv(s * 0.08, -0.03, 1.0).normalized()
+	return Dv(s * EYE_TOE, -0.03, 1.0).normalized()
 
 
 def build_face():
@@ -1289,7 +1295,7 @@ def build(body_objs, fast=False, log=print):
 		me.materials.append(plain("hair_plain", HAIR_RGB, 0.8))
 		me.polygons.foreach_set("material_index", (fm > 0.5).astype(np.int32))
 		hi_eyes = eye_obj
-		cs.eye_attrs(hi_eyes, lambda side: (side * 0.08, -1, -0.03))
+		cs.eye_attrs(hi_eyes, lambda side: tuple(eye_look(side)))
 		eye_obj.data.materials.clear()
 		eye_obj.data.materials.append(cs.paint_eye("paint_eye", iris_out=(0.3, 0.17, 0.08), iris_in=(0.56, 0.34, 0.15), iris_deg=30.0, pupil_deg=13.0, shine_deg=7.5))
 		high.name = "head"
@@ -1333,7 +1339,7 @@ def build(body_objs, fast=False, log=print):
 	low = cs.game_copy(high, 44000, "head")
 	cs.bake(high, low, 2048, "head_baked", ext=0.012)
 	hi_eyes = cs.detail_copy(eye_obj, 2, "eyes_high")
-	cs.eye_attrs(hi_eyes, lambda side: (side * 0.08, -1, -0.03))
+	cs.eye_attrs(hi_eyes, lambda side: tuple(eye_look(side)))
 	hi_eyes.data.materials.clear()
 	hi_eyes.data.materials.append(cs.paint_eye("paint_eye", iris_out=(0.3, 0.17, 0.08), iris_in=(0.56, 0.34, 0.15), iris_deg=30.0, pupil_deg=13.0, shine_deg=7.5))
 	cs.uv_only(eye_obj)
