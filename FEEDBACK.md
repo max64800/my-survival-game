@@ -100,8 +100,8 @@ Fixed items get ~~crossed out~~, never deleted, so we can see the whole history.
 ## Open (still to do)
 
 **Nov 28 play test:**
-- [ ] **F944. The level-up sound is too arcade-like. Change it.** (Same family as F934, skill-up sounds.) *From: you (PC, Nov 28, play test). Said: 1×* 🛠 in progress (Nov 28 play test fixes, Nov 28)
-- [ ] **F951. The wood-chopping and crafting sounds are too arcade-like.** (Same family as F934 and F707.) *From: you (PC, Nov 28, play test). Said: 1×* 🛠 in progress (Nov 28 play test fixes, Nov 28)
+- [ ] **F944. The level-up sound is too arcade-like. Change it.** (Same family as F934, skill-up sounds.) *From: you (PC, Nov 28, play test). Said: 1×* (handed back Nov 28: goes with the sound chat's round 12 picks, like F934)
+- [ ] **F951. The wood-chopping and crafting sounds are too arcade-like.** (Same family as F934 and F707.) *From: you (PC, Nov 28, play test). Said: 1×* (handed back Nov 28: goes with the sound chat's round 12 picks, like F934)
 
 **Nov 28 play test 2 (owner, while playing):**
 - **Nov 28 play test 2, flying over the map (owner): talk these through first ("brainstorm and discuss before changing the cave system"), after the other Nov 28 items.**
