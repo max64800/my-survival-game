@@ -15795,3 +15795,28 @@ The plan is in `docs/design/2026-11-28-zone1-shrink-plan.md`. No game code chang
   put those endings into the patch. Undid the staging, put the files back to plain line endings, and staged again
   in binary mode. Only my own lines were committed; other chats' unsaved work in main.gd, cave_maker.gd and
   dungeon_map.gd stayed untouched.
+
+
+## Nov 28: sound rounds 13 to 15 (skill-up, chopping, crafting, cooking, bites, level-up)
+
+**What we did**
+- Round 13: the owner picked a metal plate tap for a small skill-up, 4 axe blows for chopping, 2 hammers for crafting
+  and 2 sizzles for the campfire. All are in the game, with CREDITS rows and a test (F934, F937, F951 done).
+- Round 14 (a bigger metal clang for a new level, and bites) was all NO.
+- Bites (F925): the owner pointed out the game already has a good "oof". Every hit already plays the dwarf's
+  pain grunt (`hurt`). So a beast's bite now adds nothing on top (no mace knock), and you only hear the "oof".
+  The fix was 6 lines of code, after three rounds of searching. Lesson: before searching for a new sound, ask whether
+  a sound already in the game does the job.
+- Level-up (F944): the owner chose "dwarf cheer". Round 15 has 12 male voice cheers and laughs, waiting for picks.
+- Loading (F748): the owner wants ruins and the tower built during the loading screen too, in its own Opus chat.
+
+**Mistakes and hurdles**
+- The first install trimmed the chops down to 0.05 s: the "cut silence at the end" step cut the whole sound.
+  Fixed by trimming only the start.
+- Windows Python couldn't print emoji (cp1252). Fixed with PYTHONIOENCODING=utf8. The file write had already
+  worked, and I checked it.
+- `re.sub` broke on `\u` in the replacement text. Fixed with a lambda replacement.
+- The first round 15 search found some unfitting clips ("Ho crap", a sarcastic "yeah right"). Fixed with a word filter
+  and a search again.
+- Several dwarf, Foreman and dungeon tests were failing. A check in an older copy (git worktree) showed they came from
+  other chats' unfinished work, not this chat.
