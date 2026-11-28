@@ -16,7 +16,8 @@ const FREE_CLEAR := 0.9   # the free-standing camp's middle from every building 
 ## The way in, in each ruin's frame: from just inside the door (gateway) straight out.
 const PATHS := {"tower": [Vector2(0.0, 3.0), Vector2(0.0, 12.0)], "outpost": [Vector2(-0.27, 13.0), Vector2(-0.27, 25.0)],
 	"brewhall": [Vector2(-5.0, 5.5), Vector2(-5.0, 14.0)], "spire": [Vector2(0.0, 3.0), Vector2(0.0, 12.0)],
-	"cliff_galleries": [Vector2(-2.0, 9.0), Vector2(-2.0, 16.0)], "smeltery": [Vector2(1.0, 9.0), Vector2(1.0, 16.0)]}
+	"cliff_galleries": [Vector2(-2.0, 9.0), Vector2(-2.0, 16.0)], "smeltery": [Vector2(1.0, 9.0), Vector2(1.0, 16.0)],
+	"pillar_spiral": [Vector2(-7.0, 18.0), Vector2(-7.0, 27.0)]}
 ## More ways in (the Cliff Galleries' shed steps; the Smeltery's second yard steps and the furnace's door).
 const MORE_PATHS := {"cliff_galleries": [[Vector2(-18.0, 9.0), Vector2(-18.0, 16.0)]],
 	"smeltery": [[Vector2(9.0, 9.0), Vector2(9.0, 16.0)], [Vector2(-19.7, 6.0), Vector2(-19.7, 16.0)]]}
@@ -31,6 +32,7 @@ static func _kind(n: String) -> RuinTower:
 		"spire": return RuinSpire.new(null)
 		"cliff_galleries": return RuinCliffGalleries.new(null)
 		"smeltery": return RuinSmeltery.new(null)
+		"pillar_spiral": return RuinPillarSpiral.new(null)
 	return null
 ## The catalogue decor ("cat", owner Nov 21: "the rules are fluid") stands free in the room, not hugging a wall, and keeps
 ## less room: this much from a doorway's middle (the gateway: 1.8), stairs 0.5 (the tool: from the piece's outline).
@@ -116,7 +118,7 @@ func test_ruin_junk_keeps_off_the_ruin() -> void:
 					check(at.distance_to(Vector2(p.pos[0], p.pos[2])) >= GATE_CLEAR * (0.6 if cat else 1.0), tag + ": off the gateway")
 				if id in HUG and lo - y > -0.1 and lo - y <= 0.35:
 					near_wall = minf(near_wall, _poly_dist(at, fp))
-				if j.ground and group == "foundation" and absf(lo - y) < 0.1:  # (a grand ruin's: on its cave floor)
+				if j.ground and group == "foundation" and lo - y > -0.1 and lo - y < 1.1:  # (a grand ruin's: on its cave floor, or its yard dug 1 m down)
 					near_wall = minf(near_wall, _poly_dist(at, fp))
 			check(on_floor != bool(j.ground) or gap, tag + (": on the ground (no floor piece under it)" if j.ground else ": on a floor piece"))
 			if j.get("free", false):

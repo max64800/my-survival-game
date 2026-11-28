@@ -142,6 +142,23 @@ RUINS = {
 		"out_pool": ["slag", "scrap", "rubble_brick", "rubble_wood", "beam_snapped", "crate_stack", "ore_basket",
 			"timber_stack", "bones", "torch_dropped"],
 	},
+	"pillar_spiral_ruin": {
+		"seed": 942,
+		"yard": False,
+		"props": True,
+		"out_reach": 30.0,
+		"camp_reach": 30.0,
+		"out_want": (4, 6),
+		"out_box": [(-14.0, 0.0, 17.0, 26.0)],   # (RuinPillarSpiral.YARD_X / YARD_Z + PS_SHIFT: the dug yard, 1 m down)
+		"yard_floor": 3.5,
+		"paths": [[(-7.0, 18.0), (-7.0, 27.0)]],
+		"keep": [(-10.5, 20.0), (-3.5, 20.0), (-11.5, 22.5), (-2.5, 22.5)],
+		"pool": ["rags", "meal", "candles", "cookpot_tipped", "lantern", "grain_sacks", "bones", "rubble_brick", "keg",
+			"crate_stack", "furn_stool", "furn_bucket_wood", "bedroll_rotten", "urn_broken", "torch_dropped", "tools",
+			"rubble_wood", "furn_vase_tall"],
+		"out_pool": ["rubble_brick", "rubble_wood", "beam_snapped", "rags", "bones", "crate_stack", "timber_stack",
+			"torch_dropped", "furn_bucket_wood"],
+	},
 }
 REPEAT = {"candles", "meal", "cookpot_tipped"}   # (owner: one of each kind per room; candles and pots may repeat)
 
@@ -154,6 +171,9 @@ def A(did, mount, **ex):
 	return (did, None, mount, None, None, ex)
 
 
+PS_KILN = (10.0, 20.0, -6.0, 8.0)      # the Pillar Spiral's Kiln House (its plan: local x 20, + PS_SHIFT)
+PS_SHRINE = (-16.0, 0.0, -26.0, -12.0)  # ...and its Rock Shrine (local -1, -21)
+KILN, SHRINE = PS_KILN, PS_SHRINE
 DECOR = {
 	"watchtower_ruin": [
 		("rt_water_cistern", 0.0, "ground", -4.6, -3.0, {"yaw": 300}),
@@ -232,6 +252,18 @@ DECOR = {
 		A("ef_broken_grindstone", "mid"), A("cf_crucible_dropped", "mid"), A("ef_burst_crucible", "mid"),
 		A("cf_quench_trough", "wall"), A("ef_cooling_rack_empty", "wall"), A("hw_ingot_cart_empty", "mid"),
 		A("coal_pile_shovel", "ground"), A("cf_slag_cart_tipped", "ground"), A("hw_derailed_cart", "ground"),
+	],
+	# (the Kiln House on its lump, the Rock Shrine on the high shelf: x0, x1, z0, z1 in its box)
+	# A town round a rock column: house things in the four houses and the Ring Hall, pots and moulds in the Kiln House,
+	# candles and offerings at the Rock Shrine (high up), a lookout's horn on the Eyrie (its plan has the searchables).
+	"pillar_spiral_ruin": [
+		A("storage_trunk", "wall"), A("rocking_chair", "wall"), A("bunk_bed", "wall"), A("washbasin", "wall"),
+		A("wardrobe", "wall"), A("writing_desk", "wall"), A("table_overturned", "mid"), A("chandelier_fallen", "mid"),
+		A("dish_rack", "wall", up=1.0, lo=9.9), A("spice_shelf", "wall", up=1.0), A("candle_wall_shelf", "wall", up=1.2),
+		A("bread_oven", "wall"), A("hearth_pot_rack", "wall"), A("mug_rack", "wall", up=1.2),
+		A("cf_crucible_dropped", "mid", area=KILN), A("ef_burst_crucible", "mid", area=KILN), A("cf_sand_bin", "wall", area=KILN),
+		A("shrine_broken", "wall", area=SHRINE), A("altar_candles", "mid", area=SHRINE), A("qb_incense_stand", "wall", area=SHRINE),
+		A("war_horn_stand", "mid", lo=18.9), A("firewood_rack", "ground"), A("mg_wheelbarrow", "ground"),
 	],
 }
 
@@ -596,7 +628,7 @@ def make(name):
 	def auto_tries(model, mount, ex, sz):
 		"""A decor piece with no hint (the grand ruins, F976: "if you think it works, place it"): every wall, floor or
 		yard spot of the ruin, the floors with the least decor first, shuffled, so the pieces spread over the ruin.
-		ex "y": only that floor; "lo"/"hi": only floors between."""
+		ex "y": only that floor; "lo"/"hi": only floors between; "area": (x0, x1, z0, z1) only in that part (a house)."""
 		out = []
 		lo, hi = ex.get("lo", -99.0), ex.get("hi", 99.0)
 		if "y" in ex:
@@ -630,6 +662,9 @@ def make(name):
 						out.append((0.0, *_origin(model, x, z, yaw), yaw, "ground", G))
 						z += 0.5
 					x += 0.5
+		if "area" in ex:
+			a = ex["area"]
+			out = [t for t in out if a[0] <= t[1] <= a[1] and a[2] <= t[2] <= a[3]]
 		count = {}
 		for (_, _, oy) in decor_at:
 			count[round(oy, 1)] = count.get(round(oy, 1), 0) + 1
@@ -736,6 +771,10 @@ def make(name):
 		if n < want and os.environ.get("DBG"):
 			print("    why:", {k: v for k, v in why.items() if k != "last"})
 		print("  %-5s y=%-5s %d of %d (%d spots)" % (zone[0], zone[1], n, want, len(cands[zone])))
+	if "yard_floor" in opt:   # (a yard dug lower than the cave floor: the ground junk lies on it)
+		for j in junk:
+			if j["ground"]:
+				j["pos"][1] = opt["yard_floor"]
 	out = ROOT / "blueprints/ruins" / f"{name}_junk.json"
 	out.write_text(json.dumps({"junk": junk}, indent=0, separators=(",", ":")), encoding="utf-8")
 	print("%s: %d junk pieces -> %s" % (name, len(junk), out.relative_to(ROOT)))
