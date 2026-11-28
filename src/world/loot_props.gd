@@ -57,7 +57,7 @@ const RUIN_PLANS := {"tower": RuinTower.PLAN, "outpost": RuinOutpost.OUTPOST_PLA
 	"manor": RuinManor.PLAN_PATH, "prow_hall": RuinProwHall.PLAN_PATH,
 	"twin_gate": RuinTwinGate.PLAN_PATH, "smeltery": RuinSmeltery.PLAN_PATH,
 	"minehead": RuinMinehead.PLAN_PATH,
-	"cliff_galleries": RuinCliffGalleries.PLAN_PATH}
+	"cliff_galleries": RuinCliffGalleries.PLAN_PATH, "pillar_spiral": RuinPillarSpiral.PLAN_PATH}
 
 var auth: GameAuthority
 const SMALL_HEIGHT := 1.1  ## loot shorter than this is a "small thing" you can't stand on (F919)

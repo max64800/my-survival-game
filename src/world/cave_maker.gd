@@ -304,6 +304,7 @@ var twin_gate_spot := {}  ## where the Twin Gate goes (F479 + F656 + F657; the s
 var smeltery_spot := {}  ## where the Smeltery Terraces go (F845; the same)
 var minehead_spot := {}  ## where the Mine-head Works go (F899; the same)
 var cliff_galleries_spot := {}  ## where the Cliff Galleries go (F913; the same)
+var pillar_spiral_spot := {}  ## where the Pillar Spiral goes (F942; the same)
 var reserved: Array[Dictionary] = []  ## {pos, r, h}: a circle of ground (r wide), from pos.y up to pos.y + h
 var dungeons: Array[Dictionary] = []  ## layout 14: the dungeons dug into the rock (DungeonMap.place)
 
@@ -568,6 +569,17 @@ func _reserve_tower() -> void:
 					_cols[i] = Vector4(1.0e7, 1.0e7, _cols[i].z, _cols[i].w)
 		if not cliff_galleries_spot.is_empty():
 			reserve(cliff_galleries_spot.pos - Vector3(0, 6.5, 0), RuinCliffGalleries.REACH + 3.0, RuinCliffGalleries.HEIGHT + 6.5)  # (its crack goes 4.75 m down)
+	# The Pillar Spiral (owner, Nov 28, F942): round a rock column it grows itself, in a tall cavern (after the Cliff
+	# Galleries). No spot clear of the columns: like the Twin Gate.
+	if not RuinTower.load_plan(RuinPillarSpiral.PLAN_PATH).is_empty():
+		pillar_spiral_spot = RuinPillarSpiral.pick(self)
+		if pillar_spiral_spot.is_empty():
+			pillar_spiral_spot = RuinPillarSpiral.pick(self, true)
+			if not pillar_spiral_spot.is_empty():
+				for i in RuinPillarSpiral.columns_in(self, pillar_spiral_spot):
+					_cols[i] = Vector4(1.0e7, 1.0e7, _cols[i].z, _cols[i].w)
+		if not pillar_spiral_spot.is_empty():
+			reserve(pillar_spiral_spot.pos - Vector3(0, 5.5, 0), RuinPillarSpiral.REACH + 3.0, RuinPillarSpiral.HEIGHT + 5.5)  # (its crack goes 4.5 m down)
 
 
 ## Layout 8 (owner, Nov 17): 1 or 2 smaller stone columns (5 to 11 m wide) in the plain big caverns, the same kind as

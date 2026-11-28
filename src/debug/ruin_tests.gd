@@ -18,6 +18,7 @@ const LIST := [
 	{key = "smeltery", half = 27.0, name = "Smeltery Terraces", layout = 1108, cave = Vector3(50.0, 26.0, 40.0), back = 2.0, hard = "Brick"},
 	{key = "minehead", half = 28.0, name = "Mine-head Works", layout = 1110, cave = Vector3(52.0, 24.0, 26.0), back = 19.0},
 	{key = "cliff_galleries", half = 25.0, name = "Cliff Galleries", layout = 1111, cave = Vector3(54.0, 30.0, 28.0), back = 21.0},
+	{key = "pillar_spiral", half = 22.0, name = "Pillar Spiral", layout = 1112, cave = Vector3(46.0, 30.0, 42.0), back = 10.0},
 ]
 
 
