@@ -104,7 +104,6 @@ Fixed items get ~~crossed out~~, never deleted, so we can see the whole history.
 - [ ] **F951. The wood-chopping and crafting sounds are too arcade-like.** (Same family as F934 and F707.) *From: you (PC, Nov 28, play test). Said: 1×* 🛠 in progress (Nov 28 play test fixes, Nov 28)
 
 **Nov 28 play test 2 (owner, while playing):**
-- [ ] **F956. Choose which bolts to shoot: holding R when the crossbow is already loaded opens a wheel of your bolt types.** *From: you (PC, Nov 28, play test 2). Said: 1×* 🛠 in progress (Nov 28 play test fixes, Nov 28)
 - **Nov 28 play test 2, flying over the map (owner): talk these through first ("brainstorm and discuss before changing the cave system"), after the other Nov 28 items.**
   - 🛠 in progress F969-F974 (zone 1 shrink + wayfinding chat, Nov 28). **Owner chose (Nov 28 brainstorm):** zone 1 about 500 m wide (was 800); fewer caves, as many as there are places (one place per cave); all rune shrines open, none sealed; Mossgate Hold (the first dungeon) as the tutorial dungeon beside the first cavern; wayfinding = all 4 (landmark glows, signposts at forks, compass strip, map that fills in), built in that order after the shrink; old saves don't need to keep working.
 - [ ] **F969. Some rune shrines sit inside caves, joined to nothing: a player could never find them.** *From: you (PC, Nov 28, play test 2, flying over the map). Said: 1×*
