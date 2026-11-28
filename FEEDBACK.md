@@ -127,6 +127,13 @@ Fixed items get ~~crossed out~~, never deleted, so we can see the whole history.
 - [ ] **F966. Copper and tin ore are hard to spot: change how they look.** Tin is somewhat OK, copper was never seen. *From: you (PC, Nov 28, play test 2). Said: 1×*
 - [ ] **F967. Bats and beetles lose track in the caves: bats bob up and down instead of attacking, beetles get stuck on a rock instead of going over it.** *From: you (PC, Nov 28, play test 2). Said: 1×*
 - [ ] **F968. Abandoned columns: some of its stone blocks can be walked through.** (Screenshot: the broken wall of square blocks by the glowing pool.) *From: you (PC, Nov 28, play test 2). Said: 1×*
+- **Nov 28 play test 2, flying over the map (owner): talk these through first ("brainstorm and discuss before changing the cave system"), after the other Nov 28 items.**
+- [ ] **F969. Some rune shrines sit inside caves, joined to nothing: a player could never find them.** *From: you (PC, Nov 28, play test 2, flying over the map). Said: 1×*
+- [ ] **F970. Finding your way is very hard: "no way to understand where you need to go".** Needs some way to find places. *From: you (PC, Nov 28, play test 2, flying over the map). Said: 1×*
+- [ ] **F971. Two ruins can spawn right next to each other, in the same cave.** (Screenshots: the Brickcrown beside a stone tower ruin; a brick castle beside a broken round stone tower.) *From: you (PC, Nov 28, play test 2, flying over the map). Said: 1×*
+- [ ] **F972. The world feels too big for zone 1: shorter, easier tunnels so the next place is closer.** "Shrink the map without losing any POIs (places to find)." The white paths are fine. *From: you (PC, Nov 28, play test 2, flying over the map). Said: 1×*
+- [ ] **F973. One place per cave: every cave gets a POI or a dungeon; some caves are empty now.** *From: you (PC, Nov 28, play test 2, flying over the map). Said: 1×*
+- [ ] **F974. Idea: put the first dungeon (the one we made first) in the first cave, as a tutorial dungeon.** *From: you (PC, Nov 28, play test 2, flying over the map). Said: 1×*
 
 **Nov 27 play session (big list):**
 - [ ] **F925. Getting hit by a bat sounds like a 'ding'. It shouldn't.** *From: you (PC, Nov 27, play session). Said: 1×* 🛠 code done Nov 27, waiting for your round 12 sound picks (the page is open)
