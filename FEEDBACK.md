@@ -101,7 +101,6 @@ Fixed items get ~~crossed out~~, never deleted, so we can see the whole history.
 
 **Nov 28 play test:**
 - [ ] **F944. The level-up sound is too arcade-like. Change it.** (Same family as F934, skill-up sounds.) *From: you (PC, Nov 28, play test). Said: 1×* 🛠 in progress (Nov 28 play test fixes, Nov 28)
-- [ ] **F945. The last hit on anything gives more: finishing a boulder, a tree, etc. drops a bigger pile than the hits before.** *From: you (PC, Nov 28, play test). Said: 1×* 🛠 in progress (Nov 28 play test fixes, Nov 28)
 - [ ] **F951. The wood-chopping and crafting sounds are too arcade-like.** (Same family as F934 and F707.) *From: you (PC, Nov 28, play test). Said: 1×* 🛠 in progress (Nov 28 play test fixes, Nov 28)
 
 **Nov 28 play test 2 (owner, while playing):**

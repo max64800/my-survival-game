@@ -602,9 +602,13 @@ func test_boulder_breaks_and_comes_back() -> void:
 		return
 	player.global_position = (r.pos as Vector3) + Vector3(1.6, 0.1, 0.0)
 	var before := auth.drop_count()
+	var stone_before := _stone_on_floor()
 	for i in Boulders.HITS + 3:
 		auth.request_hit_boulder(1, 0)
 	check(auth.drop_count() > before, "hitting it gives stone")
+	# F945 (owner, Nov 28): the breaking hit gives double (with a pickaxe 2 a hit, 4 on the last)
+	var per := 2 if Items.kind(ps.selected_item()) == "pickaxe" else 1
+	check_eq(_stone_on_floor() - stone_before, (Boulders.HITS - 1 + GameAuthority.LAST_HIT_BONUS) * per, "the last hit gives a double pile")
 	check(bo.rock(0).broken, "it broke after %d hits" % Boulders.HITS)
 	check(auth.boulder_back.has(0), "a new one is on its way")
 	var snap := auth.snapshot()
@@ -631,7 +635,7 @@ func test_charging_beetle_smash_gives_all_the_stone() -> void:
 	auth.request_hit_boulder(1, 0)  # one pickaxe-less hit first: 1 stone
 	var stone_before := _stone_on_floor()
 	check(auth.smash_boulder(0, (r.pos as Vector3) + Vector3(3, 0, 0)), "the charge bursts it")
-	check_eq(_stone_on_floor() - stone_before, (Boulders.HITS - 1) * 2, "all the stone its other hits would give")
+	check_eq(_stone_on_floor() - stone_before, (Boulders.HITS - 1 + GameAuthority.LAST_HIT_BONUS - 1) * 2, "all the stone its other hits would give")
 	check(bo.rock(0).broken, "it is broken")
 	check(not auth.smash_boulder(0, Vector3.ZERO), "a broken boulder can't burst twice")
 	_teardown()

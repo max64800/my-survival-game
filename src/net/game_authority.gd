@@ -381,9 +381,10 @@ func request_hit_boulder(peer_id: int, id: int) -> void:
 		return
 	var n := 2 if pick else 1
 	var out := (_chest(ps) - at).normalized()
-	spawn_drop("stone", n, at + out * 0.6 * float(r.scale) + Vector3.UP * 0.3)
-	give_xp(peer_id, 1, "mining")
 	var hits: int = boulder_hits.get(id, 0) + 1
+	var last := n * (LAST_HIT_BONUS if hits >= Boulders.HITS else 1)  # (F945: the hit that breaks it gives double)
+	spawn_drop("stone", last, at + out * 0.6 * float(r.scale) + Vector3.UP * 0.3)
+	give_xp(peer_id, 1, "mining")
 	boulder_hits[id] = hits
 	if hits >= Boulders.HITS:
 		boulder_hits.erase(id)
@@ -459,8 +460,8 @@ func smash_boulder(id: int, from: Vector3) -> bool:
 	var left: int = Boulders.HITS - int(boulder_hits.get(id, 0))
 	boulder_hits.erase(id)
 	boulder_back[id] = Boulders.RESPAWN
-	# Everything mining it to the end would give (owner, Nov 20): 2 stone for each hit it still had left.
-	spawn_drop("stone", left * 2, at + out * 0.6 * float(r.scale) + Vector3.UP * 0.3)
+	# Everything mining it to the end would give (owner, Nov 20): 2 stone for each hit it still had left (the last one double, F945).
+	spawn_drop("stone", (left + LAST_HIT_BONUS - 1) * 2, at + out * 0.6 * float(r.scale) + Vector3.UP * 0.3)
 	_ev_boulder.rpc(id, true)
 	return true
 
@@ -559,6 +560,8 @@ func request_chop_pillar(peer_id: int, id: int) -> void:
 	var out := Vector3(chest.x - axis.x, 0.0, chest.z - axis.z).normalized()
 	var wood := n * (2 if ps.progress.has_star("woodcutting", 100) and randf() < 0.15 else 1)  # ★100: double wood
 	wood += onyx_wood(ps)
+	if used + n >= RootPillars.CHOPS:
+		wood += n * (LAST_HIT_BONUS - 1)  # (F945: the chop that cracks it gives double)
 	if used + n >= RootPillars.CHOPS and ps.progress.has_star("woodcutting", 50):
 		wood += 1  # Woodcutting ★50: +1 wood per Root Tree
 	var drop_at := axis + out * float(p.width) * 0.18 + Vector3.UP * 0.4
@@ -3586,6 +3589,11 @@ func load_snapshot(snap: Dictionary) -> void:
 
 
 # ================================================================== helpers
+
+## F945 (owner, Nov 28): the hit that finishes something (breaks a boulder, cracks a Root Tree) gives this many times
+## one hit. (Rock and ore already pay what's left of the rock on the breaking hit; crystals and mushrooms give it all then.)
+const LAST_HIT_BONUS := 2
+
 
 ## Every hit pays (owner, Nov 17, F261, like Conan Exiles): a hit that doesn't break the rock yet already gives 1 stone
 ## (or ore). It's an advance: it's taken off what that rock gives when it breaks (ps.leftovers goes below zero for a
