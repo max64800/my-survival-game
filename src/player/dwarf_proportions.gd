@@ -234,6 +234,18 @@ func _rest_global(sk: Skeleton3D, i: int, changed: bool) -> Transform3D:
 	return t
 
 
+## Lengthen the neck by `metres`: the head joint moves that much farther from the neck joint, along the neck, so the
+## head (and everything riding on it: helmets, hair) sits higher and the skin bound to both stretches between them.
+func set_neck_lift(sk: Skeleton3D, metres: float) -> void:
+	var neck := sk.find_bone("neck_01")
+	var head := sk.find_bone("Head")
+	if neck < 0 or head < 0 or not _pos.has(head):
+		return
+	var d := _rest_global(sk, head, true).origin.distance_to(_rest_global(sk, neck, true).origin)
+	if d > 1e-4:
+		_pos[head] = (_pos[head] as Vector3) * ((d + metres) / d)
+
+
 ## Lean the chest (spine_02) and the shoulders (spine_03) back by `degrees` in all, on top of every move, and tip the
 ## neck forward by `neck_share` of that, so the head comes back over the hips without looking up at the roof.
 func set_stand_tall(sk: Skeleton3D, degrees: float, neck_share: float) -> void:

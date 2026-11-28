@@ -2,13 +2,10 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://6v45cvvoxvmj"
+uid="uid://ujbmgpm1co7f"
 path="res://.godot/imported/dwarf_body_eye_baked_col.jpg-a2fc81a6b8600499c84b5b61573cd7df.ctex"
 metadata={
 "vram_texture": false
-}
-generator_parameters={
-"md5": "694e59de705b7c2a60127fcb1793ae27"
 }
 
 [deps]
@@ -26,7 +23,7 @@ compress/rdo_quality_loss=0.0
 compress/hdr_compression=1
 compress/normal_map=0
 compress/channel_pack=0
-mipmaps/generate=true
+mipmaps/generate=false
 mipmaps/limit=-1
 roughness/mode=0
 roughness/src_normal=""

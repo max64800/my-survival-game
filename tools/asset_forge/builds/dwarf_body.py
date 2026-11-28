@@ -70,6 +70,7 @@ skin = ck.color("skin", (0.86, 0.6, 0.48), rough=0.7)
 shirt = ck.color("shirt", (0.86, 0.8, 0.68), rough=0.9)
 shorts = ck.color("shorts", (0.46, 0.31, 0.2), rough=0.9)
 wraps = ck.color("wraps", (0.8, 0.72, 0.58), rough=0.9)
+leather = ck.color("leather", (0.42, 0.27, 0.16), rough=0.75)  # (the wrist wraps, F943)
 
 UP = Vector((0, 0, 1))
 FWD = Vector((0, -1, 0))  # Blender: the dwarf faces -Y
@@ -386,6 +387,32 @@ for side in ("l", "r"):
 	cl.add(cl.ell(QV(th[-1]), (0.02, 0.02, 0.02)), 0.005)
 	finish(cl.mesh(f"hand_{side}", skin, PARTS), 4000)
 	del cl
+	# (F943, owner Nov 28 later: a thin line still showed where the hand's wrist piece crosses the forearm skin, after two
+	# tries at blending the skins; owner picked "leather wrist wrap") two turns of a chunky leather strap round the forearm
+	# over that crossing (it lies 4.5-8.5 cm up from the wrist, the crossing at ~6.5 cm), each tilted a little, the upper
+	# turn lying over the lower, and the strap's end tucked under at the back of the wrist. Named body_hand_cuff_*, so the
+	# game hides it under gauntlets like the bare hand.
+	ax = (el_ - wr).normalized()
+	c0, c1 = wr + ax * 0.043, wr + ax * 0.088
+	pts_c = [c0, c1]
+	lo = Vector([min(p[i] for p in pts_c) - 0.07 for i in range(3)])
+	hi = Vector([max(p[i] for p in pts_c) + 0.07 for i in range(3)])
+	cl = clay((lo.x, lo.z, lo.y), (hi.x, hi.z, hi.y), 0.002)
+	a_ = np.array(QV(c1), np.float32) - np.array(QV(c0), np.float32)
+	a_ /= np.linalg.norm(a_)
+	perp = np.cross(a_, np.array([0.0, 1.0, 0.0], np.float32))
+	perp /= np.linalg.norm(perp)
+	for k, (at, tilt, lift, half) in enumerate(((0.054, 0.07, 0.009, 0.0125), (0.076, 0.045, 0.0115, 0.0125))):
+		cc = wr + ax * at
+		C = np.array(QV(cc), np.float32)
+		n_ = a_ * math.cos(tilt) + np.cross(perp, a_) * math.sin(tilt)  # (the strap's edge planes, tipped a little)
+		slab = np.abs((cl.U - C[0]) * n_[0] + (cl.V - C[1]) * n_[1] + (cl.W - C[2]) * n_[2]) - half
+		shell = etube(cl, QV(c0), QV(c1), forearm_r(el_, wr, c0) + lift, forearm_r(el_, wr, c1) + lift, 0.9, 1.05)
+		cl.add(np.maximum(shell, slab), 0.0015)  # (a small blend: two clear turns, a groove between)
+	tuck = wr + ax * 0.064 + Vector((0.0, 1.0, 0.0)) * (forearm_r(el_, wr, wr + ax * 0.064) * 1.05 + 0.011)
+	cl.add(cl.ell(QV(tuck), (0.009, 0.0045, 0.011)), 0.004)  # (the strap's end, tucked under at the back of the wrist)
+	finish(cl.mesh(f"hand_cuff_{side}", leather, PARTS), 2500)
+	del cl
 
 if CLOTHES:
 	# ---- shorts: a baggy seat and legs, folds, rolled cuffs
@@ -630,7 +657,9 @@ if not CLOTHES:
 	# stop at one height (0.915 m), so the shoulder slopes rising to the neck stuck out bare. Now only an oval round the
 	# neck is cut out (> 0 = cut away), and the shirt runs up the shoulder slopes to it.
 	nb = (HC.y - sc.W) - 0.01  # (front/back from the neck's middle)
-	neck = np.minimum(0.09 * (1.0 - np.sqrt((x_ / 0.12) ** 2 + (nb / 0.105) ** 2)), up_ - 0.845)  # (a bit of neck skin shows)
+	# (Nov 28 evening, owner: "I still don't see the neck": the hole is 2 cm wider and 1.5 cm lower, and the neck is 2 cm
+	# longer in the game, DwarfRig.BODY_NECK_LIFT)
+	neck = np.minimum(0.09 * (1.0 - np.sqrt((x_ / 0.14) ** 2 + (nb / 0.12) ** 2)), up_ - 0.83)  # (a band of neck skin shows)
 	sc.D = np.maximum(np.maximum(shell_of(sc, off), hem - up_), np.maximum(arms, np.maximum(neck, up_ - 1.0))).astype(np.float32)
 	sc.add(np.maximum(lip(sc, off, up_ - hem - 0.006, 0.009), arms), 0.005)                     # the hem
 	sc.add(np.maximum(lip(sc, off, arms + 0.004, 0.006), hem - up_), 0.004)                     # the sleeve ends (thin: Nov 18)
@@ -726,6 +755,7 @@ PAINT = {
 	"skin": dict(base=(0.75, 0.5, 0.385), dark=(0.435, 0.25, 0.19), light=(0.85, 0.66, 0.56), weave=0.0, per=1.0, size=2048),
 	"shirt": dict(base=(0.86, 0.8, 0.66), dark=(0.48, 0.41, 0.3), light=(0.98, 0.95, 0.86), weave=0.0011, per=0.008, size=2048, checks=0.0, threads=0.4),
 	"shorts": dict(base=(0.5, 0.33, 0.2), dark=(0.22, 0.13, 0.07), light=(0.68, 0.5, 0.33), weave=0.0011, per=0.008, size=2048, checks=0.045),
+	"leather": dict(base=(0.42, 0.26, 0.15), dark=(0.2, 0.11, 0.06), light=(0.6, 0.42, 0.27), weave=0.0, per=1.0, size=512),  # (F943 wrist wraps)
 	"wraps": dict(base=(0.84, 0.79, 0.67), dark=(0.48, 0.42, 0.32), light=(0.97, 0.94, 0.86), weave=0.0007, per=0.006, size=1024, checks=0.0),
 }
 
@@ -938,7 +968,7 @@ if torso_o is not None:
 	tkd.balance()
 	tnames = {vg.index: vg.name for vg in torso_o.vertex_groups}
 	for o in meshes:
-		if not ("pants" in o.name or o.name in ("body_shirt", "body_shorts")):
+		if not ("pants" in o.name or o.name in ("body_shirt", "body_shorts") or o.name.startswith("body_hand_cuff_")):
 			continue
 		for vg in list(o.vertex_groups):
 			o.vertex_groups.remove(vg)
@@ -988,7 +1018,7 @@ if torso_o is not None:
 	# (F943) the hand's wrist piece up the forearm bends exactly like the forearm skin it lies on (the torso point
 	# nearest each of its points), blended in over the first 2.5 cm above the wrist, so no gap opens when the hand turns
 	for o in meshes:
-		if not o.name.startswith("body_hand_"):
+		if not o.name.startswith("body_hand_") or "cuff" in o.name:
 			continue
 		side = o.name[len("body_hand_")]
 		wr, el_ = B(f"hand_{side}"), B(f"lowerarm_{side}")
@@ -1267,7 +1297,7 @@ if BODYREV:
 	wr_w = arm.matrix_world @ arm.pose.bones["hand_l"].head
 	ft_w = arm.matrix_world @ arm.pose.bones["foot_l"].head
 	for tag, aim, off, scale in (("neck", Vector((0, 0.0, 0.93)), Vector((1.4, -3.0, 2.4)), 0.5),
-			("wrist", wr_w, Vector((-1.0, -3.0, 0.4)), 0.26), ("foot", ft_w + Vector((0, -0.08, 0)), Vector((-1.6, -3.0, 1.6)), 0.3)):
+			("wrist", wr_w, Vector((-1.0, -3.0, 0.4)), 0.26), ("neckside", Vector((0, 0.0, 0.97)), Vector((-3.2, -0.6, 0.3)), 0.45), ("foot", ft_w + Vector((0, -0.08, 0)), Vector((-1.6, -3.0, 1.6)), 0.3)):
 		cam.data.ortho_scale = scale
 		cam.location = aim + off
 		cam.rotation_euler = (aim - cam.location).to_track_quat("-Z", "Y").to_euler()

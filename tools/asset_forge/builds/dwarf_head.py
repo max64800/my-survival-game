@@ -468,6 +468,19 @@ def scalp_lock(phi, el, shape, k=1.0, width=0.034, thick=0.017, grooves=2):
 
 
 EAR_C = (0.137, -0.04, -0.026)
+NECK_GAP = (((0.125, -0.075, -0.05), (0.135, -0.27, -0.08)), (0.042, 0.066))  # (head space: the hair-free slot under each ear)
+
+
+def in_neck_gap(p, extra=0.008):
+	"""Is a Blender point inside the hair-free slot under an ear (F943)?"""
+	(g0, g1), (r0, r1) = NECK_GAP
+	for s in (-1, 1):
+		a, b = Hd(s * g0[0], g0[1], g0[2]), Hd(s * g1[0], g1[1], g1[2])
+		ab = b - a
+		t = min(max((p - a).dot(ab) / ab.dot(ab), 0.0), 1.0)
+		if (p - (a + ab * t)).length < r0 + (r1 - r0) * t + extra:
+			return True
+	return False
 
 
 def build_hair():
@@ -490,6 +503,11 @@ def build_hair():
 	del r, phi, el
 	for s in (-1, 1):
 		cl.cut(cl.ell((s * (EAR_C[0] + 0.01), EAR_C[1], EAR_C[2] + 0.012), (0.06, 0.058, 0.054)), 0.012)  # a notch: the ears stay free
+	# (F943, owner Nov 28: "there still should be some skin" at the side of the neck, then picked "gap under the ears"):
+	# a slot under each ear where no hair grows, so a strip of neck runs down from the ear into the shoulder
+	for s in (-1, 1):
+		(g0, g1), (r0, r1) = NECK_GAP
+		cl.cut(cl.tube((s * g0[0], g0[1], g0[2]), (s * g1[0], g1[1], g1[2]), r0, r1), 0.015)
 	cl.mesh("hair_mass", MH, HAIR)
 	del cl
 	BVH["hairmass"] = bvh_of([HAIR[-1]])
@@ -520,8 +538,8 @@ def build_hair():
 			lift = 1.0 - 0.8 * flat
 			pts = [R0 - n * 0.012 - t * 0.01, R0 + t * 0.33 * k + n * 0.003, R0 + t * 0.66 * k + n * 0.005 * lift,
 				R0 + t * 0.9 * k + n * 0.011 * lift + curl * 0.5, R0 + t * k + n * 0.016 * lift + curl]
-			if min((p - e).length for p in pts for e in ears) < 0.05:
-				continue  # (the ears stay uncovered, like the picture's)
+			if min((p - e).length for p in pts for e in ears) < 0.05 or any(in_neck_gap(p) for p in pts):
+				continue  # (the ears stay uncovered, like the picture's; and the neck under them, F943)
 			lock(pts, 0.036 * R.uniform(0.9, 1.1), 0.021, n, grooves=2, rd=0.22, twist=jit(0.4))
 	# The hanging part (the "ponytail" down onto the upper back) gets its own rows of locks round its back and sides,
 	# hanging down along it, tips lying flat (owner, Nov 17: the lower back hair was a bare smooth sheet: the rows above
@@ -552,6 +570,8 @@ def build_hair():
 				k = RT.uniform(0.08, 0.16)
 			pts = [R0 - radial * 0.012 - tdir * 0.01, R0 + tdir * 0.33 * k + radial * 0.003, R0 + tdir * 0.66 * k + radial * 0.002,
 				R0 + tdir * 0.9 * k + radial * 0.003, R0 + tdir * k + radial * 0.004]
+			if any(in_neck_gap(p) for p in pts):
+				continue  # (the neck under the ears stays bare, F943)
 			lock(pts, 0.036 * RT.uniform(0.9, 1.1), 0.021, radial, grooves=2, rd=0.22, twist=RT.uniform(-0.4, 0.4))
 	# the path of the back hair's swing chain (owner F215: "add the skeleton to the big ponytail that slides down the
 	# back, similar to the braids"): one chain down the middle (three side by side swung apart and tore the hair between

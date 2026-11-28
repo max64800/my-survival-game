@@ -38,7 +38,11 @@ const KINDS := {
 	# (F943, owner Nov 28: "when he's running it fully detaches; only the ends should flop": the braids now lie on the
 	# chest, the top half stays put (loose_from: free from half way down), and the drag works on the resting place, not
 	# the world (air 1 was a headwind that lifted the whole braid off his chest))
-	"braid": {"stiff": 0.17, "drag": 0.27, "radius": 0.04, "bend": 16.0, "air": 0.35, "loose_from": 0.45},  # (radius: the thicker braids' half-depth + a gap)
+	# (owner, Nov 28 later: "glued together, only the middle tip bounces": the whole braid sways a little now (loose_min),
+	# freer from a fifth of the way down)
+	# (owner, Nov 28 evening, picture: the whole braid from the face down must sway, not only the ends: 70% free at the
+	# top, fully free at the tip)
+	"braid": {"stiff": 0.17, "drag": 0.27, "radius": 0.04, "bend": 16.0, "air": 0.35, "loose_from": 0.05, "loose_min": 0.7},  # (radius: the thicker braids' half-depth + a gap)
 	# (back hair: livelier again, owner Nov 17 evening: "it barely moves"; it lies on the shirt now, so it sways, no visor)
 	"back": {"stiff": 0.14, "drag": 0.24, "radius": 0.035, "bend": 11.0, "air": 0.0},  # (radius: the hair layer's half-thickness)
 	"cloth": {"stiff": 0.22, "drag": 0.3, "radius": 0.02, "bend": 14.0, "air": 0.35},  # (the shirt hem: a light sway and bounce, Nov 18)
@@ -109,7 +113,7 @@ func setup(chains: Dictionary, colliders: Array, head: int, head_rest: Transform
 		for i in joints.size():
 			var f := float(i) / float(joints.size() - 1)
 			var x2 := clampf((f - from) / maxf(1.0 - from, 1e-3), 0.0, 1.0) if from > 0.0 else 1.0
-			loose.append(x2 * x2 * (3.0 - 2.0 * x2))
+			loose.append(lerpf(float(kind.get("loose_min", 0.0)), 1.0, x2 * x2 * (3.0 - 2.0 * x2)))
 		_chains.append({"name": name, "bones": bones, "joints": joints, "bind_rot": bind_rot, "kind": kind, "on_back": on_back,
 			"under": lies if is_back else [], "pinned": pinned, "along_y": along_y, "loose": loose,
 			"p": [], "prev": [], "was": [], "ready": false})

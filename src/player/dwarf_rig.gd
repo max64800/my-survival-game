@@ -27,8 +27,13 @@ var use_body := BODY_ON or "newdwarf" in OS.get_cmdline_user_args()
 ## the shoulders with a big beard on the chest, so a full human nod pushed the face into the chest (F183).
 const BODY_HEAD_FOLLOW := 0.35
 ## How far the hand-built dwarf's chest and shoulders lean back on every move (F943, owner Nov 28: "he is slouching so much"),
-## degrees: DwarfProportions.set_stand_tall.
-const BODY_STAND_TALL := 10.0
+## degrees: DwarfProportions.set_stand_tall. (Owner, Nov 28 later: 10° with the head tipped back too was "too straight", the head
+## should come a little forward: 7°, and the neck tips the head half of that forward again. Nov 28 evening: that was
+## "standing too forward": 8.5°, the head straight on the neck)
+const BODY_STAND_TALL := 8.5
+## How much longer the hand-built dwarf's neck is (m), so bare skin shows between the collar and the beard (F943,
+## owner Nov 28 evening: "I still don't see the neck": the jaw sat right on the shirt). DwarfProportions.set_neck_lift.
+const BODY_NECK_LIFT := 0.02
 const BODY_ARM_GAP := 8.0  ## degrees the thick arms hang out from the body (F916, Nov 26; DwarfProportions.set_arm_gap)
 const LIBS := {"": "res://assets/characters/anims/UAL1.glb", "b": "res://assets/characters/anims/UAL2.glb"}
 const CROSSBOW_LIB := "res://assets/anim/crossbow_kaykit.res"  ## "c/": Aim, Shoot, Reload, Reload1H (KayKit, chat 17)
@@ -289,7 +294,8 @@ func build(tint: Color) -> void:
 	if use_body and ResourceLoader.exists(BODY):
 		prop.head_follow = BODY_HEAD_FOLLOW
 		prop.set_arm_gap(skeleton, BODY_ARM_GAP)
-		prop.set_stand_tall(skeleton, BODY_STAND_TALL, -0.6)
+		prop.set_neck_lift(skeleton, BODY_NECK_LIFT)
+		prop.set_stand_tall(skeleton, BODY_STAND_TALL, 0.0)  # (head 0.5 forward: "standing too forward", Nov 28 evening)
 		pass  # prop.no_skew(skeleton): off, it broke the arms (owner, Nov 17); see DwarfProportions.no_skew  # (the sword swing stretched his head flat: see there)
 	proportions = prop
 	# Weight (Nov 19, "heavy + chunky"): follow-through, waddle, breathing, landing squash. After the shaping,
