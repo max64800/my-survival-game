@@ -459,13 +459,14 @@ func test_the_dungeon_test_world_has_no_caves() -> void:
 ## Owner, Nov 20 (F490) and Nov 21 (F591, came back): every dungeon's boss room has a door. Each way into the room
 ## where a boss sleeps (a doorway on its walls) is shut by a round door you open, the loot door or a barred gate:
 ## you never see the boss from outside. (A way on that you only reach through his room doesn't count: BOSS_WAY_ON.)
-const BOSS_WAY_ON := {"lampwick": Vector2(42.0, 28.0)}  # (the Back Rails, down to the way out)
+const BOSS_WAY_ON := {"lampwick": Vector2(42.0, 28.0),  # (the Back Rails, down to the way out)
+	"barrows": Vector2(28.0, 50.0)}  # (the Grave Gate behind the Barrow Keeper, locked by his key)
 func test_every_boss_room_has_a_door() -> void:
 	var rooms := 0
 	for map: Dictionary in DungeonMap.MAPS:
 		var plan := DungeonBuild.load_plan(String(map.id))
 		for c in plan.get("creatures", []):
-			var kind := String(c.model).get_file().get_basename()
+			var kind := String(c.get("kind", String(c.model).get_file().get_basename()))  # (the Vault's guard wears the Foreman's model but is no boss)
 			if not Monsters.LIST.get(kind, {}).get("boss", false):
 				continue
 			var room: Array = []

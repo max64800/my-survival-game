@@ -32,7 +32,7 @@ func test_each_dungeon_teaches_its_own_recipe() -> void:
 ## F844 step 5: every dungeon the game really builds has a stand whose scroll teaches that dungeon's bronze recipe.
 ## The same in every world: what a stand holds comes from the dungeon's plan, never from the seed.
 func test_every_built_dungeon_teaches_a_bronze_recipe() -> void:
-	check_eq(DungeonBuild.PLANS.size(), 6, "6 dungeons are built so far (the other 6 come later, F742)")
+	check_eq(DungeonBuild.PLANS.size(), 7, "7 dungeons are built so far (the other 5 come later, F742)")
 	for key in DungeonBuild.PLANS:
 		var lid := String(DungeonBuild.LIST_ID.get(key, ""))
 		check(DungeonList.get_dungeon(lid).size() > 0, "%s is in the dungeon list" % key)

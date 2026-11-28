@@ -41,6 +41,8 @@ var skel: Skeleton3D
 var shield: ShieldArm    ## the Prop Warden's raised shield arm (F548), or null
 var _guard_swing := true  ## the swing playing now keeps the shield up (not his two-handed moves)
 const SHIELD_FADE := 6.0  ## how fast the shield comes up / goes down (whole way in 1/6 s)
+var shield_rest := 0.0  ## the Vault Captain (F975): seconds his shield hangs down after each swing (0 = never)
+var _lowered := 0.0  ## seconds left with the shield down
 
 
 ## The rig of a model made from a skeleton pack, or null (an older creature).
@@ -86,6 +88,17 @@ func hold_shield() -> void:
 	if arm.setup(ap, sk):
 		sk.add_child(arm)
 		shield = arm
+
+
+## The host: his shield hangs down for `seconds` (the Vault Captain, after a swing or a charge: F975).
+func lower_shield(seconds: float) -> void:
+	if shield_rest > 0.0:
+		_lowered = maxf(_lowered, seconds)
+
+
+## True while the shield hangs down.
+func shield_lowered() -> bool:
+	return shield != null and _lowered > 0.0
 
 
 ## Lying scattered on the floor until someone comes near.
@@ -314,7 +327,8 @@ func step(delta: float, speed: float, run: float, alert: bool, frozen: bool) -> 
 			shield.influence = 0.0
 		return
 	if shield:
-		var up := alert and not lying and (_busy <= 0.0 or _busy_kind == "hit" or (_busy_kind == "attack" and _guard_swing))
+		_lowered = maxf(0.0, _lowered - delta)
+		var up := alert and not lying and _lowered <= 0.0 and (_busy <= 0.0 or _busy_kind == "hit" or (_busy_kind == "attack" and _guard_swing))
 		shield.influence = move_toward(shield.influence, 1.0 if up else 0.0, delta * SHIELD_FADE)
 	ap.speed_scale = 0.0 if frozen else 1.0
 	if frozen:
@@ -330,6 +344,8 @@ func step(delta: float, speed: float, run: float, alert: bool, frozen: bool) -> 
 		return  # hold the floor pose until get_up() is called
 	if _busy > 0.0:
 		_busy -= delta
+		if _busy <= 0.0 and _busy_kind == "attack":
+			_lowered = shield_rest  # (the Vault Captain lowers his shield after the swing: hit him now)
 		return
 	var clip := "Idle_Combat" if alert else "Idle"
 	if speed > 0.25:

@@ -12,7 +12,8 @@ const THING_CLEAR := 1.5 # from a door, a lever, a chest, the recipe stand (the 
 const PATH_CLEAR := 1.1  # from the walk line between a room's doorways
 const TRAP_CLEAR := 1.0
 const LANE_CLEAR := 0.9  # solid junk out in the room: its middle from a walk line (junk.py: 1.0)
-const DOORS := ["dungeon/dungeon_entrance.glb", "dungeon/wall_cracked.glb", "dungeon/door_loot.glb", "dungeon/gate_round.glb"]
+const DOORS := ["dungeon/dungeon_entrance.glb", "dungeon/wall_cracked.glb", "dungeon/door_loot.glb", "dungeon/gate_round.glb",
+	"dungeon/portcullis.glb"]  # (a portcullis is a doorway too: the junk keeps off the line through it, F975)
 
 
 func _plans() -> Array:
@@ -171,7 +172,7 @@ func test_no_junk_over_drops_rails_or_the_plank_walk() -> void:
 			var at := _xz(p.pos)
 			for s in _on(map, float(p.pos[1])):
 				var nm := String(s[0])
-				var drop: bool = (float(s[5]) < 0.0 and not map.id in ["pell", "hald", "barrows"]) or nm in map.get("deadly", []) or nm == "chasm" or nm.begins_with("shaft_") or nm == "spike_pit"   # (and 0.8 m from its edge)
+				var drop: bool = (float(s[5]) < 0.0 and not map.id in ["pell", "hald", "barrows", "brassgate"]) or nm in map.get("deadly", []) or nm == "chasm" or nm.begins_with("shaft_") or nm == "spike_pit"   # (and 0.8 m from its edge)
 				var rails := nm.contains("rail") or nm == "old_shaft"   # (the rail pieces themselves: 1 m, test above)
 				check(not (drop and _inside(s, at, 0.8)) and not (rails and _inside(s, at)), "%s junk %s at %s keeps off %s" % [map.id, p.model, at, nm])
 

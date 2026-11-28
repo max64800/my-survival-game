@@ -95,9 +95,18 @@ PAINT = {
 	"plank_rot": ("wood_b", (0.27, 0.26, 0.19), 1.0, 0.0),
 	"plank_dark": ("wood_b", (0.17, 0.16, 0.11), 1.0, 0.0),
 	"moss": ("soil_b", (0.19, 0.29, 0.09), 1.0, 0.0),
+	# the Vault Captain (Brassgate Vault's boss, F975, owner: "a big armoured lost miner, grand + brass"): old brass
+	# armour gone dull and dark in the creases, a faded red guard's coat, ash-grey beard, dark oak behind his shield
+	"brass": ("bronze_b", (0.60, 0.45, 0.20), 0.8, 0.0),
+	"brass_dark": ("bronze_dark", (0.34, 0.24, 0.11), 0.8, 0.0),
+	"bone_vault": ("limestone_b", (0.50, 0.46, 0.39), 0.55, 0.0),
+	"wool_red": ("sack_b", (0.27, 0.08, 0.06), 0.9, 0.0),
+	"leather_vault": ("leather_dark", (0.22, 0.15, 0.10), 0.7, 0.0),
+	"beard_ash": ("ropev_a", (0.31, 0.30, 0.28), 1.0, 0.0),
+	"oak_dark": ("wood_b", (0.20, 0.14, 0.09), 1.0, 0.0),
 }
 TILE = {"bone": 0.7, "bone_ghost": 0.7, "bone_grime": 0.7, "wool": 0.6, "wool_ghost": 0.6, "wool_dark": 0.6,
-	"iron": 0.45, "iron_black": 0.45, "leather": 0.5, "beard": 0.25, "beard_ghost": 0.25, "beard_red": 0.25, "wood": 0.5, "copper": 0.4}
+	"iron": 0.45, "iron_black": 0.45, "leather": 0.5, "beard": 0.25, "beard_ghost": 0.25, "beard_red": 0.25, "wood": 0.5, "copper": 0.4, "brass": 0.45, "brass_dark": 0.45}
 for _k in PAINT:
 	TILE.setdefault(_k, 0.35 if _k == "moss" else 0.25 if _k.startswith("beard") else 0.6 if _k.startswith(("wool", "shirt")) else 0.5 if _k.startswith("leather") else 0.7)
 
@@ -130,6 +139,14 @@ CREATURES = {
 		eyes=(0.75, 1.0, 0.35), eye_glow=3.0, beard="beard_moss", beard_len=0.66, beard_w=0.60,
 		pose={"spine": (0, 0, 0), "chest": (-4, 0, 0), "head": (4, 0, 0)}, chest_scale=(1.32, 1.12, 1.25),
 		helmet="warden", tool="felling_axe", shield="plank", tache_in=0.02, head_k=0.86, looks={"": {}}),  # (tache_in: his moustache floated 1 cm off the face)
+	# The Brassgate Vault's boss (F975): the guard captain who never left his post. Broader than the Warden (the game
+	# makes him a quarter bigger again), his armour painted brass, a brass helm with a crest and a nose guard, the felling
+	# axe, and a tall oak shield faced with brass plates, a brass rim and a lock-face boss (blocks from the front).
+	"vault_captain": dict(src="Skeleton_Warrior", height=1.9, drop=["Skeleton_Warrior_Helmet"],
+		paint={"bone": "bone_vault", "cloth": "wool_red", "metal": "brass", "leather": "leather_vault", "shirt": "wool_red"},
+		eyes=(1.0, 0.78, 0.3), eye_glow=3.0, beard="beard_ash", beard_len=0.66, beard_w=0.62,
+		pose={"spine": (0, 0, 0), "chest": (-6, 0, 0), "head": (4, 0, 0)}, chest_scale=(1.4, 1.15, 1.3),
+		helmet="captain", tool="felling_axe", shield="brass", tache_in=0.02, head_k=0.86, looks={"": {}}),
 }
 
 # owner, Nov 21 (F527): "the heads are too big, make them normal size": every head is this much of the pack's
@@ -178,7 +195,7 @@ def paint_mat(kind, glow=None):
 	t = m.node_tree.nodes.new("ShaderNodeTexImage")
 	t.image = img
 	m.node_tree.links.new(t.outputs["Color"], b.inputs["Base Color"])
-	metal = kind in ("iron", "copper")
+	metal = kind in ("iron", "copper") or kind.startswith("brass")
 	b.inputs["Metallic"].default_value = 0.5 if metal else 0.0
 	b.inputs["Roughness"].default_value = 0.5 if metal else 0.9
 	if glow:
@@ -525,8 +542,8 @@ def helmet(head_lo, head_hi, kind):
 	ry = (head_hi.y - head_lo.y) / 2 * 1.3  # (F527: the smaller skull's back poked through the dome)
 	z0 = head_hi.z - (0.42 if kind != "cap" else 0.36) * HK
 	tall = head_hi.z + (0.07 if kind != "foreman" else 0.12) * HK - z0  # the dome's top clears the skull
-	shell = paint_mat("plank_rot" if kind == "warden" else "iron_black")  # (round 3: black helmets, the Rat's cap too)
-	band = paint_mat("iron_black")
+	shell = paint_mat("plank_rot" if kind == "warden" else "brass" if kind == "captain" else "iron_black")  # (round 3: black helmets, the Rat's cap too)
+	band = paint_mat("brass_dark" if kind == "captain" else "iron_black")
 	# dome: a squashed low-poly half ball, a bit dented
 	bpy.ops.mesh.primitive_uv_sphere_add(segments=10, ring_count=6, radius=1.0, location=(cx, cy, z0))
 	d = bpy.context.object
@@ -595,6 +612,20 @@ def helmet(head_lo, head_hi, kind):
 			parts += new_objs(before2)
 		if kind == "foreman":  # the badge on the band's side (the sheet's octagon with a peak)
 			pass
+	if kind == "captain":  # the Vault Captain's brass helm: no lamp; a crest of chunky blocks over the top, a nose guard
+		before2 = set(bpy.data.objects)
+		k = HK
+		dk = paint_mat("brass_dark")
+		for i in range(5):  # front to back over the dome, each block overlapping the next (no gaps, no shimmer)
+			t = (i - 2) / 2.4
+			a = t * 1.05
+			y = cy + math.sin(a) * ry * 0.98
+			z = z0 + math.cos(a) * tall * 0.98
+			kit.box((0.07 * k, 0.13 * k, 0.11 * k - abs(t) * 0.03 * k), (cx, y, z + 0.04 * k), dk, bevel=0.012 * k, wobble=0.006 * k,
+				rot=(-math.degrees(a), 0, rng.uniform(-2, 2)))
+		kit.box((0.06 * k, 0.05 * k, 0.2 * k), (cx, cy - ry * 1.08, z0 - 0.04 * k), dk, bevel=0.012 * k, wobble=0.005 * k)  # nose guard
+		kit.rivet((cx, cy - ry * 1.13, z0 + 0.03 * k), dk, r=0.018 * k)
+		parts += new_objs(before2)
 	if kind == "warden":  # the Prop Warden's timber helm: no lamp, moss growing over the top and spilling on the brim
 		before2 = set(bpy.data.objects)
 		k = HK
@@ -620,6 +651,8 @@ CRACKS = {
 	"foreman": [("c", 16, 1.1, 36, -0.8, 1.1), ("c", 26, 0.3, 60, -0.1, 0.7), ("c", -30, 0.1, -44, -1.1, 0.9),
 		("s", -46, 1.0, -64, -0.4, 0.65), ("s", -56, 1.0, -74, -0.35, 0.65), ("s", -66, 1.0, -84, -0.3, 0.65),
 		("c", 165, 1.1, 190, -0.9, 1.0), ("c", 100, 1.1, 115, -0.6, 0.8)],
+	"vault_captain": [("c", 20, 1.1, 42, -0.8, 1.1), ("c", -32, 0.9, -54, -0.9, 0.9), ("s", -60, 1.0, -76, -0.4, 0.65),
+		("s", -70, 1.0, -86, -0.35, 0.65), ("c", -165, 1.1, -190, -0.9, 1.0)],
 	"prop_warden": [("c", -18, 1.1, -40, -0.8, 1.1), ("c", 30, 0.9, 52, -0.9, 0.9), ("c", -60, 0.4, -95, 0.0, 0.7),
 		("s", 60, 1.0, 76, -0.4, 0.65), ("s", 70, 1.0, 86, -0.35, 0.65), ("c", 160, 1.1, 185, -0.9, 1.0)],
 }
@@ -810,10 +843,52 @@ def moss_clump(loc, size):
 	return kit._finish(o, paint_mat("moss"), 0, min(size) * 0.25)
 
 
+def brass_shield():
+	"""The Vault Captain's tall shield (F975), in the left forearm's own space (as shield()): three thick dark oak planks
+	behind, faced with two big brass plates (top and bottom, sunk into the oak), a raised brass rim round the edge,
+	a lock-face boss in the middle (a brass plate with a dark keyhole), rows of rivets. Bigger than the Warden's."""
+	before = set(bpy.data.objects)
+	oak, br, dk, strap = paint_mat("oak_dark"), paint_mat("brass"), paint_mat("brass_dark"), paint_mat("leather_vault")
+	W, T, ZC, BOT, H = 0.27, 0.06, 0.16, -0.5, 1.08  # plank width, thickness, middle (z), bottom, height
+	xs = [(i - 1) * (W - 0.004) for i in range(3)]
+	for i, x in enumerate(xs):  # the oak (each plank overlaps the next a little: no gaps)
+		kit.box((W + 0.004, H + rng.uniform(-0.01, 0.01), T), (x, BOT + H / 2, ZC), oak, bevel=0.012, wobble=0.007,
+			rot=(0, 0, rng.uniform(-0.8, 0.8)))
+	FZ = ZC + T / 2  # the oak's front
+	WW = 3 * W - 0.05  # the brass plates: a little inside the rim
+	for y0, y1 in ((BOT + 0.07, BOT + H * 0.5 - 0.02), (BOT + H * 0.5 + 0.02, BOT + H - 0.07)):
+		kit.box((WW, y1 - y0, 0.024), (0, (y0 + y1) / 2, FZ + 0.012 - 0.01), br, bevel=0.01, wobble=0.006, rot=(0, 0, rng.uniform(-0.8, 0.8)))
+	PZ = FZ + 0.014  # the plates' front
+	X = 1.5 * W + 0.01
+	for x in (-X + 0.03, X - 0.03):  # the rim: up both sides ...
+		kit.box((0.07, H + 0.04, 0.05), (x, BOT + H / 2, FZ + 0.025 - 0.012), dk, bevel=0.012, wobble=0.006)
+	for y in (BOT + 0.025, BOT + H - 0.025):  # ... and across the top and bottom (between the sides, sunk into them)
+		kit.box((2 * X - 0.1, 0.07, 0.044), (0, y, FZ + 0.022 - 0.012), dk, bevel=0.012, wobble=0.006)
+	kit.box((2 * X - 0.1, 0.06, 0.036), (0, BOT + H * 0.5, FZ + 0.018 - 0.008), dk, bevel=0.01, wobble=0.005)  # the band between the plates
+	# the lock-face boss: a chunky eight-sided brass plate standing proud, a dark keyhole in it
+	kit.cylinder(0.15, 0.06, (0, BOT + H * 0.5, PZ + 0.03 - 0.01), br, rot=(90, 0, 0), verts=8, bevel=0.015)
+	kit.cylinder(0.035, 0.03, (0, BOT + H * 0.5 + 0.035, PZ + 0.05 + 0.005), kit.mat("charcoal"), rot=(90, 0, 0), verts=8, bevel=0.004)
+	kit.box((0.03, 0.07, 0.03), (0, BOT + H * 0.5 - 0.01, PZ + 0.05 + 0.005), kit.mat("charcoal"), bevel=0.004, wobble=0.0)
+	for k in range(8):  # rivets round the boss
+		a = 2 * math.pi * (k + 0.5) / 8
+		kit.rivet((math.cos(a) * 0.12, BOT + H * 0.5 + math.sin(a) * 0.12, PZ + 0.06 - 0.006), dk, r=0.016)
+	for y in (BOT + 0.025, BOT + H - 0.025):  # rivets along the rim
+		for x in (-0.3, -0.1, 0.1, 0.3):
+			kit.rivet((x, y, FZ + 0.034), br, r=0.016)
+	for y in (-0.08, 0.13):  # two leather straps behind, round the forearm (sunk 0.5 cm into the oak)
+		kit.box((0.18, 0.05, 0.09), (0.0, y, ZC - T / 2 + 0.005 - 0.045), strap, bevel=0.008, wobble=0.004)
+	o = group(new_objs(before), "shield")
+	o.data.transform(o.matrix_world)
+	o.matrix_world = Matrix.Identity(4)
+	return o
+
+
 def shield(kind):
 	"""The Prop Warden's plank shield, in the left forearm's own space: x = across, y = along the arm (to the hand),
 	z = out from the arm (the strap at 0). Four rotten planks with broken tops,
 	two battens and a brace nailed across the front, an iron band on the bottom, moss in the joints."""
+	if kind == "brass":
+		return brass_shield()
 	before = set(bpy.data.objects)
 	rot, dark, ir, strap = paint_mat("plank_rot"), paint_mat("plank_dark"), paint_mat("iron_black"), paint_mat("leather_rot")
 	W, GAP, T, ZC = 0.15, 0.014, 0.05, 0.15  # plank width, gap between, thickness, middle (z)

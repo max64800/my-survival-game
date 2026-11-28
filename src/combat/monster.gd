@@ -142,6 +142,8 @@ func _ready() -> void:
 	hit_shapes = HitShapes.for_monster(model, kind, data)  # hurt bubbles + what it hits with (F9 shows them)
 	if rig and data.get("front_shield", false):
 		rig.hold_shield()  # (the Prop Warden: his plank shield up in front while he comes at you, F548)
+		if data.get("shield_drops", false):
+			rig.shield_rest = float(data.get("recover", RECOVER_TIME))  # (the Vault Captain lowers it after each swing)
 	if rig and state == State.SLEEP and data.get("rises", false):
 		model.rotation.y = fposmod(float(uid) * 2.39996, TAU)  # (each lies its own way: owner, Nov 20, "all the same direction")
 		rig.lie()  # scattered on the floor until someone comes near (F462)
@@ -692,6 +694,8 @@ func think(delta: float, mgr: Node) -> void:
 				else:
 					state = State.RECOVER
 					_timer = data.get("recover", RECOVER_TIME)
+					if rig and data.get("shield_drops", false):
+						rig.lower_shield(maxf(_timer, CHARGE_DAZE) if _attack.get("lunge", false) else _timer)
 					if _attack.get("lunge", false):
 						# After a charge it stands catching its breath: your chance to hit it (F111). It isn't dazed (no
 						# stars, no "Dazed!"): the old word here made it say dazed when it wasn't (owner F448).

@@ -216,6 +216,28 @@ static var LIST := {
 			{name = "Shield Charge", anim = "Running_B", warn_sound = "beetle_rumble", tell = 1.2, damage = 20, type = "blunt", reach = 8.0, min_reach = 3.5, rest = 9.0, parry = "shield", knockdown = true, lunge = true, straight = true, lunge_reach = 3.0},
 			{name = "Rally Slam", anim = "2H_Melee_Attack_Chop", warn_sound = "beetle_rumble", tell = 2.0, damage = 0, type = "blunt", reach = 14.0, rest = 25.0, parry = "any", raise_miners = 2, land_sound = "snail_slam"}],
 		drops = []},
+	# The Brassgate Vault's boss (owner, Nov 28, F975: "a big armoured lost miner" with a big shield): the Prop Warden's
+	# moves, a quarter bigger and tougher, in his own brass look (kaykit_miners.py: brass helm, red coat, a tall
+	# brass-faced oak shield). His shield blocks from the front (front_shield) but he lowers it after every swing and
+	# after his charge (shield_drops: CreatureRig.lower_shield): hit him then, or from the side. No Rally Slam (the
+	# Vault's no_raising). He holds the Vault Key (DungeonKeys.KEYS.key_vault) to the Strongroom.
+	"vault_captain": {name = "The Vault Captain", dungeon_only = true, rises = true, rise_near = 10.0, sleeps = true, no_variant = true, ragdoll = false, statue_hits = 5, boss = true,
+		front_shield = true, shield_drops = true, no_push = true, key = "key_vault", size = 1.25, height = 2.35, hp = 420,
+		armor = 60, stun = 300, slash = 1.0, blunt = 1.25, pierce = 0.75,
+		fire = 1.0, frost = 0.5, poison = 1.0, walk = 1.3, run = 3.3, pack = [1, 1], xp = 100,
+		color = Color(0.72, 0.58, 0.3), shape = "foreman", recover = 1.6,
+		attacks = [{name = "Axe Chop", anim = "1H_Melee_Attack_Chop", warn_sound = "beetle_rumble", tell = 0.9, damage = 24, type = "slash", reach = 2.6, rest = 5.0, parry = "any", knock = 2.5},
+			{name = "Shield Sweep", anim = "2H_Melee_Attack_Spin", warn_sound = "beetle_rumble", tell = 0.97, damage = 18, type = "blunt", reach = 2.6, rest = 8.0, parry = "shield", knockdown = true, knock = 3.5},
+			{name = "Shield Charge", anim = "Running_B", warn_sound = "beetle_rumble", tell = 1.2, damage = 22, type = "blunt", reach = 8.0, min_reach = 3.5, rest = 9.0, parry = "shield", knockdown = true, lunge = true, straight = true, lunge_reach = 3.0}],  # (no Rally Slam: the Vault's map says no_raising)
+		drops = []},
+	# The Captain's bodyguard leader (Claude, F975): a big Hollow Miner in the Pit Boss's body, not a boss (the exit
+	# lever only waits for the Captain). His pick chop is slow and heavy; the miners with him are ordinary ones.
+	"vault_guard": {name = "Vault Guard", dungeon_only = true, rises = true, rise_near = 10.0, sleeps = true, no_variant = true, ragdoll = false,
+		no_push = true, size = 1.1, height = 1.9, hp = 220, armor = 30, stun = 120, slash = 1.0, blunt = 1.25, pierce = 0.75,
+		fire = 0.0, frost = 0.5, poison = 1.0, walk = 1.2, run = 3.0, pack = [1, 1], xp = 35,
+		color = Color(0.66, 0.6, 0.48), shape = "foreman", recover = 1.4,
+		attacks = [{name = "Pick Crack", anim = "2H_Melee_Attack_Chop", warn_sound = "warn_bones", tell = 0.9, damage = 16, type = "blunt", reach = 2.2, parry = "any", knock = 2.5, rest = 4.0}],
+		drops = []},
 }
 
 

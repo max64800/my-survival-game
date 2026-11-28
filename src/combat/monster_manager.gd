@@ -662,6 +662,8 @@ func _shield_blocks(m: Monster, from: Vector3, heavy: bool) -> bool:
 		return false  # (during his Rally Slam the plank is up over his head: hit him now)
 	if m.data.get("ghost", false) and (m.state == Monster.State.RECOVER or (m.rig is GhostRig and m.rig.shield_open())):
 		return false  # F850: the Shield-Brother's shield drops after each swing and after his charge: hit him then
+	if m.data.get("shield_drops", false) and (m.state == Monster.State.RECOVER or (m.rig and m.rig.shield_lowered())):
+		return false  # F975: the Vault Captain lowers his shield after each swing and after his charge: hit him then
 	var to_me := (from - m.global_position) * Vector3(1, 0, 1)
 	var ahead := -m.model.global_transform.basis.z * Vector3(1, 0, 1)
 	if to_me.length() < 0.01 or ahead.length() < 0.01:

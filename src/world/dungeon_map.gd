@@ -319,7 +319,70 @@ const BARROWS := {
 	],
 }
 
-const MAPS := [MOSSGATE, LAMPWICK, PELL, MOSSPROP, HALD, BARROWS]
+## Brassgate Vault (owner, Nov 28, F975): a medium Stonehold-stone treasury, two levels: the toll halls at 0 and the
+## mint at MINT = -8. Lost miners guard the toll halls, ghosts the mint; the Vault Captain (a big shielded miner)
+## holds the Vault Key to the Strongroom. Two straight stairs: the Mint Stair down east off the Guard Corridor, the
+## Back Stair up into the Inner Door. The way out: the Bolt-hole from the Strongroom ends behind the barred gate in
+## the Brass Gate's west wall (a lever opens it). Built by tools/dungeons/make_brassgate.py
+## (docs/design/zone1-dungeons/2026-11-28-brassgate-decisions.md). `since = 22`: only its test world has it for now.
+const MINT := -8.0
+const BRASSGATE := {
+	id = "brassgate",
+	name = "Brassgate Vault",
+	mouth = Vector2(40, 70),
+	since = 22,
+	mood = "tomb",
+	torch_energy = 1.0,
+	torch_range = 7.0,
+	best = 140.0,
+	chase_out = true,
+	crushers_always = true,  # (the coin press stamps in its rhythm all the time: watch it and run)
+	deadly = ["no_pit_yet"],
+	no_raising = true,
+	## (deadly: a name no space has, because an empty list makes every room under 0 kill; the Coin Chute spikes are step 3)
+	spaces = [
+		["entry", 38, 62, 42, 70, 0, 3.5],                 # the way in
+		["brass_gate", 36, 54, 44, 62, 0, 5],              # 1 the round door; the barred gate in its west wall (the way out)
+		["bolt_hole", 22, 56, 36, 60, 0, 3.5],             # 20 the guards' escape tunnel from the Strongroom: the lever
+		["toll_door", 38, 52, 42, 54, 0, 3.5],
+		["toll_hall", 34, 40, 46, 52, 0, 6],               # 2 lost miners on guard, a chest
+		["count_door", 46, 44, 48, 48, 0, 3.5],
+		["counting_room", 48, 42, 56, 50, 0, 4.5],         # 3 old desks; the loose stone (a buried chest)
+		["guard_corridor", 38, 28, 42, 40, 0, 4],          # 4 the tripwire
+		["mint_a", 42, 32, 44, 36, -2, 6],                 # 9 the Mint Stair: 8 m down in four steps, east
+		["mint_b", 44, 32, 46, 36, -4, 8],
+		["mint_c", 46, 32, 48, 36, -6, 10],
+		["mint_foot", 48, 32, 52, 36, MINT, 12],
+		["weighing_hall", 34, 16, 46, 28, 0, 6],           # 5 big scales, the dart plate, lost miners
+		["clerks_door", 46, 20, 48, 24, 0, 3.5],
+		["clerks_rooms", 48, 18, 56, 26, 0, 4.5],          # 6 lost miners; the cracked east wall
+		["clerks_hoard", 56, 20, 60, 24, 0, 3],            # 7 behind the cracked wall
+		["inner_way", 32, 20, 34, 24, 0, 3.5],
+		["inner_door", 24, 18, 32, 26, 0, 5],              # 8 the huge round door, its lock smashed: it stands open
+		["swing_way", 22, 20, 24, 24, 0, 3.5],
+		["swing_hall", 6, 20, 22, 24, 0, 6],               # 16 the swinging boulders (time the gaps, or shoot the chains)
+		["boulder_niche", 4, 20, 6, 22, 0, 3],             # 18 behind the hidden boulder (a chest)
+		["treasury_corridor", 8, 24, 12, 36, 0, 4],        # 17 two chests in the walls
+		["vault_door", 8, 36, 12, 38, 0, 3.5],
+		["vault_hall", 4, 38, 18, 50, 0, 6],               # 19 the Vault Captain and his guards (the Vault Key)
+		["vault_lock", 14, 50, 18, 54, 0, 3.5],            #    the Strongroom's round door: locked (the Vault Key)
+		["strongroom", 14, 54, 22, 62, 0, 4.5],            # 21 the recipe stand, the big chest
+		["old_mint", 52, 28, 64, 40, MINT, 5],             # 10 cold furnaces, coin moulds; Drifting Shades
+		["mint_work", 56, 24, 60, 28, MINT, 3.5],
+		["workers_hall", 52, 12, 64, 24, MINT, 6],         # 11 the coin press (a crusher), Bearded Shades, a chest
+		["coin_chute", 40, 14, 52, 18, MINT, 4],           # 12 where the coins slid down (the push wall comes in step 3)
+		["captains_quarters", 32, 14, 40, 22, MINT, 5],    # 13 the bodyguard and his pack; the portcullis drops behind you
+		["shrine_door", 34, 12, 38, 14, MINT, 3.5],
+		["guard_shrine", 32, 2, 40, 12, MINT, 4.5],        # 14 the healing basin
+		["shrine_way", 30, 6, 32, 10, MINT, 3.5],
+		["back_foot", 26, 6, 30, 12, MINT, 12],            # 15 the Back Stair: 8 m up in four steps, north to south
+		["back_c", 26, 12, 30, 14, -6, 10],
+		["back_b", 26, 14, 30, 16, -4, 8],
+		["back_a", 26, 16, 30, 18, -2, 6],
+	],
+}
+
+const MAPS := [MOSSGATE, LAMPWICK, PELL, MOSSPROP, HALD, BARROWS, BRASSGATE]
 
 
 ## One placed dungeon: where its mouth is in the world, which way it faces, and its boxes in world terms.

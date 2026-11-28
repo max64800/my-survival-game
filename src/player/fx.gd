@@ -52,7 +52,7 @@ static func burst(parent: Node, pos: Vector3, color: Color, amount: int = 10, sp
 ## skeleton throws off bits in its own bone-white, a creature a splat"). Anything not listed is flesh.
 const HIT_BODY := {
 	"rock_snail": "rock", "rock_beetle": "rock", "great_rock_beetle": "rock",
-	"tunnel_rat": "bone", "lost_miner": "bone", "foreman": "bone", "prop_warden": "bone",
+	"tunnel_rat": "bone", "lost_miner": "bone", "foreman": "bone", "prop_warden": "bone", "vault_captain": "bone", "vault_guard": "bone",
 	"ghost_a": "ghost", "ghost_b": "ghost", "ghost_c": "ghost", "ghost_lord": "ghost", "shield_brother": "ghost", "hald_shade": "ghost", "hald_ironbrow": "ghost", "barrow_warden": "ghost", "barrow_keeper": "ghost",
 	"cave_spider": "ichor",
 }
