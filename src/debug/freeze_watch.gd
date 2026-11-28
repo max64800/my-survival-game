@@ -60,6 +60,12 @@ func _ready() -> void:
 	_beat_ms = Time.get_ticks_msec()
 	_thread = Thread.new()
 	_thread.start(_watch)
+	# F417: time each part of a frame ourselves. Godot's own "process time" is the slowest frame of the whole last
+	# second, updated once a second, so a SLOW FRAME line used to say "game code 38 ms" for a 600 ms game-code frame.
+	get_tree().physics_frame.connect(_on_physics_frame)
+	get_tree().process_frame.connect(_on_process_frame)
+	RenderingServer.frame_pre_draw.connect(_on_pre_draw)
+	RenderingServer.frame_post_draw.connect(_on_post_draw)
 
 
 func _exit_tree() -> void:
@@ -76,17 +82,57 @@ static func time_part(what: String, since_usec: int) -> void:
 
 
 var _last_usec := 0
+var _last_pipes := Vector4i.ZERO
+var _phys_from := 0  ## when this frame's first physics step started (0 = none yet)
+var _proc_from := 0
+var _pre_from := 0
+var _phys_ms := 0.0  ## this frame's physics steps
+var _draw_ms := 0.0  ## the last frame's handing over to the graphics card
+var _max_game := 0.0  ## the slowest game code / physics this second (for LOW FPS)
+var _max_phys := 0.0
+
+
+func _on_physics_frame() -> void:
+	if _phys_from == 0:
+		_phys_from = Time.get_ticks_usec()
+
+
+func _on_process_frame() -> void:
+	_proc_from = Time.get_ticks_usec()
+	_phys_ms = (_proc_from - _phys_from) / 1000.0 if _phys_from > 0 else 0.0
+	_phys_from = 0
+
+
+func _on_post_draw() -> void:
+	_draw_ms = (Time.get_ticks_usec() - _pre_from) / 1000.0
+
+
+## A whole frame ends when drawing starts: the time since the last one (measured with the real clock, not `delta`,
+## F417: a 1.4 s frame never showed up as SLOW FRAME) = the last drawing + this frame's physics + game code.
+func _on_pre_draw() -> void:
+	var now := Time.get_ticks_usec()
+	var game := (now - _proc_from) / 1000.0 if _proc_from > 0 else 0.0
+	_max_game = maxf(_max_game, game)
+	_max_phys = maxf(_max_phys, _phys_ms)
+	var real := (now - _last_usec) / 1000000.0
+	var first := _last_usec == 0
+	_last_usec = now
+	_pre_from = now
+	# F417: graphics-card programs (pipelines) made since the last frame: for newly loaded models ("mesh"), new
+	# pieces in the world ("surface"), or at the moment of drawing ("draw": the picture waits for those).
+	var pipes := Vector4i(int(Performance.get_monitor(Performance.PIPELINE_COMPILATIONS_MESH)),
+		int(Performance.get_monitor(Performance.PIPELINE_COMPILATIONS_SURFACE)),
+		int(Performance.get_monitor(Performance.PIPELINE_COMPILATIONS_DRAW)),
+		int(Performance.get_monitor(Performance.PIPELINE_COMPILATIONS_SPECIALIZATION)))
+	var new_pipes := pipes - _last_pipes
+	_last_pipes = pipes
+	if real > SLOW_FRAME and not first:
+		_say("[%s] SLOW FRAME: %.1f s (doing: %s) · game code %.0f ms, physics %.0f ms, handing the last picture to the graphics card %.0f ms · new looks readied: %d mesh, %d surface, %d draw, %d special" % [
+			_clock(), real, doing, game, _phys_ms, _draw_ms, new_pipes.x, new_pipes.y, new_pipes.z, new_pipes.w])
 
 
 func _process(delta: float) -> void:
 	_beat_ms = Time.get_ticks_msec()
-	# Measured with the real clock, not `delta` (F417: a 1.4 s frame never showed up as SLOW FRAME).
-	var now := Time.get_ticks_usec()
-	var real := (now - _last_usec) / 1000000.0 if _last_usec > 0 else delta
-	_last_usec = now
-	if real > SLOW_FRAME:
-		_say("[%s] SLOW FRAME: %.1f s (doing: %s) · game code %.0f ms, physics %.0f ms" % [_clock(), real, doing,
-			Performance.get_monitor(Performance.TIME_PROCESS) * 1000.0, Performance.get_monitor(Performance.TIME_PHYSICS_PROCESS) * 1000.0])
 	_low_check(delta)
 	_report_t += delta
 	if _report_t >= REPORT_EVERY:
@@ -111,6 +157,10 @@ func _low_check(delta: float) -> void:
 	var vp := get_viewport().get_viewport_rid()
 	RenderingServer.viewport_set_measure_render_time(vp, true)
 	var fps := Engine.get_frames_per_second()
+	var max_game := _max_game
+	var max_phys := _max_phys
+	_max_game = 0.0
+	_max_phys = 0.0
 	if fps >= 50 or _low_quiet > 0.0:  # (owner, Nov 18: drops to 43-47 FPS matter too)
 		return
 	_low_quiet = 10.0
@@ -118,9 +168,9 @@ func _low_check(delta: float) -> void:
 	hits = 0
 	var cam := get_viewport().get_camera_3d()
 	var at := cam.global_position if cam else Vector3.ZERO
-	_say("[%s] LOW FPS %d at (%.0f, %.0f, %.0f) · whole frame %.1f ms · physics %.1f ms · drawing: cpu %.1f ms, graphics card %.1f ms · %d draw calls, %dk triangles · %d nodes, %d moving physics bodies, %d collision pairs · rock hits lately: %d, flying rock chunks: %d · doing: %s" % [
+	_say("[%s] LOW FPS %d at (%.0f, %.0f, %.0f) · slowest this second: game code %.1f ms, physics %.1f ms · drawing: cpu %.1f ms, graphics card %.1f ms · %d draw calls, %dk triangles · %d nodes, %d moving physics bodies, %d collision pairs · rock hits lately: %d, flying rock chunks: %d · doing: %s" % [
 		_clock(), fps, at.x, at.y, at.z,
-		Performance.get_monitor(Performance.TIME_PROCESS) * 1000.0, Performance.get_monitor(Performance.TIME_PHYSICS_PROCESS) * 1000.0,
+		max_game, max_phys,
 		RenderingServer.viewport_get_measured_render_time_cpu(vp), RenderingServer.viewport_get_measured_render_time_gpu(vp),
 		Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME), Performance.get_monitor(Performance.RENDER_TOTAL_PRIMITIVES_IN_FRAME) / 1000,
 		Performance.get_monitor(Performance.OBJECT_NODE_COUNT), Performance.get_monitor(Performance.PHYSICS_3D_ACTIVE_OBJECTS),
