@@ -38,7 +38,7 @@ static var LIST := {
 		# F460 (owner, Nov 20): it circles you, then dives straight THROUGH you at twice its speed (leaving a trail) and
 		# climbs away on the other side; no stopping. The tell is worked out from how far it has to fly (Monster._start_dive).
 		attacks = [{name = "Dive Through", warn_sound = "bat_screech", tell = 0.6, damage = 6, type = "pierce", reach = 1.2, parry = "any", dive = true}],
-		drops = [["wing_leather", 1, 1.0], ["wing_leather", 1, 0.3], ["bat_fang", 1, 0.4], ["bat_meat", 1, 0.8]]},
+		drops = [["wing_leather", 1, 1.0], ["wing_leather", 1, 0.3], ["bat_fang", 1, 0.75], ["bat_meat", 1, 0.8]]},  # (fang 0.4 -> 0.75: F964, owner Nov 28 "too hard to get")
 	# statue_hits: pickaxe hits to break its stone statue (default 2; owner, Nov 21, F586: bats 1, every other creature 2,
 	# bosses 5).
 	# ragdoll: on death it goes limp and falls apart into physics pieces (Ragdoll; the beetle first, owner Nov 18).

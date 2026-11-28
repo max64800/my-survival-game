@@ -3017,7 +3017,14 @@ func _host_remove_glow(spot: Dictionary, mined := true) -> void:
 
 ## Where a finished slow job (leather, ingots, a stew) waits: lying on top of the station that made it.
 static func ready_spot(st: Station) -> Vector3:
+	if st.kind in FRONT_READY:  # (F960, owner Nov 28: leather lay inside the rack's frame) on the floor in front of it
+		var front := st.global_transform.basis.z * Vector3(1, 0, 1)
+		return st.global_position + front.normalized() * (Station.size_of(st.kind).z * 0.5 + 0.45) + Vector3.UP * 0.3
 	return st.global_position + Vector3.UP * (Station.size_of(st.kind).y + 0.15)
+
+
+## Stations whose top is an open frame (what's made would sit inside it): their work waits in front instead.
+const FRONT_READY := ["tanning_rack"]
 
 
 func spawn_drop(item_id: String, count: int, pos: Vector3) -> void:

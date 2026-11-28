@@ -153,6 +153,7 @@ func test_crafting_takes_a_moment() -> void:
 ## F127/F129: recipes sorted into tabs; "how many can I make" for the ×5 / ×10 / All buttons.
 func test_crafting_tabs_and_amounts() -> void:
 	check_eq(CraftPanel.tab_of("pickaxe_stone"), "Tools", "pickaxes under Tools")
+	check_eq(CraftPanel.tab_of("crystal_torch"), "Tools", "crystal torches under Tools (F965)")
 	check_eq(CraftPanel.tab_of("masons_shovel"), "Tools", "the Mason's Shovel under Tools (owner, Nov 20)")
 	check_eq(CraftPanel.tab_of("sword_stone"), "Weapons", "swords under Weapons")
 	check_eq(CraftPanel.tab_of("workbench"), "Stations", "stations under Stations")

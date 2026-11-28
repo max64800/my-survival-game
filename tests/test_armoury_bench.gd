@@ -48,12 +48,13 @@ func test_all_armour_and_shields_are_made_on_it() -> void:
 	var count := 0
 	for id in Recipes.LIST:
 		var out: String = Recipes.LIST[id].output
-		if Items.kind(out) in ["wear", "shield"]:
+		if Items.kind(out) in ["wear", "shield"] and id != "shield_stone":  # (F958: the Wooden Shield is at the Workbench)
 			count += 1
 			check_eq(Recipes.LIST[id].station, "armoury_bench", "%s at the Armoury Bench" % id)
-	check(count >= 22, "leather, shell, copper, bronze and silver armour + every shield (%d)" % count)
-	for id in ["tunic_leather", "plate_shell", "helm_copper", "mail_bronze", "shield_stone", "shield_silver"]:
+	check(count >= 21, "leather, shell, copper, bronze and silver armour + every other shield (%d)" % count)
+	for id in ["tunic_leather", "plate_shell", "helm_copper", "mail_bronze", "shield_silver"]:
 		check(id in Recipes.for_station("armoury_bench"), id + " is on the bench's list")
+	check("shield_stone" in Recipes.for_station("workbench"), "F958: the Wooden Shield is made at the Workbench, from the start")
 
 
 func test_the_anvil_keeps_weapons_and_tools() -> void:

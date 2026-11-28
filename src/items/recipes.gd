@@ -89,7 +89,7 @@ const LIST := {
 	"sword_stone": {station = "workbench", inputs = {stone = 5, rootwood = 2, rope = 1}, output = "sword_stone", count = 1, unlock = []},
 	"mace_stone": {station = "workbench", inputs = {stone = 6, rootwood = 2, rope = 1}, output = "mace_stone", count = 1, unlock = []},
 	"spear_stone": {station = "workbench", inputs = {stone = 3, rootwood = 3, rope = 2}, output = "spear_stone", count = 1, unlock = []},
-	"shield_stone": {station = "armoury_bench", inputs = {plank_root = 6, rope = 2}, output = "shield_stone", count = 1, unlock = []},
+	"shield_stone": {station = "workbench", inputs = {plank_root = 6, rope = 2}, output = "shield_stone", count = 1, unlock = []},  # (F958, owner Nov 28: the first shield is at the Workbench, for the bats early on)
 	"axe_2h_stone": {station = "workbench", inputs = {stone = 8, rootwood = 3, rope = 2}, output = "axe_2h_stone", count = 1, unlock = []},
 	"mace_2h_stone": {station = "workbench", inputs = {stone = 10, rootwood = 3, rope = 2}, output = "mace_2h_stone", count = 1, unlock = []},
 	"sword_copper": {station = "anvil", inputs = {copper_ingot = 30, plank_root = 2, leather = 1}, output = "sword_copper", count = 1, unlock = "ruin"},

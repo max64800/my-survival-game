@@ -994,7 +994,9 @@ func test_tanning_rack_gives_leather() -> void:
 	check_eq(made.size(), 1, "leather came out")
 	if made.size() == 1:
 		check(made[0].freeze, "it lies still instead of bouncing away")
-		check(made[0].global_position.distance_to(GameAuthority.ready_spot(st)) < 0.05, "it waits on top of the rack")
+		check(made[0].global_position.distance_to(GameAuthority.ready_spot(st)) < 0.05, "it waits by the rack")
+		var flat: Vector3 = (made[0].global_position - st.global_position) * Vector3(1, 0, 1)
+		check(flat.length() > Station.size_of("tanning_rack").z * 0.5, "F960: in front of the rack, not inside its frame")
 	_teardown()
 
 
