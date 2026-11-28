@@ -159,6 +159,22 @@ RUINS = {
 		"out_pool": ["rubble_brick", "rubble_wood", "beam_snapped", "rags", "bones", "crate_stack", "timber_stack",
 			"torch_dropped", "furn_bucket_wood"],
 	},
+	"manor_ruin": {
+		"seed": 479,
+		"yard": False,
+		"props": True,
+		"out_reach": 30.0,
+		"camp_reach": 30.0,
+		"out_want": (6, 8),
+		"out_box": [(-19.5, 19.5, -9.5, 10.5)],   # (RuinManor: the box it digs, HALF_X / BACK / FRONT + 1 m)
+		"paths": [[(1.0, 7.0), (1.0, 11.0)], [(-14.0, -4.0), (-19.5, -4.0)], [(7.0, -5.0), (7.0, -9.5)]],
+		"keep": [(5.4, 9.0), (-3.4, 9.0), (5.4, 10.0), (-3.4, 10.0), (7.0, 8.6), (-5.0, 8.6)],
+		"pool": ["rags", "meal", "candles", "cookpot_tipped", "lantern", "grain_sacks", "bones", "rubble_brick", "keg",
+			"crate_stack", "furn_stool", "furn_bucket_wood", "bedroll_rotten", "urn_broken", "torch_dropped",
+			"rubble_wood", "furn_vase_wide", "furn_vase_tall"],
+		"out_pool": ["rubble_brick", "rubble_wood", "beam_snapped", "rags", "bones", "crate_stack", "timber_stack", "keg",
+			"torch_dropped", "furn_bucket_wood", "urn_broken"],
+	},
 }
 REPEAT = {"candles", "meal", "cookpot_tipped"}   # (owner: one of each kind per room; candles and pots may repeat)
 
@@ -252,6 +268,15 @@ DECOR = {
 		A("ef_broken_grindstone", "mid"), A("cf_crucible_dropped", "mid"), A("ef_burst_crucible", "mid"),
 		A("cf_quench_trough", "wall"), A("ef_cooling_rack_empty", "wall"), A("hw_ingot_cart_empty", "mid"),
 		A("coal_pile_shovel", "ground"), A("cf_slag_cart_tipped", "ground"), A("hw_derailed_cart", "ground"),
+	],
+	# A big dwarf house (its plan already has a sideboard, game table, bunk bed, wardrobe, desk, book nooks...):
+	# more house things, kitchen shelves by the bread oven, a fallen chandelier, a woodpile and barrow outside.
+	"manor_ruin": [
+		A("storage_trunk", "wall"), A("rocking_chair", "wall"), A("bookshelf_collapsed", "wall"), A("boot_rack", "wall"),
+		A("hearth_dresser", "wall"), A("hearth_pot_rack", "wall"), A("hm_preserve_shelf", "wall"),
+		A("dish_rack", "wall", up=1.0), A("spice_shelf", "wall", up=1.0), A("candle_wall_shelf", "wall", up=1.2),
+		A("mug_rack", "wall", up=1.2), A("table_overturned", "mid"), A("chandelier_fallen", "mid"),
+		A("firewood_rack", "ground"), A("mg_wheelbarrow", "ground"), A("mg_water_butt", "ground"),
 	],
 	# (the Kiln House on its lump, the Rock Shrine on the high shelf: x0, x1, z0, z1 in its box)
 	# A town round a rock column: house things in the four houses and the Ring Hall, pots and moulds in the Kiln House,
