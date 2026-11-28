@@ -17,6 +17,10 @@ var _spots: Dictionary = {}  ## id -> spot data
 ## instead of every spot in the world (that took ~8 ms per dig, a visible stutter).
 const CELL := 4.0
 var _grid := {}  ## Vector3i -> Array of spot ids
+## F337 (Nov 28): only the glowing spots, in big 16 m boxes, for the lights' 75 m search every 0.3 s. Searching the
+## 4 m grid that far checked ~55,000 boxes (10-12 ms, three times a second while walking); this checks ~1,300.
+const GLOW_CELL := 16.0
+var _glow_grid := {}  ## Vector3i (16 m box) -> Array of glowing spot ids
 var _nodes: Dictionary = {}  ## id -> StaticBody3D
 var _lights: Array[OmniLight3D] = []
 var _light_spot: Array[int] = []  ## which spot each light is on (-1 = none)
@@ -74,7 +78,28 @@ func spots_near(p: Vector3, radius: float) -> Array[Dictionary]:
 	for x in range(lo.x, hi.x + 1):
 		for y in range(lo.y, hi.y + 1):
 			for z in range(lo.z, hi.z + 1):
-				for id in _grid.get(Vector3i(x, y, z), []):
+				var ids = _grid.get(Vector3i(x, y, z))  # (no new empty list for every empty box)
+				if ids == null:
+					continue
+				for id in ids:
+					var s: Dictionary = _spots[id]
+					if s.pos.distance_to(p) <= radius:
+						out.append(s)
+	return out
+
+
+## The glowing spots within `radius` (the same ones spots_near + a "glow" filter finds, from the coarse glow grid).
+func glow_spots_near(p: Vector3, radius: float) -> Array[Dictionary]:
+	var out: Array[Dictionary] = []
+	var lo := Vector3i(((p - Vector3.ONE * radius) / GLOW_CELL).floor())
+	var hi := Vector3i(((p + Vector3.ONE * radius) / GLOW_CELL).floor())
+	for x in range(lo.x, hi.x + 1):
+		for y in range(lo.y, hi.y + 1):
+			for z in range(lo.z, hi.z + 1):
+				var ids = _glow_grid.get(Vector3i(x, y, z))
+				if ids == null:
+					continue
+				for id in ids:
 					var s: Dictionary = _spots[id]
 					if s.pos.distance_to(p) <= radius:
 						out.append(s)
@@ -90,6 +115,11 @@ func _grid_add(s: Dictionary) -> void:
 	if not _grid.has(c):
 		_grid[c] = []
 	_grid[c].append(s.id)
+	if GlowPlacer.KINDS[s.kind].get("glow", false):
+		var g := Vector3i((s.pos / GLOW_CELL).floor())
+		if not _glow_grid.has(g):
+			_glow_grid[g] = []
+		_glow_grid[g].append(s.id)
 
 
 ## A root was chopped: remember how many chops it has left.
@@ -133,6 +163,9 @@ func remove_spot(id: int) -> void:
 		var c := _cell(_spots[id].pos)
 		if _grid.has(c):
 			_grid[c].erase(id)
+		var g := Vector3i((_spots[id].pos / GLOW_CELL).floor())
+		if _glow_grid.has(g):
+			_glow_grid[g].erase(id)
 	_spots.erase(id)
 	var n: Node = _nodes.get(id)
 	_nodes.erase(id)
@@ -515,7 +548,7 @@ func _process(delta: float) -> void:
 		return
 	var from := cam.global_position
 	# Only spots within 40 m can get a light, so only look in the squares around us.
-	var near := spots_near(from, LIGHT_REACH).filter(func(s): return GlowPlacer.KINDS[s.kind].get("glow", false))
+	var near := glow_spots_near(from, LIGHT_REACH)
 	near.sort_custom(func(a, b): return a.pos.distance_squared_to(from) < b.pos.distance_squared_to(from))
 	var count := GraphicsSettings.light_count()
 	near = near.slice(0, count)

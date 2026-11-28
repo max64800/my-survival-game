@@ -346,6 +346,7 @@ func _hitch_loop() -> void:
 ## Which part of the world is slow in _process: a timer stamp before every child of main (and of their children
 ## that hold many nodes). Same priority (0) runs in tree order, so the gap between two stamps = that part's cost.
 var _split_names: Array[String] = []
+var _split_min := 40.0  ## print a frame's split when its game code takes this long (`why`: 12 ms)
 var _split_t: PackedInt64Array = []
 
 
@@ -378,7 +379,7 @@ func _split_process() -> void:
 		var tot := 0.0
 		for c in costs:
 			tot += c[0]
-		if tot > 40.0:
+		if tot > _split_min:
 			var top := ""
 			for c in costs.slice(0, 4):
 				top += "%s %.0f ms, " % [c[1], c[0]]
@@ -618,12 +619,21 @@ func _hitches(dwarf: Dwarf) -> void:
 	dwarf.bot_move = Vector2(0, -1)
 	var dig_t := 0.0
 	var dig_ms := []
+	var why := OS.get_cmdline_user_args().has("why")  # F337: explain each slow frame
+	if why:
+		_split_min = 12.0
+		_split_process()
+	var dug_now := false
 	var last := Time.get_ticks_usec()
 	while Time.get_ticks_msec() < t_end:
 		await get_tree().process_frame
 		var now := Time.get_ticks_usec()
 		times.append((now - last) / 1000.0)
 		last = now
+		if why and times[-1] > 33.0:
+			print("    SLOW %.0f ms%s · physics (worst this second) %.1f ms · doing %s" % [times[-1], " (dug last frame)" if dug_now else "",
+				Performance.get_monitor(Performance.TIME_PHYSICS_PROCESS) * 1000.0, FreezeWatch.doing])
+		dug_now = false
 		dig_t += times[-1]
 		if dig_t > 700.0:  # dig in front every 0.7 s (new holes = the cave rebuilding)
 			dig_t = 0.0
@@ -636,6 +646,7 @@ func _hitches(dwarf: Dwarf) -> void:
 			auth._tell_feedback(1, r)
 			var d2 := Time.get_ticks_usec()
 			dig_ms.append([(d1 - d0) / 1000.0, r.get("state", "?"), (d2 - d1) / 1000.0])
+			dug_now = true
 	dwarf.bot_move = Vector2.ZERO
 	print("  each dig: [decide ms, result, show ms]: ", dig_ms.map(func(d): return "%.1f %s %.1f" % [d[0], d[1], d[2]]))
 	var root := get_tree().current_scene
