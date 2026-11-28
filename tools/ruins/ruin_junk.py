@@ -125,6 +125,23 @@ RUINS = {
 		"out_pool": ["rubble_brick", "rubble_wood", "beam_snapped", "rags", "bones", "crate_stack", "timber_stack", "keg",
 			"torch_dropped", "furn_bucket_wood"],
 	},
+	"smeltery_ruin": {
+		"seed": 845,
+		"yard": False,
+		"props": True,
+		"out_reach": 30.0,
+		"camp_reach": 30.0,
+		"out_want": (5, 7),
+		"out_box": [(-22.0, 24.0, 8.0, 12.5), (-23.0, -15.0, 5.0, 12.5), (-8.0, 22.0, 2.0, 8.0)],   # (the dug yard, in
+		# front of the furnace, and in front of the vaults: never the dip under the bridge, RuinSmeltery.DIP_X / DIP_Z)
+		"paths": [[(1.0, 9.0), (1.0, 16.0)], [(9.0, 9.0), (9.0, 16.0)], [(-19.7, 6.0), (-19.7, 16.0)]],
+		"keep": [(-3.0, 11.5), (13.0, 11.5), (5.0, 12.5), (-5.0, 11.5), (15.0, 11.5)],
+		"pool": ["slag", "crucible_mould", "tongs_hammer", "scrap", "rags", "bones", "rubble_brick", "keg", "crate_stack",
+			"furn_bucket_metal", "ore_basket", "torch_dropped", "tools", "lantern", "candles", "meal", "cookpot_tipped",
+			"urn_broken"],
+		"out_pool": ["slag", "scrap", "rubble_brick", "rubble_wood", "beam_snapped", "crate_stack", "ore_basket",
+			"timber_stack", "bones", "torch_dropped"],
+	},
 }
 REPEAT = {"candles", "meal", "cookpot_tipped"}   # (owner: one of each kind per room; candles and pots may repeat)
 
@@ -204,6 +221,17 @@ DECOR = {
 		A("spice_shelf", "wall", up=1.0), A("dish_rack", "wall", up=1.0), A("candle_wall_shelf", "wall", up=1.2),
 		A("bunk_bed", "wall"), A("chandelier_fallen", "mid"), A("hs_watch_brazier", "mid", lo=9.0),
 		A("mg_last_watch", "wall", lo=9.0), A("mg_wheelbarrow", "ground"), A("mg_water_butt", "ground"),
+	],
+	# A smelting works: smiths' racks and shelves on the walls, broken anvils, bellows and crucibles in the rooms,
+	# coal and slag carts out in the yard (the searchable ingot stack, cart, coal scuttle and charcoal bay are its plan's).
+	"smeltery_ruin": [
+		A("ef_hammer_rack", "wall"), A("ef_tong_rack", "wall"), A("cf_ladle_rack", "wall"), A("cf_casting_shelf", "wall"),
+		A("ef_mould_shelf", "wall"), A("cf_flux_shelf", "wall"), A("ef_scrap_bin", "wall"), A("cf_sand_bin", "wall"),
+		A("ef_ingot_wall_empty", "wall"), A("hw_tool_board", "wall", up=1.2), A("ef_file_board", "wall", up=1.2),
+		A("forge_anvil_cracked", "mid"), A("forge_bellows_broken", "mid"), A("cf_moulders_bench", "wall"),
+		A("ef_broken_grindstone", "mid"), A("cf_crucible_dropped", "mid"), A("ef_burst_crucible", "mid"),
+		A("cf_quench_trough", "wall"), A("ef_cooling_rack_empty", "wall"), A("hw_ingot_cart_empty", "mid"),
+		A("coal_pile_shovel", "ground"), A("cf_slag_cart_tipped", "ground"), A("hw_derailed_cart", "ground"),
 	],
 }
 
