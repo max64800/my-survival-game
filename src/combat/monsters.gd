@@ -257,6 +257,33 @@ static var LIST := {
 		color = Color(0.66, 0.6, 0.48), shape = "foreman", recover = 1.4,
 		attacks = [{name = "Pick Crack", anim = "2H_Melee_Attack_Chop", warn_sound = "warn_bones", tell = 0.9, damage = 16, type = "blunt", reach = 2.2, parry = "any", knock = 2.5, rest = 4.0}],
 		drops = []},
+	# The Vigil of Orrin Stonejaw (owner, Nov 28, F980). The Rune Caller: a skeleton acolyte that throws glowing rune
+	# bolts from far away. Step 1: it fights up close like a Hollow Miner (its bolt and its own look are step 2).
+	"rune_caller": {name = "Rune Caller", dungeon_only = true, rises = true, rise_near = 11.0, sleeps = true, no_variant = true, ragdoll = false, statue_hits = 2,
+		size = 1.0, height = 1.45, hp = 90, armor = 0, stun = 50, slash = 1.0, blunt = 1.25, pierce = 0.75,
+		fire = -0.25, frost = 0.75, poison = 1.0, walk = 1.0, run = 2.6, pack = [1, 2], xp = 16,
+		no_push = true, color = Color(0.62, 0.7, 0.85), shape = "lost_miner", recover = 1.2,
+		attacks = [{name = "Rune Staff Jab", anim = "1H_Melee_Attack_Chop", warn_sound = "warn_bones", tell = 0.9, damage = 12, type = "blunt", reach = 3.0, parry = "any", lunge = true, small_lunge = true, lunge_speed = 2.6, rest = 4.0, quiet_after = 3.5}],
+		drops = []},
+	# The Rune Elder (Claude, F980): the Acolyte's Sanctum's leader, a big skeleton like the Shield Guard (not a boss).
+	"rune_elder": {name = "Rune Elder", dungeon_only = true, rises = true, rise_near = 10.0, sleeps = true, no_variant = true, ragdoll = false,
+		no_push = true, size = 1.1, height = 1.9, hp = 220, armor = 30, stun = 120, slash = 1.0, blunt = 1.25, pierce = 0.75,
+		fire = 0.0, frost = 0.5, poison = 1.0, walk = 1.2, run = 3.0, pack = [1, 1], xp = 35,
+		color = Color(0.6, 0.64, 0.78), shape = "foreman", recover = 1.4,
+		attacks = [{name = "Staff Crack", anim = "2H_Melee_Attack_Chop", warn_sound = "warn_bones", tell = 0.9, damage = 16, type = "blunt", reach = 2.2, parry = "any", knock = 2.5, rest = 4.0}],
+		drops = []},
+	# The Bell-Ringer (owner, Nov 28, F980): the Vigil's boss, a huge skeleton with a bell-hammer under the great bell.
+	# Step 1: the Pit Boss's moves, a quarter bigger (his bell strike, whose ring knocks you flat unless you hide behind
+	# a pillar, and his own look are step 2). He holds the Rune Key (DungeonKeys.KEYS.key_rune) to Orrin's Rest.
+	"bell_ringer": {name = "The Bell-Ringer", dungeon_only = true, rises = true, rise_near = 10.0, sleeps = true, no_variant = true, ragdoll = false, statue_hits = 5, boss = true,
+		no_push = true, key = "key_rune", size = 1.25, height = 2.35, hp = 450, armor = 50, stun = 360, slash = 1.0, blunt = 1.25, pierce = 0.75,
+		fire = 0.0, frost = 0.5, poison = 1.0, walk = 1.3, run = 3.4, pack = [1, 1], xp = 100,
+		color = Color(0.6, 0.55, 0.45), shape = "foreman", recover = 1.6,
+		attacks = [{name = "Hammer Whirl", anim = "2H_Melee_Attack_Spin", warn_sound = "beetle_rumble", tell = 0.97, damage = 12, type = "blunt", reach = 2.2, rest = 9.0, parry = "shield", knockdown = false, knock = 2.0,
+			follow = {tell = 0.9, damage = 12, whirl_speed = 1.5, warn_sound = null, knock = 2.5, follow = {tell = 0.9, damage = 12, knock = 2.5,
+				follow = {tell = 0.9, damage = 20, knockdown = true, knock = 3.5}}}},
+			{name = "Hammer Crack", anim = "2H_Melee_Attack_Chop", warn_sound = "warn_bones", tell = 0.9, damage = 20, type = "blunt", reach = 2.6, parry = "any", knock = 2.5, rest = 5.0}],
+		drops = []},
 }
 
 

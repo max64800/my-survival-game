@@ -63,6 +63,11 @@ About 20 new models in all. The small wooden dungeons need almost nothing new (o
 8. **Dungeon chests and the recipe stand** use `DungeonLoot` (built): 1-hour refill, same page again.
 9. **A robot check** that all 12 exist in a new world, every room can be reached, and nothing grows inside.
 
+## Materials of the last four (owner, Nov 28)
+**Dungeons #9-#12 are all brick** (Hearthbrick `clay_brick`), owner: "The last 4 dungeons will be brick." #9 (Vigil of
+Orrin Stonejaw) is very old brick, with a little Stonehold stone here and there (see `2026-11-28-orrin-decisions.md`).
+This overrides the "medium = stone" rule (`DungeonList.SIZES`) for #9.
+
 ## Build order (each step playable before the next)
 1. **PC:** push Mossgate Hold; test it; swap its creatures for the first KayKit miners (Lost Miner, Tunnel Rat,
    Foreman). Its recipe stand hands out the dungeon's page through DungeonLoot.

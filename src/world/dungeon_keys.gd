@@ -27,7 +27,7 @@ const KEYS := {
 	key_barrow = {name = "Barrow Key", dungeon = "the_quiet_barrows", boss = "The Barrow Keeper"},
 	key_vault = {name = "Vault Key", dungeon = "brassgate_vault", boss = "The Vault Captain"},
 	key_armoury = {name = "Armoury Key", dungeon = "hall_of_the_shieldbearers", boss = "Sergeant Halfhelm"},
-	key_rune = {name = "Rune Key", dungeon = "vigil_of_orrin_stonejaw", boss = "Orrin's Last Acolyte"},
+	key_rune = {name = "Rune Key", dungeon = "vigil_of_orrin_stonejaw", boss = "The Bell-Ringer"},
 	key_forge = {name = "Forge Key", dungeon = "emberdeep_forge", boss = "The Forge Foreman"},
 	key_gear = {name = "Gear Key", dungeon = "the_hammerfall_works", boss = "The Gearmaster"},
 	key_hammer = {name = "Hammer Key", dungeon = "the_hammerfall_works", boss = "The Smeltwarden"},

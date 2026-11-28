@@ -453,7 +453,81 @@ const SHIELDBEARERS := {
 	],
 }
 
-const MAPS := [MOSSGATE, LAMPWICK, PELL, MOSSPROP, HALD, BARROWS, BRASSGATE, SHIELDBEARERS]
+## The Vigil of Orrin Stonejaw (owner, Nov 28, F980): a medium bell temple of very old Hearthbrick (worn, crumbling, a
+## little Stonehold stone here and there), three levels going UP: the halls at 0, the rune halls at RUNE = +8, the bell
+## tower at BELL = +16 (only its top, Orrin's Vigil and Orrin's Rest, is newer brick). Skeletons and Rune Callers; the
+## Bell-Ringer (a huge skeleton with a bell-hammer) holds the Rune Key to Orrin's Rest. Two straight stairs: the First
+## Stair up west off the Hall of Pillars, the Tower Stair up south from the Rune Door hall. The Broken Bridge crosses a
+## 10 m chasm (open both sides). The way out: the Pilgrims' Slide down from Orrin's Rest to a ledge 8 m up in the
+## Pilgrims' Door's east wall; jump down. Built by tools/dungeons/make_orrin.py
+## (docs/design/zone1-dungeons/2026-11-28-orrin-decisions.md). `since = 99`: only its test world has it for now.
+const RUNE := 8.0
+const BELL := 16.0
+const ORRIN := {
+	id = "orrin",
+	name = "Vigil of Orrin Stonejaw",
+	mouth = Vector2(46, 70),
+	since = 99,
+	mood = "tomb",
+	torch_energy = 0.9,
+	torch_range = 6.5,
+	best = 140.0,
+	chase_out = true,
+	deadly = ["echo_pit", "chasm"],
+	no_raising = true,
+	spaces = [
+		["entry", 44, 62, 48, 70, 0, 3.5],                 # the way in
+		["pilgrims_door", 40, 52, 52, 62, 0, 12],          # 1 the round door; the exit ledge's hole 8 m up its east wall
+		["exit_ledge", 52, 54, 64, 58, RUNE, 3.5],         # 20 the Pilgrims' Slide comes out here: jump down onto the rags
+		["slide_foot", 64, 54, 68, 64, RUNE, 6],           #    the slide's foot
+		["pillar_door", 44, 50, 48, 52, 0, 3.5],
+		["hall_of_pillars", 40, 38, 52, 50, 0, 6],         # 2 old brick pillars; Bone Rots; darts from the wall
+		["robing_door", 52, 42, 54, 46, 0, 3.5],
+		["robing_room", 54, 40, 62, 48, 0, 4.5],           # 3 the loose stone (a buried chest)
+		["first_foot", 36, 40, 40, 44, 0, 6],              # 4 the First Stair: 8 m up in four steps, west (falling stones)
+		["first_a", 34, 40, 36, 44, 0, 6],
+		["first_b", 32, 40, 34, 44, 2, 6],
+		["first_c", 30, 40, 32, 44, 4, 6],
+		["first_d", 28, 40, 30, 44, 6, 6],
+		["rune_gallery", 16, 36, 28, 48, RUNE, 6],         # 5 Rune Callers; a pressure plate shoots darts
+		["cells_way", 20, 24, 24, 36, RUNE, 4],            # 8 the Acolytes' Cells corridor: Bone Rots
+		["carvers_door", 24, 28, 26, 32, RUNE, 3.5],
+		["carvers_workshop", 26, 22, 36, 32, RUNE, 5],     # 6 a chest; the cracked east wall
+		["carvers_vault", 36, 24, 40, 28, RUNE, 3],        # 7 behind the cracked wall
+		["echo_door", 20, 22, 24, 24, RUNE, 3.5],
+		["hall_of_echoes", 14, 10, 26, 22, RUNE, 6],       # 9 the crumbling floor in the middle: keep to the edge
+		["echo_pit", 16, 12, 24, 20, RUNE - 4.0, 5],       #    (4 m down onto spikes: falling in kills)
+		["sanctum_door", 12, 14, 14, 18, RUNE, 3.5],
+		["acolytes_sanctum", 4, 12, 12, 20, RUNE, 5],      # 10 the Rune Elder and his pack
+		["shrine_door", 6, 10, 10, 12, RUNE, 3.5],
+		["quiet_shrine", 4, 2, 12, 10, RUNE, 4.5],         # 11 the healing basin
+		["rune_way", 6, 20, 10, 22, RUNE, 3.5],
+		["rune_hall", 4, 22, 12, 30, RUNE, 5],             # 12 the Rune Door hall: a chest
+		["tower_foot", 4, 30, 8, 34, RUNE, 6],             # 13 the Tower Stair: 8 m up in four steps, south
+		["tower_a", 4, 34, 8, 36, RUNE, 6],
+		["tower_b", 4, 36, 8, 38, RUNE + 2.0, 6],
+		["tower_c", 4, 38, 8, 40, RUNE + 4.0, 6],
+		["tower_d", 4, 40, 8, 42, RUNE + 6.0, 6],
+		["bell_walk", 2, 42, 10, 50, BELL, 5],             # 14 Hollow Miners keep the bells
+		["bridge_way", 6, 50, 10, 52, BELL, 3.5],
+		["broken_bridge", 4, 52, 12, 68, BELL, 6],         # 15 slabs down the middle over the chasm, open both sides
+		["chasm", 4, 54, 12, 64, BELL - 10.0, 10.5],       #    10 m down onto spikes (falling in kills)
+		["loft_niche", 2, 64, 4, 66, BELL, 3],             # 17 the Bellringer's Loft: behind the hidden boulder
+		["bell_run", 12, 64, 24, 68, BELL, 4],             # 16 spears stab out of the walls
+		["bell_alcove", 16, 68, 20, 70, BELL, 3],          #    the side niche
+		["antechamber", 24, 62, 32, 70, BELL, 5],          # 18 a quiet room before the end
+		["vigil_door", 32, 64, 34, 68, BELL, 3.5],
+		["orrins_vigil", 34, 56, 46, 70, BELL, 8],         # 19 the Bell-Ringer (the Rune Key) and two Hollow Miners
+		["rune_lock", 46, 60, 48, 64, BELL, 3.5],          #    Orrin's Rest's round door: locked (the Rune Key)
+		["orrins_rest", 48, 58, 56, 66, BELL, 4.5],        # 21 the recipe stand, the big chest
+		["slide_a", 56, 60, 58, 64, BELL - 2.0, 6],        # 20 the Pilgrims' Slide: 8 m down in four steps, east
+		["slide_b", 58, 60, 60, 64, BELL - 4.0, 6],
+		["slide_c", 60, 60, 62, 64, BELL - 6.0, 6],
+		["slide_d", 62, 60, 64, 64, RUNE, 6],
+	],
+}
+
+const MAPS := [MOSSGATE, LAMPWICK, PELL, MOSSPROP, HALD, BARROWS, BRASSGATE, SHIELDBEARERS, ORRIN]
 
 
 ## One placed dungeon: where its mouth is in the world, which way it faces, and its boxes in world terms.

@@ -16,7 +16,8 @@ extends Node3D
 const PLANS := {"mossgate": "res://blueprints/dungeons/mossgate_hold.json", "lampwick": "res://blueprints/dungeons/lampwick_drift.json",
 	"pell": "res://blueprints/dungeons/old_pells_diggings.json", "mossprop": "res://blueprints/dungeons/mossprop_workings.json",
 	"hald": "res://blueprints/dungeons/tomb_of_hald_ironbrow.json", "barrows": "res://blueprints/dungeons/the_quiet_barrows.json",
-	"brassgate": "res://blueprints/dungeons/brassgate_vault.json", "shieldbearers": "res://blueprints/dungeons/hall_of_the_shieldbearers.json"}
+	"brassgate": "res://blueprints/dungeons/brassgate_vault.json", "shieldbearers": "res://blueprints/dungeons/hall_of_the_shieldbearers.json",
+	"orrin": "res://blueprints/dungeons/vigil_of_orrin_stonejaw.json"}
 ## What you bump into, in each model's own metres: [centre, size] boxes. Models not listed and not in NO_BODY get
 ## the box round the whole model.
 const BOXES := {
@@ -186,7 +187,7 @@ const HEAL_RATE := 8.0        ## health a second
 const HEAL_POOL := 30.0       ## owner, Nov 20: it heals 30 health in all, then it is dry until the dungeon refills
 ## The loot door opens when the Pack Hall's pack is dead (owner, Nov 20). It is a lock of DungeonKeys (the same saved,
 ## sent-to-everyone door state as the bigger dungeons' key doors); it shuts again when the pack moves back in.
-const LIST_ID := {"mossgate": "mossgate_hold", "lampwick": "lampwick_drift", "pell": "old_pells_diggings", "mossprop": "mossprop_workings", "hald": "tomb_of_hald_ironbrow", "barrows": "the_quiet_barrows", "brassgate": "brassgate_vault", "shieldbearers": "hall_of_the_shieldbearers"}  ## the dungeon's id in DungeonList / DungeonKeys
+const LIST_ID := {"mossgate": "mossgate_hold", "lampwick": "lampwick_drift", "pell": "old_pells_diggings", "mossprop": "mossprop_workings", "hald": "tomb_of_hald_ironbrow", "barrows": "the_quiet_barrows", "brassgate": "brassgate_vault", "shieldbearers": "hall_of_the_shieldbearers", "orrin": "vigil_of_orrin_stonejaw"}  ## the dungeon's id in DungeonList / DungeonKeys
 const PACK_LOCK := "pack"
 const PACK_ROOM := "pack_hall"
 const KILL := 1000000.0       ## instant death (more than any health and armour)
@@ -1654,7 +1655,8 @@ static func deadly_space(d: Dictionary, p: Vector3) -> String:
 	var only: Array = d.map.get("deadly", [])  # (Pell's: its whole lower level is under 0, only the spike pit kills)
 	for s in d.map.spaces:
 		# (F846, Nov 25: no bottom to the box killed you in Hald's tomb door, 5 m under the pit: only near its floor)
-		if float(s[5]) < 0.0 and (only.is_empty() or String(s[0]) in only) and q.x > float(s[1]) - 0.5 and q.x < float(s[3]) + 0.5 and q.z > float(s[2]) - 0.5 				and q.z < float(s[4]) + 0.5 and q.y < float(s[5]) + 1.2 and q.y > float(s[5]) - 2.0:
+		# (F980: a named deadly place kills at any height: Orrin's pit and chasm lie above the way in)
+		if (String(s[0]) in only or (only.is_empty() and float(s[5]) < 0.0)) and q.x > float(s[1]) - 0.5 and q.x < float(s[3]) + 0.5 and q.z > float(s[2]) - 0.5 				and q.z < float(s[4]) + 0.5 and q.y < float(s[5]) + 1.2 and q.y > float(s[5]) - 2.0:
 			return String(s[0])
 	return ""
 
