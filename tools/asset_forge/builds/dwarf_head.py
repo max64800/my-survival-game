@@ -61,11 +61,14 @@ FACES = {
 		pic="dwarf_face_topknot_head.png",
 		hair_rgb=(0.2, 0.14, 0.11), skin_rgb=(0.84, 0.55, 0.42),
 		jaw=(0.1, 0.066, 0.09), brow_ridge=(0.09, 0.024, 0.034), nose_u=0.007, nose_r=(0.036, 0.032, 0.034),
-		lids={-1: (34, 17), 1: (24, 15)},  # (upper, lower lid opening in degrees: narrowed eyes, the scarred one squints)
-		frown=True, short_back=True, moustache="droop", cap="topknot", beard_point=True,
+		# (upper, lower lid opening in degrees: narrowed eyes; round 4, owner: "his left eye where the scar is, closed")
+		lids={-1: (34, 17), 1: (3, 2)},
+		scar_gap=(0.046, 0.012),  # (round 4, owner: "I don't see the scar above the eye": the brow parts where it crosses)
+		frown=True, short_back=True, back_braid=True, ring_reach=0.035, moustache="droop", cap="topknot", beard_point=True,
 		braids=[("braid_-1", -0.128), ("braid_1", 0.128)],
 		# scars in face coordinates (u sideways, v up from the eye level; + u = his left), drawn as raised pale lines
-		scars=[[(0.03, 0.09), (0.038, 0.066), (0.046, 0.042), (0.052, 0.024), (0.058, -0.016), (0.064, -0.038), (0.071, -0.06)],
+		scars=[[(0.02, 0.135), (0.025, 0.112), (0.03, 0.09), (0.038, 0.066), (0.046, 0.042), (0.052, 0.024), (0.053, 0.016), (0.054, 0.008), (0.055, 0.0), (0.056, -0.008), (0.058, -0.016),  # (round 5: dots across the shut lid, owner: "the scar doesn't go over the eye")
+			 (0.064, -0.038), (0.071, -0.06)],
 			[(-0.016, -0.084), (-0.009, -0.1)]],
 	),
 }
@@ -745,7 +748,9 @@ def build_brows():
 					# the brow runs right over the scar, owner: "I don't mind him to have the second brow, even over the scar")
 					u, v = s * (0.01 + 0.084 * f), v0 - 0.006 + 0.026 * f + 0.004 * layer * f
 				if FACE.get("frown") and layer == 2:
-					continue  # (two layers, not three: a thick straight bar, not face 1's huge bush)
+					continue
+				if s == 1 and FACE.get("scar_gap") and abs(u - FACE["scar_gap"][0]) < FACE["scar_gap"][1]:
+					continue  # (no brow hair grows on the scar)  # (two layers, not three: a thick straight bar, not face 1's huge bush)
 				P, n = hit_front("face", u, v)
 				if P is None:
 					continue
@@ -841,14 +846,14 @@ def build_beard():
 	# the core under the chin, in front of the neck (only there: lower down these stood out in front of the braids)
 	for s in (-1, 1):  # (between the braids: hanging locks; round filler there showed as two balls)
 		P, n = hit_round("skull", s * 138, -52)
-		if P is not None:
+		if P is not None and "core" not in DBG_SKIP:
 			for k in range(2 if not FACE.get("beard_point") else 1):
 				off = Vector((s * 0.018 * k, 0, 0))
 				lock([P - n * 0.006 + off, P + n * 0.012 + DN * 0.035 + FWD * 0.02 + off, P + DN * 0.075 + FWD * 0.035 + off * 1.3,
 					P + DN * 0.105 + FWD * 0.04 + off * 1.5], 0.034, 0.02, n, grooves=3, twist=jit(0.3))
-	if FACE.get("beard_point"):
+	if FACE.get("beard_point") and "point" not in DBG_SKIP:
 		build_beard_point()
-	for u in (0.0,):
+	for u in (0.0,) if not FACE.get("beard_point") else ():  # (F737 round 4: with the point it showed as a bulb under the mouth)
 		for v in (-0.15,):
 			sf = max([x for x in (shirt_front(u, v + dv) for dv in (0.03, 0.0, -0.036)) if x is not None] or [0.0])
 			w = max(sf, 0.075) + GAP + 0.02  # (behind the beard locks: further out it showed as balls)
@@ -886,9 +891,10 @@ def lathe(name, ctr, axis, profile, m, segs=40):
 	return o
 
 
-def braid(name, u_top, v_top, v_ring, v_end, W0, W1, D0, D1, r_in, r_out, ring_h, w_top, tuft_n=7, seed=0):
+def braid(name, u_top, v_top, v_ring, v_end, W0, W1, D0, D1, r_in, r_out, ring_h, w_top, tuft_n=7, seed=0, back=False):
 	"""A three-strand braid lying on the body: plump lobes slanting in from each edge in turn (the picture's chevrons),
-	its core pinched under a copper ring, then a tuft that swells and ends in points."""
+	its core pinched under a copper ring, then a tuft that swells and ends in points. back: hangs from the back of the
+	head down the upper back instead (F737 round 4, owner: "we should have a braid at the back of his head still")."""
 	rr = random.Random(seed)
 	vs = np.linspace(v_top, v_end, 48)
 	girth = []
@@ -898,11 +904,17 @@ def braid(name, u_top, v_top, v_ring, v_end, W0, W1, D0, D1, r_in, r_out, ring_h
 	us = [u_top * (1.0 + 0.12 * min(max((v_top - v) / (v_top - v_end), 0), 1)) for v in vs]
 	floor = []
 	for u, v, g in zip(us, vs, girth):
-		sf = shirt_front(u, v)
-		floor.append(max((sf + GAP + g / 2) if sf is not None else -1.0, w_top + g / 2))
+		if back:  # (behind the body or the skull, whichever is further back; up on the head it sinks into the hair cap)
+			hits = [w_of(loc) for tree in ("body", "skull") for loc in [BVH[tree].ray_cast(Hd(u, v, -0.9), FWD, 2.0)[0]] if loc]
+			wb = min(hits) if hits else w_top
+			on_head = min(max((v - (v_top - 0.07)) / 0.05, 0.0), 1.0)  # (1 high on the head, 0 from the nape down)
+			floor.append(min(wb - GAP - g / 2 + on_head * (GAP + g * 0.6), w_top - g / 2 * (1 - on_head)))
+		else:
+			sf = shirt_front(u, v)
+			floor.append(max((sf + GAP + g / 2) if sf is not None else -1.0, w_top + g / 2))
 	ws = list(floor)
 	for _ in range(6):  # smooth the path, but never closer to the body than the gap
-		ws = [max(floor[i], (ws[max(i - 1, 0)] + ws[i] + ws[min(i + 1, len(ws) - 1)]) / 3) for i in range(len(ws))]
+		ws = [(min if back else max)(floor[i], (ws[max(i - 1, 0)] + ws[i] + ws[min(i + 1, len(ws) - 1)]) / 3) for i in range(len(ws))]
 	B = _resample([Hd(u, v, w) for u, v, w in zip(us, vs, ws)], 80)
 	arc = [0.0]
 	for a, b in zip(B[:-1], B[1:]):
@@ -920,7 +932,7 @@ def braid(name, u_top, v_top, v_ring, v_end, W0, W1, D0, D1, r_in, r_out, ring_h
 		T = (B[i + 1] - B[i]).normalized()
 		_, nb, _, _ = BVH["body"].find_nearest(p, 0.4)
 		N = nb if nb is not None else FWD.copy()
-		N = (N + FWD * 0.6)
+		N = (N + (BACK if back else FWD) * 0.6)
 		N = (N - T * N.dot(T)).normalized()
 		return p, T, N, T.cross(N)
 	s_ring = next(arc[i] for i, p in enumerate(B) if p.z <= Hd(0, v_ring, 0).z)
@@ -993,6 +1005,8 @@ def build_beard_point():
 	point between the two braids, each lying on the body (the shirt front) with the usual gap."""
 	rp = random.Random(41)
 	for ri, (v0, half, cnt) in enumerate(((-0.13, 0.036, 3), (-0.17, 0.032, 3), (-0.21, 0.024, 2), (-0.25, 0.014, 2), (-0.285, 0.0, 1))):
+		if os.environ.get("DWARF_PROWS") and str(ri) not in os.environ["DWARF_PROWS"]:
+			continue
 		for j in range(cnt):
 			u0 = 0.0 if cnt == 1 else -half + 2 * half * j / (cnt - 1)
 			u0 += rp.uniform(-0.004, 0.004)
@@ -1016,6 +1030,9 @@ def build_braids():
 	if FACE.get("braids"):
 		for k, (name, u) in enumerate(FACE["braids"]):
 			braid(name, u, -0.13, -0.29, -0.43, 0.088, 0.068, 0.054, 0.046, 0.034, 0.042, 0.046, w_top=0.075, tuft_n=8, seed=2 + k)
+		if FACE.get("back_braid"):  # (a warrior's braid from the back of the head down between the shoulders)
+			braid("braid_back", 0.0, -0.01, -0.25, -0.37, 0.084, 0.068, 0.06, 0.052, 0.033, 0.041, 0.042,  # (round 5, owner: "thicker")
+				 w_top=-0.1, tuft_n=7, seed=7, back=True)
 		return
 	braid("braid_mid", 0.0, -0.14, -0.35, -0.49, 0.13, 0.09, 0.06, 0.05, 0.04, 0.048, 0.044, w_top=0.1, tuft_n=9, seed=1)  # (thicker: owner F214)
 	for s in (-1, 1):  # (further out: at 11.5 cm their tops clashed with the middle braid, owner round 2b)
@@ -1105,11 +1122,11 @@ def sculpt_face(high, skin):
 			groove(on_face([(s * 0.008, 0.012), (s * 0.011, 0.03), (s * 0.012, 0.046)]), 0.0022, 0.0017, 0.4)
 			groove(on_face([(s * 0.038, -0.05), (s * 0.05, -0.07), (s * 0.058, -0.09)]), 0.0016, 0.0018, 0.3)
 	for sc in FACE.get("scars", []):  # old scars: a raised, puckered line with a little dip each side
-		pts = on_face(sc)
+		pts = on_face(sc, "face")  # (on the bare skin: on the melted head its top landed on brow hair, unpainted, round 4)
 		if len(pts) >= 2:
 			SCARS3D.append(pts)
 			d = line_dist(co[near], pts)
-			h[near] += 0.0018 * np.exp(-(d / 0.0026) ** 2) - 0.0009 * np.exp(-((d - 0.0048) / 0.0016) ** 2)
+			h[near] += 0.0032 * np.exp(-(d / 0.0034) ** 2) - 0.0009 * np.exp(-((d - 0.0048) / 0.0016) ** 2)
 	h *= skin
 	put(high, co + no * h[:, None])
 
@@ -1186,7 +1203,8 @@ def pinch_rings(high, hair):
 		half = b["h"] / 2 + 0.003
 		ease = np.clip((np.abs(t) - half) / 0.015, 0.0, 1.0)  # 0 inside the band, 1 at 1.5 cm beyond it
 		limit = (b["r_in"] - 0.0025) + ease * 0.05
-		sel = (hair > 0.5) & (np.abs(t) < half + 0.015) & (r > limit) & (r < b["r_in"] + 0.06)
+		# (F737 round 4: 6 cm also caught the beard point's edge and stretched it into a spike toward the ring)
+		sel = (hair > 0.5) & (np.abs(t) < half + 0.015) & (r > limit) & (r < b["r_in"] + FACE.get("ring_reach", 0.06))
 		co[sel] = c + t[sel, None] * ax + radial[sel] / r[sel, None] * limit[sel, None]
 		moved += int(sel.sum())
 	put(high, co)
@@ -1512,10 +1530,10 @@ def build(body_objs, fast=False, log=print):
 	cols = cols * (1.0 - 0.8 * ink)[:, None]
 	for pts in SCARS3D:  # (F737) the scars: pale pink in the middle, a darker red edge
 		d = line_dist(co_, pts)
-		mid = np.exp(-(d / 0.0028) ** 2) * (1 - soft)
+		mid = np.exp(-(d / 0.0036) ** 2) * (1 - soft)  # (round 5: wider, to show on the shut lid's shadow)
 		rim = np.exp(-((d - 0.005) / 0.0018) ** 2) * (1 - soft)
 		pale = np.array(cs.lin((0.97, 0.72, 0.66))) / 0.74
-		cols = cols * (1 - 0.9 * mid[:, None]) + pale[None, :] * 0.9 * mid[:, None]
+		cols = cols * (1 - mid[:, None]) + pale[None, :] * 1.1 * mid[:, None]
 		cols = cols * (1.0 - 0.45 * rim[:, None] * np.array([0.35, 1.0, 1.0])[None, :])  # (round 1's thin faint line didn't show)
 	log(f"HEAD hard lines on {int((ink > 0.5).sum())} hair points; dark creases on {int((soft * deep > 0.5).sum())}")
 	at = me.color_attributes.new("tint", "FLOAT_COLOR", "POINT")

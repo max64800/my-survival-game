@@ -941,7 +941,7 @@ def path_s(pts, p):
 # whole braid, from under the chin to the tuft's tip, and 4 down each of three strands of back hair, all hanging from
 # the head. The game swings them and keeps them out of the body with collision balls (HairSwing).
 for bd in dh.BRAIDS + dh.POINTS:  # (by name: a face with two braids has no middle one, F737)
-	tag = {"braid_mid": "m", "braid_-1": "a", "braid_1": "b"}[bd["name"]]
+	tag = {"braid_mid": "m", "braid_-1": "a", "braid_1": "b", "braid_back": "k"}[bd["name"]]
 	joints = chain_along(bd["path"], [k / 7 for k in range(8)])
 	CHAINS[f"hair_braid_{tag}"] = (bd, joints, "Head")
 for k, pts in enumerate(dh.BACKS):
