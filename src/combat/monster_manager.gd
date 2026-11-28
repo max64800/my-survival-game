@@ -149,8 +149,11 @@ func _spawn_and_despawn() -> void:
 		_group_step(BAT_KEY + i, room, near, RESPAWN, _spawn_roost.bind(i))
 		var st: Dictionary = _rooms.get(i, {alive = [], cleared_at = -RESPAWN})
 		_rooms[i] = st
+		var had: bool = not st.alive.is_empty()
 		st.alive = st.alive.filter(func(u): return monsters.has(u))
-		if st.alive.is_empty() and near < SPAWN_NEAR and _clock - st.cleared_at >= RESPAWN:
+		if had and st.alive.is_empty():
+			st.cleared_at = _clock  # (F957: the wait starts when the last one dies, not when they came)
+		if st.alive.is_empty() and near < SPAWN_NEAR and _clock - st.cleared_at >= _room_respawn(room):
 			if not auth.world.is_ready_at(room.center, 4.0):
 				continue
 			st.alive = _spawn_pack(i, room)
@@ -376,6 +379,21 @@ func _ev_cling(uid: int, pos: Vector3, n: Vector3, cue: String) -> void:
 	var m: Monster = monsters.get(uid)
 	if m:
 		m.show_cling(pos, n, cue)
+
+
+## F957 (owner, Nov 28: "snails come back too fast near the base"): a cave with a station of yours in it (your base)
+## waits NEAR_BASE_RESPAWN_MULT times as long before its creatures move back in.
+const NEAR_BASE := 45.0
+const NEAR_BASE_RESPAWN_MULT := 3.0
+
+
+func _room_respawn(room: Dictionary) -> float:
+	if auth and auth.stations:
+		var c: Vector3 = room.center
+		for st in auth.stations.values():
+			if is_instance_valid(st) and (st as Node3D).global_position.distance_to(c) < NEAR_BASE:
+				return RESPAWN * NEAR_BASE_RESPAWN_MULT
+	return RESPAWN
 
 
 func _nearest_player_dist(p: Vector3) -> float:

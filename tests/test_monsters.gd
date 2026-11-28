@@ -357,6 +357,31 @@ func test_spawner_fills_nearby_caves() -> void:
 	_teardown()
 
 
+## F957 (owner, Nov 28: "snails come back too fast near the base"): the wait starts when the last one dies, and a
+## cave with your station in it waits three times as long.
+func test_cleared_cave_waits_from_the_last_kill() -> void:
+	await _setup()
+	auth.monsters.enabled = true
+	auth.monsters._spawn_and_despawn()
+	var st: Dictionary = auth.monsters._rooms.get(0, {})
+	check(not st.get("alive", []).is_empty(), "the first cave has its snails")
+	if st.get("alive", []).is_empty():
+		_teardown()
+		return
+	auth.monsters._clock += MonsterManager.RESPAWN - 5.0  # they've been there almost 10 minutes...
+	for u in st.alive.duplicate():
+		auth.monsters._ev_remove(u)  # ...then you kill them all
+	auth.monsters._spawn_and_despawn()
+	auth.monsters._clock += 10.0
+	auth.monsters._spawn_and_despawn()
+	check(st.alive.is_empty(), "10 s after the last kill they're not back")
+	var room: Dictionary = world.maker.rooms[0]
+	check_near(auth.monsters._room_respawn(room), MonsterManager.RESPAWN, 0.01, "an empty cave waits 10 minutes")
+	auth._ev_place_station(77, "workbench", room.center, 0.0)
+	check_near(auth.monsters._room_respawn(room), MonsterManager.RESPAWN * MonsterManager.NEAR_BASE_RESPAWN_MULT, 0.01, "your base's cave waits 30")
+	_teardown()
+
+
 func test_attack_animation_keeps_monster_size() -> void:
 	await _setup()
 	var m := _spawn("cave_spider", Vector3(4, 0, 0), true)  # leaders are 1.3× bigger
