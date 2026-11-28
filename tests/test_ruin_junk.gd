@@ -15,7 +15,21 @@ const PATH_CLEAR := 0.9   # from the path out of the door / gateway (the tool ke
 const FREE_CLEAR := 0.9   # the free-standing camp's middle from every building piece (the tool keeps 1.0 for every corner)
 ## The way in, in each ruin's frame: from just inside the door (gateway) straight out.
 const PATHS := {"tower": [Vector2(0.0, 3.0), Vector2(0.0, 12.0)], "outpost": [Vector2(-0.27, 13.0), Vector2(-0.27, 25.0)],
-	"brewhall": [Vector2(-5.0, 5.5), Vector2(-5.0, 14.0)], "spire": [Vector2(0.0, 3.0), Vector2(0.0, 12.0)]}
+	"brewhall": [Vector2(-5.0, 5.5), Vector2(-5.0, 14.0)], "spire": [Vector2(0.0, 3.0), Vector2(0.0, 12.0)],
+	"cliff_galleries": [Vector2(-2.0, 9.0), Vector2(-2.0, 16.0)]}
+## A second way in (the Cliff Galleries' shed steps).
+const MORE_PATHS := {"cliff_galleries": [Vector2(-18.0, 9.0), Vector2(-18.0, 16.0)]}
+## The ruins whose catalogue pieces are their own set (prefix); the grand ruins (F976) use the shared catalogue.
+const OWN_SET := {"tower": "rt_", "outpost": "ro_", "brewhall": "rb_", "spire": "rs_"}
+## Each ruin's game class (its Rebuilding Chest spots).
+static func _kind(n: String) -> RuinTower:
+	match n:
+		"tower": return RuinTower.new(null)
+		"outpost": return RuinOutpost.new(null)
+		"brewhall": return RuinBrewhall.new(null)
+		"spire": return RuinSpire.new(null)
+		"cliff_galleries": return RuinCliffGalleries.new(null)
+	return null
 ## The catalogue decor ("cat", owner Nov 21: "the rules are fluid") stands free in the room, not hugging a wall, and keeps
 ## less room: this much from a doorway's middle (the gateway: 1.8), stairs 0.5 (the tool: from the piece's outline).
 const DECOR_DOOR := 1.2
@@ -100,7 +114,7 @@ func test_ruin_junk_keeps_off_the_ruin() -> void:
 					check(at.distance_to(Vector2(p.pos[0], p.pos[2])) >= GATE_CLEAR * (0.6 if cat else 1.0), tag + ": off the gateway")
 				if id in HUG and lo - y > -0.1 and lo - y <= 0.35:
 					near_wall = minf(near_wall, _poly_dist(at, fp))
-				if j.ground and group == "foundation" and lo < 0.1:
+				if j.ground and group == "foundation" and absf(lo - y) < 0.1:  # (a grand ruin's: on its cave floor)
 					near_wall = minf(near_wall, _poly_dist(at, fp))
 			check(on_floor != bool(j.ground) or gap, tag + (": on the ground (no floor piece under it)" if j.ground else ": on a floor piece"))
 			if j.get("free", false):
@@ -114,17 +128,21 @@ func test_ruin_junk_keeps_off_the_ruin() -> void:
 
 
 func test_ruin_junk_keeps_off_the_way_in() -> void:
-	var kinds := {"tower": RuinTower.new(null), "outpost": RuinOutpost.new(null), "brewhall": RuinBrewhall.new(null),
-		"spire": RuinSpire.new(null)}
+	var kinds := {}
 	for r in _ruins():
 		var n: String = r[0]
+		kinds[n] = _kind(n)
+		check(kinds[n] != null, "%s: its game class is known to this test" % n)
+		if kinds[n] == null:
+			continue
 		var spots: Array[Vector2] = (kinds[n] as RuinTower)._chest_spots(float(r[1].get("radius", 4.2)))
-		var path: Array = PATHS[n]
+		var paths: Array = [PATHS[n]] + ([MORE_PATHS[n]] if MORE_PATHS.has(n) else [])
 		for j in r[2]:
 			if not j.ground:
 				continue
 			var at := Vector2(float(j.pos[0]), float(j.pos[2]))
-			check(_seg_dist(at, path[0], path[1]) >= PATH_CLEAR, "%s: %s at %s off the way in" % [n, j.model, at])
+			for path in paths:
+				check(_seg_dist(at, path[0], path[1]) >= PATH_CLEAR, "%s: %s at %s off the way in" % [n, j.model, at])
 			for s in spots:
 				check(at.distance_to(s) >= THING_CLEAR, "%s: %s at %s clear of the Rebuilding Chest spot %s" % [n, j.model, at, s])
 	for k in kinds:
@@ -164,14 +182,18 @@ func test_smeltery_props_go_after_a_rebuild() -> void:
 ## The catalogue pieces (owner, Nov 21: "Brewhall and Spire: nothing; Outpost and Watchtower: 2 props each"): every
 ## ruin's own pieces are in its list, on each floor, and the lootable ones are left to LootProps (searchable).
 func test_ruins_have_their_catalogue_decor() -> void:
-	var prefix := {"tower": "rt_", "outpost": "ro_", "brewhall": "rb_", "spire": "rs_"}
 	for r in _ruins():
 		var n: String = r[0]
 		var cat: Array = r[2].filter(func(j): return j.get("cat", false))
 		check(cat.size() >= 10, "%s: catalogue decor (got %d)" % [n, cat.size()])
 		var floors := {}
 		for j in cat:
-			check(String(j.model).get_file().begins_with(prefix[n]), "%s: %s is its own catalogue piece" % [n, j.model])
+			if OWN_SET.has(n):
+				check(String(j.model).get_file().begins_with(OWN_SET[n]), "%s: %s is its own catalogue piece" % [n, j.model])
+			else:
+				check(String(j.model).begins_with("decor/"), "%s: %s is a catalogue piece" % [n, j.model])
+			if not j.get("loot", false):
+				check(not LootProps.LOOT.has(LootProps.model_id(String(j.model))), "%s: %s is searchable: marked loot" % [n, j.model])
 			if not j.ground:
 				floors[snappedf(float(j.pos[1]) - float(j.get("hung", 0.0)), 0.25)] = true
 			if j.get("loot", false):

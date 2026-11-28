@@ -12,7 +12,9 @@ extends Node3D
 ## building would stand where they are (inside a new wall, floor or stair).
 
 const PLANS := {"tower": RuinTower.PLAN, "outpost": RuinOutpost.OUTPOST_PLAN, "brewhall": RuinBrewhall.PLAN_PATH,
-	"spire": RuinSpire.PLAN_PATH}
+	"spire": RuinSpire.PLAN_PATH,
+	# F976 (owner, Nov 28): the grand ruins too (built into cave shapes: their ground junk lies on their own cave floor)
+	"cliff_galleries": RuinCliffGalleries.PLAN_PATH}
 ## 2 (Nov 21): the catalogue decor joined the lists; a ruin whose junk is older is made again.
 const JUNK_V := 2
 const CHECK_EVERY := 1.0
@@ -65,8 +67,8 @@ static func world_list(world: World, ruin_name: String, origin: Vector3, turn: i
 			continue  # (a lootable piece: LootProps places it, so it can be searched)
 		var p: Vector3 = origin + basis * Vector3(float(j.pos[0]), float(j.pos[1]), float(j.pos[2]))
 		if j.get("ground", false):
-			var y := floor_at(world, p.x, p.z, origin.y)
-			if is_nan(y) or absf(y - origin.y) > MAX_STEP:
+			var y := floor_at(world, p.x, p.z, p.y)  # (p.y: the ruin's base, or a grand ruin's cave floor)
+			if is_nan(y) or absf(y - p.y) > MAX_STEP:
 				continue  # rock in the way, a drop or a ledge: no junk there
 			p.y = y
 		out.append(["res://assets/models/" + String(j.model), p, deg_to_rad(float(j.yaw)) + turn * PI / 2.0, bool(j.get("inside", true))])
@@ -137,7 +139,11 @@ func _make_missing(ruins: Dictionary) -> void:
 			continue
 		var origin: Vector3 = r.origin
 		var reach := float(r.get("reach", 9.0)) + 2.0
-		var box := AABB(origin - Vector3(reach, 3.0, reach), Vector3(reach * 2.0, 6.0, reach * 2.0))
+		var up := 0.0  # (a grand ruin's cave floor stands this high in its box)
+		for j in load_list(String(r.name)):
+			if j.get("ground", false):
+				up = maxf(up, float(j.pos[1]))
+		var box := AABB(origin - Vector3(reach, 3.0, reach), Vector3(reach * 2.0, 6.0 + up, reach * 2.0))
 		if not auth.world.terrain.is_area_meshed(box):
 			continue
 		var r2 := r.duplicate()

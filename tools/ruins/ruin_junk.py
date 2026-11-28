@@ -39,6 +39,7 @@ JUNK_GAP = 0.25      # junk to junk, edge to edge
 DECOR_STAIR = 0.5    # decor: from stairs' outline (owner, Nov 21: the rules are fluid; the steps themselves stay free)
 DECOR_DOOR = 0.6     # decor: a doorway's clearance times this, from the piece's outline (1.2 m; the gateway 1.8 m)
 DECOR_EDGE = 0.12    # decor: its corners may hang this far past a floor's edge (a round tower's bent walls)
+AUTO_APART = 3.0     # decor with no hint (auto): this far from other decor on the same floor
 FREE_CLEAR = 1.0     # the free-standing camp: every corner this far from every building piece
 CAMP = [("campfire_cold", 0.0, 0.0), ("bedroll_rotten", 1.35, 0.0), ("cookpot_tipped", 1.0, 105.0)]  # (dist, angle)
 HUG = {"wall", "wall_narrow", "half_wall", "window_wall", "window_wide", "ruin_wall_worn", "ruin_wall_collapsed"}
@@ -104,6 +105,26 @@ RUINS = {
 		"out_pool": ["rubble_wood", "beam_snapped", "rags", "bones", "crate_stack", "timber_stack", "torch_dropped",
 			"helmet"],
 	},
+	# The grand ruins (F976, owner Nov 28: "go through all of the ruins and see if they have garbage and other assets
+	# laying around"). Built into cave shapes: "ground" is their cave floor in their box (the plan's "floor"), outside
+	# junk and the camp only go in the yard each one digs flat in front ("out_box": x0, x1, z0, z1), and junk keeps off
+	# the plan's own furniture ("props"). "keep": the ruin's _chest_spots; "paths": the way in to its _path_z.
+	"cliff_galleries_ruin": {
+		"seed": 913,
+		"yard": False,
+		"props": True,
+		"out_reach": 30.0,
+		"camp_reach": 30.0,
+		"out_want": (3, 5),
+		"out_box": [(-23.0, 4.0, 8.0, 17.0)],   # (RuinCliffGalleries.YARD_X / YARD_Z: the dug yard)
+		"paths": [[(-2.0, 9.0), (-2.0, 16.0)], [(-18.0, 9.0), (-18.0, 16.0)]],
+		"keep": [(-7.5, 11.5), (2.5, 11.5), (-10.5, 12.0), (-5.0, 14.0), (0.0, 14.5)],
+		"pool": ["rags", "meal", "candles", "cookpot_tipped", "lantern", "grain_sacks", "bones", "rubble_brick", "keg",
+			"crate_stack", "furn_stool", "furn_bucket_wood", "bedroll_rotten", "urn_broken", "torch_dropped", "tools",
+			"rubble_wood", "furn_vase_wide"],
+		"out_pool": ["rubble_brick", "rubble_wood", "beam_snapped", "rags", "bones", "crate_stack", "timber_stack", "keg",
+			"torch_dropped", "furn_bucket_wood"],
+	},
 }
 REPEAT = {"candles", "meal", "cookpot_tipped"}   # (owner: one of each kind per room; candles and pots may repeat)
 
@@ -111,6 +132,11 @@ REPEAT = {"candles", "meal", "cookpot_tipped"}   # (owner: one of each kind per 
 # frame (x right, z toward the door). "wall": back to the nearest wall to the hint ("up": hung this high); "mid": free
 # standing near the hint ("yaw"); "ground": outside on the bare ground near the hint ("yaw"); "gap": exactly there,
 # filling a breach in a wall. "n": how many (each spot searched on its own, from its hint).
+def A(did, mount, **ex):
+	"""A decor piece with no hint: the tool finds it a spot (see auto_tries). ex: "up" (hung), "y"/"lo"/"hi" (floors)."""
+	return (did, None, mount, None, None, ex)
+
+
 DECOR = {
 	"watchtower_ruin": [
 		("rt_water_cistern", 0.0, "ground", -4.6, -3.0, {"yaw": 300}),
@@ -170,6 +196,14 @@ DECOR = {
 		("rs_signal_shutters", 0.0, "ground", 7.0, 9.6, {"yaw": 200}),
 		("rs_lantern_cage_fallen", 0.0, "ground", 13.4, 9.4, {"yaw": 30}),
 		("rs_lens_shattered", 0.0, "ground", 14.6, 3.4, {"yaw": 0}),
+	],
+	# Dwarf homes up a cliff: house things in every home, a watchman's corner up in the tower, a cart in the yard.
+	"cliff_galleries_ruin": [
+		A("wardrobe", "wall"), A("writing_desk", "wall"), A("rocking_chair", "wall"), A("storage_trunk", "wall"),
+		A("washbasin", "wall"), A("bookshelf_collapsed", "wall"), A("table_overturned", "mid"), A("boot_rack", "wall"),
+		A("spice_shelf", "wall", up=1.0), A("dish_rack", "wall", up=1.0), A("candle_wall_shelf", "wall", up=1.2),
+		A("bunk_bed", "wall"), A("chandelier_fallen", "mid"), A("hs_watch_brazier", "mid", lo=9.0),
+		A("mg_last_watch", "wall", lo=9.0), A("mg_wheelbarrow", "ground"), A("mg_water_butt", "ground"),
 	],
 }
 
@@ -274,19 +308,42 @@ def make(name):
 	opt = RUINS[name]
 	plan = json.loads((ROOT / "blueprints/ruins" / f"{name}.json").read_text(encoding="utf-8"))
 	rng = random.Random(opt["seed"])
+	G = float(opt.get("ground", plan.get("floor", 0.0)))   # (a grand ruin's cave floor in its box: Cliff Galleries 5.0)
 	pieces = [p for p in plan["pieces"] if p["id"] in PIECES]
 	for p in pieces:
 		p["fp"] = footprint(p)
 		p["top"] = p["pos"][1] + PIECES[p["id"]]["size"][1]
 	supports = [p for p in pieces if PIECES[p["id"]]["group"] in ("floor", "foundation") and p["id"] not in STAIRS]
-	levels = sorted({round(p["top"], 2) for p in supports} | {0.0})
+	# Things that aren't building pieces but stand in the way (the grand ruins, F976): the plan's own props (furniture,
+	# lootable racks) and any piece the game doesn't have yet (the Kiln's own models): junk keeps off their outlines.
+	others = []
+	for p in plan.get("props", []):
+		m = p["model"] if "/" in p["model"] else "decor/%s.glb" % p["model"]
+		if (ROOT / "assets/models" / m).exists():
+			others.append((corners(m, p["pos"][0], p["pos"][2], float(p.get("yaw", 0.0))), p["pos"][1], p["pos"][1] + height(m)))
+	for p in plan["pieces"]:
+		if p["id"] not in PIECES:
+			m = "build/%s.glb" % p["id"]
+			if (ROOT / "assets/models" / m).exists():
+				others.append((corners(m, p["pos"][0], p["pos"][2], steps_of(int(p.get("rot", 0))) * 30.0), p["pos"][1],
+					p["pos"][1] + height(m)))
+			else:
+				print("  (no model for %s: left out)" % p["id"])
+	if not opt.get("props", False):
+		others = []   # (the first four ruins: their junk was laid out before this, Nov 21)
+	levels = sorted({round(p["top"], 2) for p in supports} | {G})
+
+	def out_ok(x, z):
+		"""Outside ground junk and the camp: only in the dug-out yard(s) of a grand ruin (real, level floor), if listed."""
+		boxes = opt.get("out_box")
+		return boxes is None or any(b[0] <= x <= b[1] and b[2] <= z <= b[3] for b in boxes)
 
 	def level_of(pt, y):
 		"""'piece' when a floor piece with its top at y is under pt, 'ground' when no floor piece at all, else None."""
 		on = [p for p in supports if inside(pt, p["fp"])]
 		if any(abs(p["top"] - y) < 0.06 for p in on):
 			return "piece"
-		return "ground" if not on and y == 0.0 else None
+		return "ground" if not on and y == G else None
 
 	# The edges junk hugs at each level: (a, b, face offset from the line, base y).
 	edges = []
@@ -315,7 +372,7 @@ def make(name):
 
 	lines = {y: [(a, b) for i, a in enumerate(openings_at(y)) for b in openings_at(y)[i + 1:]] for y in levels}
 	for y in lines:
-		if y == 0.0:
+		if y == G:
 			lines[y] += [tuple(l) for l in opt["paths"]]
 	chests = [(c["pos"][0], c["pos"][1], c["pos"][2]) for c in plan.get("chests", [])]
 	torches = [tuple(t) for t in plan.get("torches", [])]
@@ -362,7 +419,12 @@ def make(name):
 			for (tx, ty, tz) in ([] if up > 0.3 else torches):
 				if abs(ty - y) < 1.0 and not far(cs, px, pz, rad, solo, tx, tz, TORCH_CLEAR):
 					return _no('torch')
-			if y == 0.0:
+			for (ocs, olo, ohi) in others:
+				if olo < top and ohi > low and overlap(cs, grow_by(ocs, JUNK_GAP)):
+					return _no('prop')
+			if kind == "ground" and not out_ok(px, pz):
+				return _no('out_box')
+			if y == G:
 				for (kx, kz) in opt["keep"]:
 					if not far(cs, px, pz, rad, solo, kx, kz, THING_CLEAR):
 						return _no('keep')
@@ -419,7 +481,7 @@ def make(name):
 			for y in levels:
 				if base is not None and not (-0.1 <= base - y <= 0.35):
 					continue  # a wall hugs the floor it stands on (a cellar's too)
-				if base is None and y != 0.0:
+				if base is None and y != G:
 					continue  # a foundation's side: only the bare ground beside it
 				t = 0.35
 				while t <= L - 0.35:
@@ -430,9 +492,9 @@ def make(name):
 						if kind == "piece":
 							zone = ("in", y)
 						elif in_yard(*probe):
-							zone = ("yard", 0.0)
+							zone = ("yard", G)
 						elif math.hypot(*probe) <= opt["out_reach"]:
-							zone = ("out", 0.0)
+							zone = ("out", G)
 						else:
 							zone = None
 						if zone:
@@ -485,15 +547,15 @@ def make(name):
 					break
 				if any(math.hypot(*c) > opt["camp_reach"] for c in cs):
 					break
-				f = free([(model, cs)], 0.0, "ground")   # (camp mates: checked by their real outlines below)
+				f = free([(model, cs)], G, "ground")   # (camp mates: checked by their real outlines below)
 				if f is None or any(overlap(cs, o) for o in outs):
 					break
 				outs.append(cs)
-				got.append((f[0], {"model": model, "pos": [round(x, 3), 0.0, round(z, 3)], "yaw": round(yaw % 360.0, 1),
+				got.append((f[0], {"model": model, "pos": [round(x, 3), G, round(z, 3)], "yaw": round(yaw % 360.0, 1),
 					"ground": True, "inside": False, "free": True}))
 			if len(got) == len(CAMP):
 				for f, j in got:
-					placed.append((f[0], f[1], 0.0, f[2]))
+					placed.append((f[0], f[1], G, f[2]))
 					junk.append(j)
 				print("  camp  at (%.1f, %.1f)" % (fx, fz))
 				return True
@@ -501,6 +563,51 @@ def make(name):
 		return False
 
 	decor_fps = []   # (corners, low, high) of the decor placed
+	decor_at = []    # (x, z, floor y) of the decor placed
+
+	def auto_tries(model, mount, ex, sz):
+		"""A decor piece with no hint (the grand ruins, F976: "if you think it works, place it"): every wall, floor or
+		yard spot of the ruin, the floors with the least decor first, shuffled, so the pieces spread over the ruin.
+		ex "y": only that floor; "lo"/"hi": only floors between."""
+		out = []
+		lo, hi = ex.get("lo", -99.0), ex.get("hi", 99.0)
+		if "y" in ex:
+			lo = hi = ex["y"]
+		if mount == "wall":
+			for zone, spots in cands.items():
+				for (q, d, nrm, face, cy, kind) in spots:
+					if kind != "piece" or not (lo - 0.01 <= cy <= hi + 0.01):
+						continue
+					yaw = math.degrees(math.atan2(nrm[0], nrm[1]))
+					for o in (0.0, 0.2):
+						w = face + WALL_GAP + o + sz / 2
+						out.append((0.0, *_origin(model, q[0] + nrm[0] * w, q[1] + nrm[1] * w, yaw), yaw, kind, cy))
+		elif mount == "mid":
+			rooms = [(q, cy) for zone, spots in cands.items() if zone[0] == "in" for (q, d, nrm, face, cy, kind) in spots]
+			for p in supports:
+				if not (lo - 0.01 <= p["top"] <= hi + 0.01):
+					continue
+				mx, mz = sum(c[0] for c in p["fp"]) / len(p["fp"]), sum(c[1] for c in p["fp"]) / len(p["fp"])
+				if not any(abs(cy - p["top"]) < 0.01 and math.hypot(q[0] - mx, q[1] - mz) < 4.0 for (q, cy) in rooms):
+					continue   # (a room's floor, with walls round it: not a bridge, a roof or a ledge)
+				for yaw in (0.0, 90.0):
+					out.append((0.0, *_origin(model, mx, mz, yaw + rng.uniform(-15, 15)), yaw, "piece", round(p["top"], 2)))
+		else:   # "ground": out on the bare floor of the dug yard
+			for b in opt.get("out_box", [(-25.0, 25.0, -25.0, 25.0)]):
+				x = b[0] + 1.0
+				while x <= b[1] - 1.0:
+					z = b[2] + 1.0
+					while z <= b[3] - 1.0:
+						yaw = rng.uniform(0, 360)
+						out.append((0.0, *_origin(model, x, z, yaw), yaw, "ground", G))
+						z += 0.5
+					x += 0.5
+		count = {}
+		for (_, _, oy) in decor_at:
+			count[round(oy, 1)] = count.get(round(oy, 1), 0) + 1
+		rng.shuffle(out)
+		out.sort(key=lambda t: count.get(round(t[5], 1), 0))
+		return out
 
 	def place_decor():
 		"""The catalogue pieces (DECOR), nearest free spot to each hint first."""
@@ -508,8 +615,10 @@ def make(name):
 			model = "decor/%s.glb" % did
 			sx, sz, ox, oz = size(model)
 			up = ex.get("up", 0.0)
-			tries = []   # (distance from the hint, x, z, yaw, kind)
-			if mount == "wall":
+			tries = []   # (distance from the hint, x, z, yaw, kind[, floor y])
+			if hx is None:
+				tries = auto_tries(model, mount, ex, sz)
+			elif mount == "wall":
 				for zone, spots in cands.items():
 					for (q, d, nrm, face, cy, kind) in spots:
 						if abs(cy - y) > 0.01 or kind != "piece":
@@ -531,10 +640,15 @@ def make(name):
 			tries.sort(key=lambda t: t[0])
 			why.clear()
 			got = None
-			for (dist, x, z, yaw, kind) in tries:
-				if dist > ex.get("reach", 5.0):
+			for t in tries:
+				dist, x, z, yaw, kind = t[:5]
+				if hx is None:
+					y = t[5]
+				elif dist > ex.get("reach", 5.0):
 					break
 				cs = corners(model, x, z, yaw)
+				if hx is None and any(abs(oy - y) < 1.0 and rect_dist(cs, (ox, oz)) < AUTO_APART for (ox, oz, oy) in decor_at):
+					continue
 				low, high = y + up, y + up + height(model)
 				if any(overlap(cs, [(c[0], c[1]) for c in grow_by(o, 0.1)]) for (o, olo, ohi) in decor_fps if ohi > low and olo < high):
 					continue
@@ -549,10 +663,11 @@ def make(name):
 				got = (dist, x, z, yaw, kind, cs, f[0], low, high)
 				break
 			if got is None:
-				print("  decor %-26s y=%-5s NO SPOT near (%.1f, %.1f) %s" % (did, y, hx, hz, {k: v for k, v in why.items() if k != "last"}))
+				print("  decor %-26s y=%-5s NO SPOT near (%s, %s) %s" % (did, y, hx, hz, {k: v for k, v in why.items() if k != "last"}))
 				continue
 			dist, x, z, yaw, kind, cs, f, low, high = got
 			decor_fps.append((cs, low, high))
+			decor_at.append((f[0], f[1], y))
 			placed.append((f[0], f[1], y, f[2]))
 			box = opt.get("wall_box", 0.0)
 			inside = mount == "gap" or kind == "piece" or in_yard(f[0], f[1]) or (abs(f[0]) < box and abs(f[1]) < box)
@@ -586,9 +701,12 @@ def make(name):
 		rng.shuffle(pool)
 		pool = [e for e in pool if e in REPEAT] + pool   # one of each kind (candles, plates, pots: twice)
 		n = 0
+		why.clear()
 		while pool and n < want:
 			if try_entry(pool.pop(), zone):
 				n += 1
+		if n < want and os.environ.get("DBG"):
+			print("    why:", {k: v for k, v in why.items() if k != "last"})
 		print("  %-5s y=%-5s %d of %d (%d spots)" % (zone[0], zone[1], n, want, len(cands[zone])))
 	out = ROOT / "blueprints/ruins" / f"{name}_junk.json"
 	out.write_text(json.dumps({"junk": junk}, indent=0, separators=(",", ":")), encoding="utf-8")
