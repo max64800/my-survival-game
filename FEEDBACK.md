@@ -99,14 +99,14 @@ Fixed items get ~~crossed out~~, never deleted, so we can see the whole history.
 ## Open (still to do)
 
 **Nov 28 play test:**
-- [ ] **F944. The level-up sound is too arcade-like. Change it.** (Same family as F934, skill-up sounds.) *From: you (PC, Nov 28, play test). Said: 1×*
-- [ ] **F945. The last hit on anything gives more: finishing a boulder, a tree, etc. drops a bigger pile than the hits before.** *From: you (PC, Nov 28, play test). Said: 1×*
-- [ ] **F946. Looking straight up (e.g. picking vines overhead), the camera goes inside the dwarf and you see the inside of his belly.** F927 fixed this only while aiming; plain looking up needs it too (camera moves out / dwarf fades, never see inside him). *From: you (PC, Nov 28, play test). Said: 1×*
-- [ ] **F947. Health and stamina bars: darker, more refined, less bright/arcade. The stamina numbers are white on yellow and very hard to read.** (F823 added the numbers.) *From: you (PC, Nov 28, play test). Said: 1×*
-- [ ] **F948. A floating tree: a big root tree hangs in the air above the floor.** Screenshot: the trunk and roots end well above the ground. *From: you (PC, Nov 28, play test). Said: 1×*
-- [ ] **F949. Workbench: switching Materials → Stations often makes the whole menu stretch, with a big empty space at the bottom right.** Back on Materials it's fine again. Happens often, not every time. *From: you (PC, Nov 28, play test). Said: 1×*
-- [ ] **F950. The new crate hitboxes are good, but a flat wooden floor board/hatch got one too, so you can't step over it.** Flat floor pieces must stay walkable (screenshot: the plank on the stone floor in a ruin). *From: you (PC, Nov 28, play test). Said: 1×*
-- [ ] **F951. The wood-chopping and crafting sounds are too arcade-like.** (Same family as F934 and F707.) *From: you (PC, Nov 28, play test). Said: 1×*
+- [ ] **F944. The level-up sound is too arcade-like. Change it.** (Same family as F934, skill-up sounds.) *From: you (PC, Nov 28, play test). Said: 1×* 🛠 in progress (Nov 28 play test fixes, Nov 28)
+- [ ] **F945. The last hit on anything gives more: finishing a boulder, a tree, etc. drops a bigger pile than the hits before.** *From: you (PC, Nov 28, play test). Said: 1×* 🛠 in progress (Nov 28 play test fixes, Nov 28)
+- [ ] **F946. Looking straight up (e.g. picking vines overhead), the camera goes inside the dwarf and you see the inside of his belly.** F927 fixed this only while aiming; plain looking up needs it too (camera moves out / dwarf fades, never see inside him). *From: you (PC, Nov 28, play test). Said: 1×* 🛠 in progress (Nov 28 play test fixes, Nov 28)
+- [ ] **F947. Health and stamina bars: darker, more refined, less bright/arcade. The stamina numbers are white on yellow and very hard to read.** (F823 added the numbers.) *From: you (PC, Nov 28, play test). Said: 1×* 🛠 in progress (Nov 28 play test fixes, Nov 28)
+- [ ] **F948. A floating tree: a big root tree hangs in the air above the floor.** Screenshot: the trunk and roots end well above the ground. *From: you (PC, Nov 28, play test). Said: 1×* 🛠 in progress (Nov 28 play test fixes, Nov 28)
+- [ ] **F949. Workbench: switching Materials → Stations often makes the whole menu stretch, with a big empty space at the bottom right.** Back on Materials it's fine again. Happens often, not every time. *From: you (PC, Nov 28, play test). Said: 1×* 🛠 in progress (Nov 28 play test fixes, Nov 28)
+- [ ] **F950. The new crate hitboxes are good, but a flat wooden floor board/hatch got one too, so you can't step over it.** Flat floor pieces must stay walkable (screenshot: the plank on the stone floor in a ruin). *From: you (PC, Nov 28, play test). Said: 1×* 🛠 in progress (Nov 28 play test fixes, Nov 28)
+- [ ] **F951. The wood-chopping and crafting sounds are too arcade-like.** (Same family as F934 and F707.) *From: you (PC, Nov 28, play test). Said: 1×* 🛠 in progress (Nov 28 play test fixes, Nov 28)
 
 **Nov 27 play session (big list):**
 - [ ] **F925. Getting hit by a bat sounds like a 'ding'. It shouldn't.** *From: you (PC, Nov 27, play session). Said: 1×* 🛠 code done Nov 27, waiting for your round 12 sound picks (the page is open)
