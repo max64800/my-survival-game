@@ -77,11 +77,11 @@ FACES = {
 	# (one brow up), a crooked half-smile, a thinner bony face, deep old wrinkles, a middle beard braid with a copper ring
 	"oldsly": dict(
 		pic="dwarf_face_oldsly_head.png",
-		hair_rgb=(0.8, 0.76, 0.7), skin_rgb=(0.86, 0.6, 0.5), ink=0.45,
+		hair_rgb=(0.8, 0.76, 0.7), skin_rgb=(0.86, 0.6, 0.5), ink=0.3,
 		jaw=(0.086, 0.058, 0.084), cheek_r=(0.039, 0.037, 0.035),
 		lids={-1: (20, 14), 1: (26, 16)},  # (narrow; his left eye, under the raised brow, a little more open)
 		cap="mohawk", short_back=True, back_braid=True, ring_reach=0.035, moustache="sly", brows="sly", smirk=True, old=True,
-		eye_paint=True, braids=[("braid_mid", 0.0)], beard_flare=0.4,
+		eye_paint=True, braids=[("braid_mid", 0.0)], beard_flare=0.4, crease_dark=0.4, ear_full=True, stubble=True,
 	),
 }
 FACE_NAME = "happy"
@@ -493,6 +493,8 @@ def build_ear(s):
 	a little flap in front of the hole, all at an angle so its back edge stands off the head."""
 	O = Hd(s * 0.13, -0.036, -0.034)
 	n = Dv(s * 0.82, 0.0, 0.57).normalized()               # the ear faces out and a little forward
+	if FACE.get("ear_full"):  # (face 3, round 2: lying closer to the head, so from behind it isn't a flat disc standing off)
+		n = Dv(s * 0.93, 0.0, 0.37).normalized()
 	up = Dv(0, 1, -0.18)
 	up = (up - n * up.dot(n)).normalized()
 	f = FWD - n * FWD.dot(n) - up * FWD.dot(up)
@@ -509,6 +511,11 @@ def build_ear(s):
 	ell(pt(262, 0.95) + up * 0.006, (f, up, n), (0.011, 0.012, 0.0065), MS, SKIN)          # the lobe
 	ell(O + f * 0.022 - up * 0.008, (f, up, n), (0.006, 0.007, 0.006), MS, SKIN)           # the flap
 	ell(O + f * 0.016 - n * 0.013, (f, up, n), (0.017, 0.03, 0.013), MS, SKIN)             # joins the head
+	if FACE.get("ear_full"):
+		# (F737 face 3, owner: "his ears look very weird": with the sides shaved the ear's back shows, and it read as a
+		# flat disc on a stalk; a rounded back shell behind the bowl, thick at the root and thin at the rim, like a real ear)
+		ell(O - n * 0.008 + f * 0.006, (f, up, n), (a * 0.82, b * 0.86, 0.008), MS, SKIN)
+		ell(O - n * 0.015 + f * 0.012, (f, up, n), (a * 0.62, b * 0.7, 0.01), MS, SKIN)
 
 
 # ---------------------------------------------------------------- the hair (one family of locks)
@@ -571,7 +578,9 @@ def build_hair():
 			cl.keep((-0.095 - cl.V) - np.clip((cl.W + 0.01) / 0.03, 0, 1) * 0.3, 0.012)
 		if FACE.get("cap") == "mohawk":
 			# (F737 face 3: both sides shaved; only a strip over the top stays, a bit wider at the back where the braid starts)
-			cl.keep(np.abs(cl.U) - (0.042 + 0.012 * np.clip(-cl.W / 0.1, 0, 1)), 0.01)
+			# (round 2: a pad stays in front of each ear, under the sideburn locks; shaved off, its locks showed holes)
+			pad = np.minimum(*(cl.ell((s * 0.098, -0.06, 0.02), (0.034, 0.06, 0.036)) for s in (-1, 1)))
+			cl.keep(np.minimum(np.abs(cl.U) - (0.042 + 0.012 * np.clip(-cl.W / 0.1, 0, 1)), pad), 0.01)
 	else:
 		cl.keep(np.radians(el - (56 - 32 * (np.minimum(np.abs(phi), 112) / 112) ** 1.3)) * 0.12, 0.012)  # below the hairline
 		cl.keep(np.radians(np.abs(phi) - (117 - 30 * np.clip((10 - el) / 20, 0, 1))) * 0.12, 0.012)  # behind the temples; behind the ears lower down
@@ -782,7 +791,7 @@ def build_brows():
 	for s in (-1, 1):
 		for layer, (cnt, v0, dv, wid, th, lift) in enumerate(((7, 0.022, 0.02, 0.016, 0.008, 0.005), (6, 0.032, 0.017, 0.015, 0.008, 0.009),
 				(4, 0.042, 0.011, 0.013, 0.007, 0.012))):
-			for k in range(cnt):
+			for k in range(cnt + (2 if FACE.get("brows") == "sly" else 0)):
 				f = (k + 0.33 * layer) / cnt
 				# inner ends raised (a kind, happy arch, not a cross V: F193)
 				u, v = s * (0.012 + 0.088 * f), v0 + dv * math.sin(math.pi * (0.1 + 0.8 * f)) + 0.008 * (1 - f) ** 2
@@ -793,10 +802,10 @@ def build_brows():
 					u, v = s * (0.01 + 0.084 * f), v0 - 0.006 + 0.026 * f + 0.004 * layer * f
 				if FACE.get("brows") == "sly":
 					# (F737 face 3: his left brow arched up high, the right one low and flat over the narrowed eye)
-					if s == 1:
-						u, v = s * (0.012 + 0.086 * f), v0 + 0.002 + 0.016 * math.sin(math.pi * (0.15 + 0.7 * f)) + 0.003 * layer
-					else:
-						u, v = s * (0.01 + 0.084 * f), v0 - 0.004 + 0.016 * f + 0.004 * layer * f
+					# (round 2, owner: "not identical, at different levels": both the same now, low and flat, a little
+					# lift at the outer end; more, wider strands lying flat, so it reads as one calm brow, not spikes)
+					f = (k + 0.5 * layer) / (cnt + 2)
+					u, v = s * (0.012 + 0.078 * f), v0 + 0.002 + 0.012 * f + 0.003 * layer * f  # (not past the temple: spiky ends)
 				if (FACE.get("frown") or FACE.get("brows") == "sly") and layer == 2:
 					continue
 				if s == 1 and FACE.get("scar_gap") and abs(u - FACE["scar_gap"][0]) < FACE["scar_gap"][1]:
@@ -808,6 +817,11 @@ def build_brows():
 				up = 0.004 + 0.022 * f ** 1.5
 				if FACE.get("frown") or FACE.get("brows") == "sly":
 					up, wid, th, lift, L =0.002 + 0.008 * f ** 1.5, wid * 0.9, th * 0.8, lift * 0.5, L * 0.8  # (flat brows lying close)
+				if FACE.get("brows") == "sly":
+					up, wid, L = 0.001 + 0.004 * f, wid * 1.05, L * 0.9
+					lock([P - n * 0.004, P + n * lift + Dv(s * L * 0.35, 0.001, 0), P + n * lift + Dv(s * L * 0.7, 0.002 + up * 0.5, 0),
+						P + n * lift * 0.4 + Dv(s * L, up, -0.004)], wid, th, n, grooves=1, rd=0.3, twist=jit(0.15))
+					continue
 				lock([P - n * 0.004, P + n * lift + Dv(s * L * 0.35, 0.002 + up * 0.2, 0), P + n * (lift + 0.002) + Dv(s * L * 0.7, 0.004 + up * 0.5, 0),
 					P + n * lift + Dv(s * L, up, -0.004)], wid, th, n, grooves=2, rd=0.24, twist=jit(0.3))
 
@@ -851,7 +865,7 @@ def build_moustache():
 				ws = [wface(s * u, v, lift) for u, v in uv]
 				for i in range(1, len(ws)):
 					ws[i] = max(ws[i], ws[i - 1] - 0.03)
-				lock([Hd(s * u, v, w) for (u, v), w in zip(uv, ws)], wid, th, FWD, n=18, grooves=3, rd=0.22)
+				lock([Hd(s * u, v, w) for (u, v), w in zip(uv, ws)], wid, th, FWD, n=18, grooves=1, rd=0.26)  # (round 2: 3 grooves showed as dark slits)
 		return
 	for s in (-1, 1):
 		for uv, wid, th, lift in (
@@ -1139,6 +1153,9 @@ def on_face(uvs, tree="high"):
 	return out
 
 
+STUBBLE = None  # (F737 face 3) how much stubble dot each point of the melted head has (set by sculpt_face)
+
+
 def sculpt_face(high, skin):
 	"""The face's sculpted detail (only where it's skin): wavy forehead wrinkles, crow's feet, smile bags under the
 	eyes, the mouth line, nostrils, and a fine skin grain."""
@@ -1182,6 +1199,19 @@ def sculpt_face(high, skin):
 			groove(on_face([(s * 0.03, -0.024), (s * 0.048, -0.03), (s * 0.066, -0.022)]), 0.0015, 0.0016, 0.3)  # (a second bag)
 			groove(on_face([(s * 0.038, -0.05), (s * 0.05, -0.07), (s * 0.058, -0.09)]), 0.0018, 0.0018, 0.3)
 			groove(on_face([(s * 0.008, 0.014), (s * 0.01, 0.03)]), 0.0016, 0.0015, 0.3)
+	if FACE.get("old"):  # (round 2, owner: "wrinkles on top of his forehead, but we need those in the face as well")
+		for s in (-1, 1):
+			for k in range(3):  # cheek lines: curving out and down under the eye bags
+				groove(on_face([(s * (0.05 + 0.008 * k), -0.036 - 0.008 * k), (s * (0.066 + 0.008 * k), -0.046 - 0.009 * k),
+					(s * (0.078 + 0.007 * k), -0.062 - 0.008 * k)]), 0.0019, 0.0013, 0.3)
+			for k in range(3):  # fine lines under the lower lid
+				groove(on_face([(s * 0.034, -0.012 - 0.0045 * k), (s * 0.05, -0.016 - 0.005 * k), (s * 0.066, -0.01 - 0.005 * k)]), 0.0014, 0.0011, 0.3)
+			for k in range(2):  # lines down the outer cheek, in front of the ear
+				groove(on_face([(s * (0.092 + 0.006 * k), -0.02), (s * (0.096 + 0.006 * k), -0.05), (s * (0.094 + 0.006 * k), -0.08)]), 0.0020, 0.0016, 0.3)
+			groove(on_face([(s * 0.05, -0.092), (s * 0.054, -0.108), (s * 0.052, -0.124)]), 0.0024, 0.0018, 0.3)  # by the mouth's corner
+			groove(on_face([(s * 0.088, 0.03), (s * 0.096, 0.012)]), 0.0017, 0.0014, 0.3)  # the temple
+		for k in range(3):  # across the top of the nose
+			groove(on_face([(-0.011, -0.002 - 0.006 * k), (0.0, -0.004 - 0.006 * k), (0.011, -0.002 - 0.006 * k)]), 0.0015, 0.0012, 0.3)
 	for s in (-1, 1):  # nostrils, from below
 		loc, _, _, _ = BVH["face"].ray_cast(Hd(s * 0.014, -0.2, 0.15), UP, 0.3)
 		if loc is not None:
@@ -1207,6 +1237,11 @@ def sculpt_face(high, skin):
 			SCARS3D.append(pts)
 			d = line_dist(co[near], pts)
 			h[near] += 0.0032 * np.exp(-(d / 0.0034) ** 2) - 0.0009 * np.exp(-((d - 0.0048) / 0.0016) ** 2)
+	if FACE.get("stubble"):  # (the dots are a little raised too, so the baked bumps catch the light)
+		global STUBBLE
+		ns = np.array([noise.noise(Vector(p) * 330) for p in co])
+		STUBBLE = np.clip((ns - 0.18) / 0.14, 0, 1)
+		h += 0.00025 * STUBBLE
 	h *= skin
 	put(high, co + no * h[:, None])
 
@@ -1586,7 +1621,7 @@ def build(body_objs, fast=False, log=print):
 	cols = sk[None, :] * (1 - soft[:, None]) + hr[None, :] * soft[:, None]
 	# dark hair in the creases: between the locks and round the braid lobes (like the back of the hair, F191)
 	deep = smooth_values(high, np.clip(creases(high) / 0.0045, 0.0, 1.0), 2)
-	shade = 1.0 - 0.72 * soft * deep ** 0.8
+	shade = 1.0 - FACE.get("crease_dark", 0.72) * soft * deep ** 0.8  # (face 3, white hair: 0.72 showed as black slits in the moustache)
 	cols = cols * shade[:, None]
 	cols = cols * np.array([1.0, 0.92, 0.85])[None, :] ** (soft * deep)[:, None]  # (deeper red-brown, not grey)
 	# hard lines (owner, round 2b: "I don't see shades, we need hard lines on the beard"): a narrow, sharp-edged dark
@@ -1618,19 +1653,32 @@ def build(body_objs, fast=False, log=print):
 	rel = co_ - np.array(tuple(C))
 	hu, hv, hw = rel[:, 0], rel[:, 2], -rel[:, 1]  # (head space)
 	if FACE.get("eye_paint"):
-		# (F737 face 3: dark soot smeared round both eyes, wider toward the temples, the edge rough like a thumb smear)
-		ns = np.array([noise.noise(Vector(p) * 90) for p in co_])
+		# (F737 face 3: soot painted round both eyes. Round 2, owner: "just black weird goo, not detailed": now charcoal
+		# laid on in brush strokes: streaky sideways strokes (darker and lighter), a frayed edge where the strokes end,
+		# a sweep out to the temple, and two thin drips running down each cheek)
+		streak = np.array([noise.noise(Vector((x * 50, z * 420, y * 50))) for x, y, z in co_])
+		ns = np.array([noise.noise(Vector(p) * 140) for p in co_])
+		char = np.array(cs.lin((0.16, 0.15, 0.17))) / 0.74
 		for s in (-1, 1):
-			e = ((hu - s * 0.058) / 0.042) ** 2 + ((hv + 0.004) / 0.029) ** 2
-			soot = np.clip((1.25 - e + 0.35 * ns) / 0.5, 0.0, 1.0) * (hw > 0.04) * (1 - soft)
-			cols = cols * (1.0 - 0.78 * soot)[:, None] * np.array([1.0, 0.97, 0.95])[None, :] ** soot[:, None]
-	if FACE.get("cap") == "mohawk":
-		# (the shaved sides: a fine pale stubble speckle on the skin above the ears and round the back of the head)
+			du = (hu - s * 0.06) * s  # (+ toward the temple)
+			e = (du / np.where(du > 0, 0.05, 0.034)) ** 2 + ((hv + 0.003 - 0.1 * np.clip(du, 0, None)) / 0.024) ** 2
+			edge = 1.3 - e + 0.45 * streak + 0.15 * ns
+			soot = np.clip(edge / 0.25, 0.0, 1.0) * (hw > 0.04) * (1 - soft)
+			soot = soot * (0.8 + 0.2 * np.clip(streak * 2.5 + 0.5, 0, 1))  # (the brush strokes: some darker, some thinner)
+			for k, (u0, L) in enumerate(((0.046, 0.032), (0.068, 0.022))):
+				pts = on_face([(s * u0, -0.02), (s * (u0 + 0.002), -0.02 - L * 0.5), (s * (u0 + 0.001), -0.02 - L)])
+				if len(pts) >= 2:
+					d = line_dist(co_, pts)
+					t = np.clip((-0.02 - hv) / L, 0, 1)  # (thinner toward the drip's end)
+					soot = np.maximum(soot, np.exp(-(d / (0.0028 * (1 - 0.6 * t) + 0.0004)) ** 4) * (hv < -0.012) * (1 - soft) * 0.85)
+			cols = cols * (1 - soot[:, None]) + char[None, :] * soot[:, None]
+	if FACE.get("stubble"):
+		# (the shaved sides, round 2, owner: "little dots like he had hair there"): clear grey-white stubble dots on
+		# the shaved scalp, round the ears and down the sideburns to the beard
 		hr_ = np.array(cs.lin(HAIR_RGB)) / 0.74
-		ns2 = np.array([noise.noise(Vector(p) * 900) for p in co_])
-		scalp = np.clip((hv + 0.03) / 0.03, 0, 1) * np.clip((0.075 - hw) / 0.03, 0, 1) * (1 - soft)
-		dots = scalp * np.clip((ns2 + 0.1) / 0.3, 0, 1) * 0.45
-		cols = cols * (1 - dots[:, None]) + hr_[None, :] * 0.8 * dots[:, None]
+		scalp = np.clip((hv + 0.07) / 0.03, 0, 1) * np.clip((0.06 - hw) / 0.03, 0, 1) * np.clip((np.abs(hu) - 0.03) / 0.02, 0, 1) * (1 - soft)
+		cols = cols * (1 - 0.12 * scalp[:, None])  # (a faint grey shadow where the hair was shaved)
+		cols = cols * (1 - 0.75 * STUBBLE[:, None] * scalp[:, None]) + hr_[None, :] * 0.9 * (0.75 * STUBBLE * scalp)[:, None]
 	log(f"HEAD hard lines on {int((ink > 0.5).sum())} hair points; dark creases on {int((soft * deep > 0.5).sum())}")
 	at = me.color_attributes.new("tint", "FLOAT_COLOR", "POINT")
 	at.data.foreach_set("color", np.concatenate([cols, np.ones((len(cols), 1))], 1).ravel())
