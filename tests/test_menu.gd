@@ -150,6 +150,20 @@ func test_crafting_takes_a_moment() -> void:
 			check_eq(t, 0.0, "%s already has its own station timer" % id)
 
 
+## F955 (owner, Nov 28): the campfire says how long cooking takes, one and several, and the queue's time left.
+func test_campfire_says_how_long_cooking_takes() -> void:
+	var r := Recipes.get_recipe("moss_tea")
+	check_eq(CraftPanel.timed_text(r, 1, null), "(cooks in 10 s)", "one: its time")
+	check_eq(CraftPanel.timed_text(r, 3, null), "(cooks in 10 s each, 3 = 0:30)", "three: each and all")
+	var st := Station.new()
+	st.kind = "campfire"
+	st.queue_job("waterskin_moss_tea", 1, 6.0)
+	check_eq(st.busy_text(), "Cooking Waterskin (moss tea): 6s left", "one cooking")
+	st.queue_job("waterskin_moss_tea", 1, 10.0)
+	check_eq(st.busy_text(), "Cooking Waterskin (moss tea): 6s left · 1 more waiting · all done in 0:16", "...and one waiting")
+	st.free()
+
+
 ## F127/F129: recipes sorted into tabs; "how many can I make" for the ×5 / ×10 / All buttons.
 func test_crafting_tabs_and_amounts() -> void:
 	check_eq(CraftPanel.tab_of("pickaxe_stone"), "Tools", "pickaxes under Tools")

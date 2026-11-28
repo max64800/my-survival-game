@@ -118,7 +118,7 @@ func _ready() -> void:
 	_amount_slider.scrollable = false  # F920: the mouse wheel scrolls the list, never changes the amount
 	_amount_slider.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_amount_slider.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	_amount_slider.value_changed.connect(func(v): amount = int(v); _amount_label.text = "×%d" % amount)
+	_amount_slider.value_changed.connect(func(v): amount = int(v); _amount_label.text = "×%d" % amount; _name_detail())
 	_amount_row.add_child(_amount_slider)
 	_amount_label = UiKit.label(_amount_row, "×1", 17, UiKit.AMBER)
 	_amount_label.custom_minimum_size = Vector2(44, 0)
@@ -366,6 +366,8 @@ func _me() -> Node3D:
 
 func _process(delta: float) -> void:
 	if _making.is_empty():
+		if visible and station and not station.jobs.is_empty():
+			_status.text = station.busy_text()  # (F955: the cooking count-down runs while the menu is open)
 		return
 	var me := _me()
 	if not visible or me == null:
@@ -647,6 +649,29 @@ func _card(recipe_id: String, inv: Inventory) -> Control:
 const DETAIL_TEXT_WIDTH := 300  ## wrapping lines beside the big picture (the column is ~330 wide)
 
 
+## The picked recipe's name, with its time when the station makes it on its own timer (F955: it follows the amount).
+func _name_detail() -> void:
+	if _picked == "" or _detail_name == null:
+		return
+	var r := Recipes.get_recipe(_picked)
+	var timer := "" if r.get("seconds", 0) == 0 else "  " + timed_text(r, amount, _prog())
+	_detail_name.text = Items.display_name(r.output) + ("" if r.count == 1 else " ×%d" % r.count) + timer
+
+
+## F955 (owner, Nov 28): how long a recipe on the station's own timer takes, one and the whole amount (they're made
+## one after the other): "(cooks in 10 s)" / "(cooks in 10 s each, 3 = 0:30)".
+static func timed_text(r: Dictionary, count: int, prog: Progression) -> String:
+	var cooking: bool = r.get("station", "") == "campfire"
+	var mult := 1.0
+	if prog:
+		mult = prog.craft_time_mult(cooking) * (prog.smelt_time_mult() if r.get("station", "") == "smelter" else 1.0)
+	var one := float(r.seconds) * mult
+	var verb := "cooks" if cooking else "takes"
+	if count <= 1:
+		return "(%s in %d s)" % [verb, ceili(one)]
+	return "(%s in %d s each, %d = %s)" % [verb, ceili(one), count, PickupFeed.clock(one * count)]
+
+
 ## The picked recipe at the bottom: big picture, every ingredient as have / need (missing in red).
 func _show_detail(inv: Inventory) -> void:
 	UiKit.clear(_detail_needs)
@@ -656,8 +681,7 @@ func _show_detail(inv: Inventory) -> void:
 	_detail.visible = true
 	var r := Recipes.get_recipe(_picked)
 	_detail_pic.texture = Items.icon(r.output)
-	var timer := "" if r.get("seconds", 0) == 0 else "  (%ds)" % r.seconds
-	_detail_name.text = Items.display_name(r.output) + ("" if r.count == 1 else " ×%d" % r.count) + timer
+	_name_detail()
 	var needs: Dictionary = r.inputs.duplicate()
 	if r.get("fuel", 0) > 0:
 		needs["fuel"] = int(r.fuel)

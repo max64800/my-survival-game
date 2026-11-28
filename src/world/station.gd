@@ -282,10 +282,18 @@ func set_water(n: int) -> void:
 			else "%s · no drips here!" % Items.display_name(kind)
 
 
+## F955 (owner, Nov 28): the campfire says how long the cooking takes, also with several waiting.
 func busy_text() -> String:
 	if jobs.is_empty():
 		return ""
-	return "Making %s… %ds (%d waiting)" % [Items.display_name(jobs[0].item), ceili(jobs[0].left), jobs.size() - 1]
+	var verb := "Cooking" if kind == "campfire" else "Making"
+	var now := "%s %s: %ds left" % [verb, Items.display_name(jobs[0].item), ceili(jobs[0].left)]
+	if jobs.size() == 1:
+		return now
+	var all := 0.0
+	for j: Dictionary in jobs:
+		all += float(j.left)
+	return "%s · %d more waiting · all done in %s" % [now, jobs.size() - 1, PickupFeed.clock(all)]
 
 
 func _size() -> Vector3:
