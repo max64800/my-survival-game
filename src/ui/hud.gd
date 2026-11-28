@@ -313,7 +313,8 @@ func _build() -> void:
 	# F247 (owner, Nov 19): the old slider look stretched into a thin strip with the number on its top edge.
 	# Now each bar sits in the hotbar slots' wood-and-brass frame, a thick fill inside, the number in the middle.
 	# (+ your stun meter, owner chat 15: a thin purple bar, shown only while it has stun in it)
-	for b in [["health", Color(0.86, 0.2, 0.16), VITAL_BAR_H[0]], ["stamina", Color(0.93, 0.74, 0.26), VITAL_BAR_H[1]],
+	# F947 (owner, Nov 28: "darker, more refined, less bright/arcade"): deep blood red and old brass, not bright red/yellow.
+	for b in [["health", Color(0.52, 0.09, 0.07), VITAL_BAR_H[0]], ["stamina", Color(0.58, 0.43, 0.13), VITAL_BAR_H[1]],
 			["stun", Color(0.62, 0.42, 0.86), STUN_BAR_H]]:
 		var frame := PanelContainer.new()
 		frame.name = b[0].capitalize() + "Frame"
@@ -335,7 +336,7 @@ func _build() -> void:
 		bar_fill.bg_color = b[1]
 		bar_fill.set_corner_radius_all(3)
 		bar_fill.border_width_top = 3  # a lighter top edge: a bit of shine, so it reads as a filled tube
-		bar_fill.border_color = b[1].lightened(0.3)
+		bar_fill.border_color = b[1].lightened(0.16)  # (F947: a soft sheen, not a bright stripe)
 		bar_fill.border_width_bottom = 2
 		bar_fill.border_blend = true
 		pb.add_theme_stylebox_override("fill", bar_fill)
@@ -364,6 +365,10 @@ func _build() -> void:
 	_stamina_text = _label(_bars.stamina.get_parent(), 14)  # same as health, a bit smaller for the thinner bar (F823)
 	_stamina_text.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_stamina_text.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	for t in [_health_text, _stamina_text]:  # F947: parchment numbers, thick dark outline: readable on any fill
+		t.add_theme_color_override("font_color", Color(0.97, 0.91, 0.78))
+		t.add_theme_constant_override("outline_size", 8)
+		t.add_theme_color_override("font_outline_color", Color(0.05, 0.03, 0.02, 1.0))
 	# Moods, food buffs and ailments: small text in the bottom-left, above the lantern.
 	_buff_label = _label(root, 13)
 	_buff_label.anchor_top = 1.0
