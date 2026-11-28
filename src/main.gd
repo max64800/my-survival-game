@@ -747,9 +747,6 @@ func start_game(p_seed: int, snap: Dictionary = {}, save: Dictionary = {}) -> vo
 		# The Smeltery Terraces (owner, Nov 25, F845), the same way. Robots: only with smeltcheck.
 		if not dungeon_test and (not _robot_run or OS.get_cmdline_user_args().has("smeltcheck")):
 			authority.world_state["smeltery"] = "pending"
-		# Brickcrown Keep (owner, Nov 25, F895), the same way. Robots: only with brickcheck.
-		if not dungeon_test and (not _robot_run or OS.get_cmdline_user_args().has("brickcheck")):
-			authority.world_state["brickcrown"] = "pending"
 		# The Mine-head Works (owner, Nov 25, F899), the same way. Robots: only with minecheck.
 		if not dungeon_test and (not _robot_run or OS.get_cmdline_user_args().has("minecheck")):
 			authority.world_state["minehead"] = "pending"
@@ -779,8 +776,6 @@ func start_game(p_seed: int, snap: Dictionary = {}, save: Dictionary = {}) -> vo
 		authority.add_child(RuinTwinGate.new(authority))
 	if authority.is_host() and authority.world_state.has("smeltery"):
 		authority.add_child(RuinSmeltery.new(authority))
-	if authority.is_host() and authority.world_state.has("brickcrown"):
-		authority.add_child(RuinBrickcrown.new(authority))
 	if authority.is_host() and authority.world_state.has("minehead"):
 		authority.add_child(RuinMinehead.new(authority))
 	if authority.is_host() and authority.world_state.has("cliff_galleries"):
