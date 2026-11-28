@@ -3,7 +3,7 @@ extends TestCase
 
 
 func test_four_blueprints_exist() -> void:
-	check_eq(BlueprintLibrary.IDS.size(), 26, "twenty-six blueprints (the starter hut, six found in ruins, the Wooden Watchtower, the Wooden Outpost, the two Brewhalls, the two Spires, the two Manors, the two Twin Gates, the two Cliff Watches, the two Prow Halls and the two Smelteries learned by rebuilding ruins, the Mine-head Works, the Cliff Galleries and the Sinkhole Ring)")
+	check_eq(BlueprintLibrary.IDS.size(), 27, "twenty-seven blueprints (the starter hut, six found in ruins, the Wooden Watchtower, the Wooden Outpost, the two Brewhalls, the two Spires, the two Manors, the two Twin Gates, the two Cliff Watches, the two Prow Halls and the two Smelteries learned by rebuilding ruins, the Mine-head Works, the Cliff Galleries, the Sinkhole Ring and the Pillar Spiral)")
 	for id in BlueprintLibrary.IDS:
 		check(BlueprintLibrary.make(id) != null, "%s can be made" % id)
 
@@ -51,6 +51,8 @@ func test_everything_stands_up() -> void:
 static func _on_own_ground(id: String, v: Vector3) -> bool:
 	if id == "sinkhole_ring":   # (ruin 14 in its hole, on its ledge and shelf)
 		return BlueprintLibrary.sink_rock(v.x, v.y - 0.05, v.z)
+	if id == "pillar_spiral":   # (ruin 15 round its rock column, on its lump and shelf)
+		return BlueprintLibrary.pillar_rock(v.x, v.y - 0.05, v.z)
 	if id == "cliff_galleries":   # (ruin 13 on its cliff, shelf, ledge and crack)
 		return BlueprintLibrary.cliff_rock(v.x, v.y - 0.05, v.z)
 	return id == "minehead_works" and BlueprintLibrary.mine_rock(v.x, v.y - 0.05, v.z)

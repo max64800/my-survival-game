@@ -11,7 +11,7 @@ const IDS := ["delvers_hut", "miners_homestead", "stone_hall", "forge_workshop",
 	"stone_outpost", "wooden_watchtower", "wooden_outpost", "hearthbrick_brewhall", "wooden_brewhall", "lantern_spire", "wooden_spire",
 	"hearthbrick_manor", "wooden_manor", "stonehold_twin_gate", "wooden_twin_gate", "stonehold_cliff_watch", "wooden_cliff_watch",
 	"stonehold_prow_hall", "wooden_prow_hall", "hearthbrick_smeltery", "wooden_smeltery",
-	"minehead_works", "cliff_galleries", "sinkhole_ring"]
+	"minehead_works", "cliff_galleries", "sinkhole_ring", "pillar_spiral"]
 ## Known from the very start (F161): you place them and bring the materials. The rest are learned from
 ## Old Blueprints found in ruins (F98).
 const STARTER := ["delvers_hut"]
@@ -22,7 +22,7 @@ const STARTER := ["delvers_hut"]
 const REBUILD_ONLY := ["stone_watchtower", "stone_outpost", "wooden_watchtower", "wooden_outpost", "hearthbrick_brewhall", "wooden_brewhall", "lantern_spire", "wooden_spire",
 	"hearthbrick_manor", "wooden_manor", "stonehold_twin_gate", "wooden_twin_gate", "stonehold_cliff_watch", "wooden_cliff_watch",
 	"stonehold_prow_hall", "wooden_prow_hall", "hearthbrick_smeltery", "wooden_smeltery",
-	"minehead_works", "cliff_galleries", "sinkhole_ring"]
+	"minehead_works", "cliff_galleries", "sinkhole_ring", "pillar_spiral"]
 const NAMES := {
 	"delvers_hut": "Delver's Hut",
 	"miners_homestead": "Miner's Homestead",
@@ -51,6 +51,7 @@ const NAMES := {
 	"minehead_works": "Mine-head Works",
 	"cliff_galleries": "Cliff Galleries",
 	"sinkhole_ring": "Sinkhole Ring",
+	"pillar_spiral": "Pillar Spiral",
 }
 
 const WOOD := "plank_root"
@@ -123,6 +124,7 @@ static func make(id: String) -> Blueprint:
 		"minehead_works": lib._minehead()  # (owner, Nov 25: ruin 12, F899; learned by rebuilding its ruin)
 		"cliff_galleries": lib._cliff_galleries()  # (owner, Nov 26: ruin 13, F913; learned by rebuilding its ruin)
 		"sinkhole_ring": lib._sinkhole_ring()  # (owner, Nov 26: ruin 14, F915; learned by rebuilding its ruin)
+		"pillar_spiral": lib._pillar_spiral()  # (owner, Nov 28: ruin 15, F942; learned by rebuilding its ruin)
 		"hearthbrick_smeltery": lib._smeltery()  # (owner, Nov 24: ruin 10, F845; learned by rebuilding its ruin)
 		"wooden_smeltery":  # (its trims, brackets and roof windows are Hearthbrick only: they stay brick)
 			lib._smeltery()
@@ -514,13 +516,14 @@ func _hex_bands(c: Vector3, flat: int, mat := STONE) -> void:
 ## r * 3.73 m from the middle (r = 1 is the watchtower's ring, r = 2 is 7.46 m, r = 3 is 11.2 m).
 ## Squares: 6 r^2, triangles: 12 r^2. `skip` = small squares left open, as [k, a, b]: big square k, row a outward,
 ## column b along it (stairs holes).
-func _big_ring_layer(r: int, square_id: String, tri_id: String, y: float, skip: Array = [], mat := STONE) -> void:
+func _big_ring_layer(r: int, square_id: String, tri_id: String, y: float, skip: Array = [], mat := STONE, middle := true) -> void:
 	var up := Vector3(0, y, 0) + _ring_off
 	for k in 6:
 		var n := _dir(2 * k)
 		var t := _dir(2 * k + 3)
-		# the middle hexagon's big triangle k: apex in the middle, flat side facing n
-		_tri_fan(r, Vector3.ZERO, _dir(2 * k - 1) * 2.0, _dir(2 * k + 1) * 2.0, 2 * k, tri_id, mat, up)
+		# the middle hexagon's big triangle k: apex in the middle, flat side facing n (`middle` false: left open, F942)
+		if middle:
+			_tri_fan(r, Vector3.ZERO, _dir(2 * k - 1) * 2.0, _dir(2 * k + 1) * 2.0, 2 * k, tri_id, mat, up)
 		# the big square on that side
 		for a in r:
 			for b in r:
@@ -4361,6 +4364,389 @@ func _sr_high_bridge_and_winch_house() -> void:
 
 ## How far the glass reaches from a window piece's middle, along its wall (the rest is the frame's brick or wood).
 const GLASS_HALF := {window_wall = 0.6, window_wide = 0.75}
+
+
+# ---------------------------------------------------------------- Ruin 15: the Pillar Spiral (owner, Nov 28, F942)
+
+## Ruin 15, the Pillar Spiral (owner, Nov 28, F942: "I love it", docs/design/ruin15/PILLAR-SPIRAL-PLAN.md): a town wound
+## round a natural rock column. A stone 12-sided Ring Hall (R = 3, 22 m across) hugs the column's foot; its flat roof is
+## the terrace (5.5). On it four houses stand round the column, each a storey higher than the one before (brick below,
+## wood on top): the Lamp House (right), Store House (back), Bunk House (left) and the Bell Tower (front), and a wooden
+## stair winds round the column from house to house, one flight a side. On the Bell Tower's deck the Eyrie, a wooden
+## lookout under a brick-tiled spire: the highest point. A stone Arch Bridge from the terrace to the Kiln House on a rock lump
+## (right), a wooden bridge from the Store House's top storey to the Rock Shrine on a high shelf (back), a stone plinth
+## and grand stair before the hall's round door (front).
+## Local metres: the column's middle at x 0, z 0, the cave floor y 0; the ring's flat sides are 11.196 m out.
+const PS_SHIFT := Vector3(-7, 4.5, 2)
+const PS_RF := 11.1961524                        # (3 * _EDGE) the ring's flat sides
+const PS_LV := [5.5, 7.75, 10.0, 12.25, 14.5]     # the terrace, then each house storey above it
+
+
+## Is (x, y, z) (shifted, like the pieces) rock: the ground, the ceiling, or the column itself (6-sided at its foot, 10 m
+## across up to the terrace, then round, 7.6 m across, widening into the ceiling).
+static func pillar_rock(x: float, y: float, z: float) -> bool:
+	var lx := x - PS_SHIFT.x
+	var ly := y - PS_SHIFT.y
+	var lz := z - PS_SHIFT.z
+	if ly < _ps_ground(lx, lz) or ly > 25.0:
+		return true
+	return ps_column(lx, ly, lz)
+
+
+## The column alone (local metres).
+static func ps_column(x: float, y: float, z: float) -> bool:
+	if y < 5.5:
+		return maxf(absf(z), maxf(absf(0.8660254 * x + 0.5 * z), absf(0.8660254 * x - 0.5 * z))) < 5.0
+	return Vector2(x, z).length() < 3.8 + pow(maxf(0.0, (y - 17.0) / 8.0), 2.0) * 6.0
+
+
+## How high the ground reaches at (x, z) (local): the cave floor 0, the crack under the Arch Bridge, the Kiln House's
+## rock lump, the high shelf and the cave wall behind, the lower floor before the grand stair.
+static func _ps_ground(x: float, z: float) -> float:
+	if z < -26.0:
+		return 99.0
+	if z < -16.0:
+		return 9.75
+	if x > 13.5 and x < 17.0:
+		return -4.5
+	if x >= 17.0 and x < 27.0 and absf(z) < 8.0:
+		return 2.25
+	if z > 15.2:
+		return -1.0
+	return 0.0
+
+
+func _pillar_spiral() -> void:
+	_start(Vector3(40, 28, 44))
+	_ps_ring_hall()
+	_ps_houses()
+	for s in 4:
+		_ps_spiral(s)
+	_ps_bridge_and_kiln()
+	_ps_shrine()
+	_brackets_off_windows()
+	for p in _bp.pieces:
+		p.pos += PS_SHIFT
+	_air_only_round_pieces(func(lx: float, y: float, lz: float) -> bool: return pillar_rock(lx, y, lz))
+
+
+## The houses and the stair round the column are built once in a "frame" and turned to each side s: 0 right (+x), 1 back
+## (-z), 2 left (-x), 3 front (+z). Frame a = outward from the column, b = along the side (the stair climbs toward -b);
+## each quarter turn takes (a, b) to (b, -a).
+static func _ps_p(s: int, a: float, y: float, b: float) -> Vector3:
+	var x := a
+	var z := b
+	for i in s % 4:
+		var t := x
+		x = z
+		z = -t
+	return Vector3(x, y, z)
+
+
+func _ps_add(s: int, id: String, mat: String, a: float, y: float, b: float, r: int) -> void:
+	_add(id, mat, _ps_p(s, a, y, b), (r + s) % 4)
+
+
+## A wall-like piece on the frame line a = `a` (spanning b), and on the line b = `b` (spanning a).
+func _ps_wall_a(s: int, id: String, a: float, b: float, y: float, mat: String) -> void:
+	_ps_add(s, id, mat, a, y, b, 1)
+
+
+func _ps_wall_b(s: int, id: String, a: float, b: float, y: float, mat: String) -> void:
+	_ps_add(s, id, mat, a, y, b, 0)
+
+
+## A piece against a wall on the frame line a = `a` (side +1 = outward), like _on_wall_x; and on a line b, like _on_wall_z.
+func _ps_on_wall_a(s: int, id: String, mat: String, a: float, b: float, y: float, side: int) -> void:
+	var depth: float = Pieces.LIST[id].size.z
+	_ps_add(s, id, mat, a + side * (0.15 + depth * 0.5), y, b, 1 if side > 0 else 3)
+
+
+func _ps_on_wall_b(s: int, id: String, mat: String, a: float, b: float, y: float, side: int) -> void:
+	var depth: float = Pieces.LIST[id].size.z
+	_ps_add(s, id, mat, a, y, b + side * (0.15 + depth * 0.5), 0 if side > 0 else 2)
+
+
+## A gable roof in frame s over a0..a1 (ridge along a), `rows` rows from b_front back toward -b; like _sr_roof.
+func _ps_roof(s: int, a0: float, a1: float, b_front: float, rows: int, top: float, steep: bool, mat: String) -> void:
+	var rise := 2.0 if steep else 1.0
+	var rid := "roof_45" if steep else "roof_26"
+	var gid := "gable_45" if steep else "gable_26"
+	for i in rows:
+		var bf := b_front - 1.0 - 2.0 * i
+		var bb := b_front - 1.0 - 2.0 * (2 * rows - 1 - i)
+		var a := a0 + 1.0
+		while a < a1:
+			_ps_add(s, rid, mat, a, top + rise * i, bf, 0)
+			_ps_add(s, rid, mat, a, top + rise * i, bb, 2)
+			a += 2.0
+		for ga in [a0, a1]:
+			for bz in [[bf, 1], [bb, 3]]:
+				for k in i:
+					_ps_wall_a(s, "wall" if steep else "half_wall", ga, bz[0], top + rise * k, mat)
+				_ps_add(s, gid, mat, ga, top + rise * i, bz[0], bz[1])
+
+
+## The Ring Hall (stone): one tall storey (1 .. 5.5: a wall, a beam band, a wall) between the outer ring and an inner
+## 6-sided wall round the column's foot; the round main door on the front side with a lantern each side; stacked stairs
+## up the front-left onto the terrace (they come up inside the Bell Tower). The terrace: battlements and a trim band,
+## both open where the Arch Bridge meets it (right side, its middle slot).
+func _ps_ring_hall() -> void:
+	var S := STONE
+	var R := 3
+	var trim := 0.15 + Pieces.LIST["cornice"].size.z * 0.5
+	_big_ring_layer(R, "foundation", "foundation_triangle", 0.0, [], S, false)
+	_big_ring_edges(R, 1.0, func(j, m): return "doorway" if (j == 0 and m == 1) else (
+		"window_wall" if (m == 1 and j % 3 != 0) else "wall"))
+	_big_ring_edges(R, 3.25, func(j, m): return "window_wide" if (j == 0 and m == 1) else (
+		"wall" if (j == 3 or m != 1) else "window_wall"))
+	_big_ring_edges(R, 3.0, func(_j, _m): return "beam")
+	for y in [1.0, 3.25]:
+		_big_ring_corners(R, y, "pillar")
+		for k in 6:                                                     # the inner wall round the column's foot
+			for o in [-2.0, 0.0, 2.0]:
+				_add("wall", S, _dir(2 * k) * (R * _APO) + _dir(2 * k + 3) * o + Vector3(0, y, 0), _rot(2 * k))
+			_add("pillar", S, _dir(2 * k + 1) * 5.95 + Vector3(0, y, 0), _rot(2 * k + 1))
+	for k in 6:
+		for o in [-2.0, 0.0, 2.0]:
+			_add("beam", S, _dir(2 * k) * (R * _APO) + _dir(2 * k + 3) * o + Vector3(0, 3.0, 0), _rot(2 * k))
+	_add("door", S, Vector3(0, 1.0, PS_RF), 0)
+	for sx in [-2, 2]:
+		_on_wall_z("wall_sconce", COPPER, sx, PS_RF, 2.2, 1)
+	_stacked_stairs(Vector3(-2, 1.0, 8.1961524), 3, S)                  # toward +x, into the Bell Tower
+	_big_ring_layer(R, "floor", "floor_triangle", 5.25, [[0, 1, 1]], S, false)
+	_wall_z("railing", -1, 8.1961524, 5.5, S)
+	_wall_x("railing", 0, 7.1961524, 5.5, S)
+	_wall_x("railing", 0, 9.1961524, 5.5, S)
+	var bridge := func(j, m): return j == 3 and m == 1
+	_big_ring_edges(R, 5.2, func(j, m): return "" if bridge.call(j, m) else "cornice", S, trim)
+	_big_ring_edges(R, 5.5, func(j, m): return "" if bridge.call(j, m) else "battlement")
+	_big_ring_corners(R, 5.5, "battlement_corner")
+	# --- the plinth before the main door (stone, x -6..6, its top level with the hall floor) and the grand stair
+	for x in [-5, -3, -1, 1, 3, 5]:
+		for z in [PS_RF + 1.0, PS_RF + 3.0]:
+			_add("foundation", S, Vector3(x, 0.0, z), 0)
+	for x in [-5, -3, 3, 5]:
+		_wall_x("railing", x, PS_RF + 4.0, 1.0, S)
+	for sx in [-6, 6]:
+		for z in [PS_RF + 1.0, PS_RF + 3.0]:
+			_wall_z("railing", sx, z, 1.0, S)
+	for x in [-1, 1]:
+		_add("foundation", S, Vector3(x, -1.0, PS_RF + 5.0), 0)
+		_add("foundation_steps", S, Vector3(x, 0.0, PS_RF + 5.0), 0)
+		_add("foundation_steps", S, Vector3(x, -1.0, PS_RF + 7.0), 0)
+
+
+## One storey of a house in frame s at height y: walls round frame a 6..a1, b -bw..bw (windows: the outer side's middle
+## two, each end side's a 9 slot), `special` keys "a<line>:<b>" / "b<line>:<a>" name another piece for a slot (a
+## doorway gets its door); with `floors`, its floor (not where `holes` are; the terrace is the ground storey's floor).
+func _ps_storey(s: int, y: float, mat: String, a1: int, bw: int, special: Dictionary, floors: bool, holes: Array) -> void:
+	for b in range(-bw + 1, bw, 2):
+		_ps_wall_a(s, special.get("a6:%d" % b, "wall"), 6, b, y, mat)
+		_ps_wall_a(s, special.get("a%d:%d" % [a1, b], "window_wall" if absi(b) == 1 else "wall"), a1, b, y, mat)
+	for a in range(7, a1, 2):
+		for e in [-bw, bw]:
+			_ps_wall_b(s, special.get("b%d:%d" % [e, a], "window_wall" if a == 9 else "wall"), a, e, y, mat)
+	for key: String in special:
+		if special[key] == "doorway":
+			var n := key.substr(1).split(":")
+			if key.begins_with("a"):
+				_ps_add(s, "door", mat, n[0].to_float(), y, n[1].to_float(), 1)
+			else:
+				_ps_add(s, "door", mat, n[1].to_float(), y, n[0].to_float(), 0)
+	if floors:
+		for a in range(7, a1, 2):
+			for b in range(-bw + 1, bw, 2):
+				if not holes.any(func(h): return h[0] == a and h[1] == b):
+					_ps_add(s, "floor", mat, a, y - 0.25, b, 0)
+
+
+## A house in frame s, storey i at PS_LV[i] in mats[i], out to a1s[i], half as wide as bws[i]. `flights` {storey: [a, b,
+## rot]}: stairs from that storey up to the next (rot 0 climbs -b, 2 climbs +b) on a slab, the floor above left open
+## over them with a railing on its inner side and the side they start from.
+func _ps_house(s: int, mats: Array, a1s: Array, bws: Array, specials: Array, flights: Dictionary) -> void:
+	for i in mats.size():
+		var y: float = PS_LV[i]
+		var holes := []
+		for f in [i, i - 1]:
+			if flights.has(f):
+				holes.append(flights[f])
+		_ps_storey(s, y, mats[i], a1s[i], bws[i], specials[i], i > 0, holes)
+		if flights.has(i - 1):
+			var h: Array = flights[i - 1]
+			_ps_wall_a(s, "railing", 8, h[1], y, mats[i])
+			_ps_wall_b(s, "railing", h[0], h[1] + (1 if h[2] == 0 else -1), y, mats[i])
+		if flights.has(i):
+			var f: Array = flights[i]
+			_ps_add(s, "floor", mats[i], f[0], y, f[1], 0)
+			_ps_add(s, "stairs", mats[i], f[0], y + 0.25, f[1], f[2])
+
+
+## The four houses round the column (the stair's doors: the lower one at a 6, b 3 on the storey the flight starts from,
+## the upper one at a 6, b -3 on the storey it reaches). The two middle ones' wooden top storeys jut 2 m out over the
+## ring's edge on brick brackets; the Bell Tower's juts 1 m each side and carries the deck and the Eyrie.
+func _ps_houses() -> void:
+	var B := BRICK
+	var W := WOOD
+	var lo := {"a6:3": "doorway"}
+	var hi := {"a6:-3": "doorway"}
+	var plain_out := {"a10:1": "wall", "a10:-1": "wall"}
+	# the Lamp House (right): two brick storeys, a tile roof
+	_ps_house(0, [B, B], [10, 10], [4, 4], [lo, hi], {0: [9, 1, 0]})
+	_ps_roof(1, -4, 4, 10, 1, PS_LV[1] + 2.0, false, B)
+	# the Store House (back): two brick storeys, a wooden one jutting out, its back door onto the Shrine Bridge
+	_ps_house(1, [B, B, W], [10, 10, 12], [4, 4, 4], [{}, lo.merged(plain_out), hi.merged({"a12:1": "doorway"})],
+		{0: [9, 1, 0], 1: [7, -1, 2]})
+	_ps_roof(1, 6, 12, 4, 2, PS_LV[2] + 2.0, false, W)
+	# the Bunk House (left): three brick storeys and a wooden one jutting out
+	_ps_house(2, [B, B, B, W], [10, 10, 10, 12], [4, 4, 4, 4], [{}, {}, lo.merged(plain_out), hi],
+		{0: [9, 1, 0], 1: [7, -1, 2], 2: [9, 1, 0]})
+	_ps_roof(2, 6, 12, 4, 2, PS_LV[3] + 2.0, false, W)
+	for sb in [[1, PS_LV[2]], [2, PS_LV[3]]]:
+		for b in [-3, -1, 1, 3]:
+			_ps_on_wall_a(sb[0], "corbel", B, 10, b, sb[1] - 1.25, 1)
+	# the Bell Tower (front): four brick storeys (the hall's stairs come up into the ground one, a side door onto the
+	# terrace), a wooden one 1 m wider each side, a railed deck. Its stairs start from the first storey up.
+	var plain_ends := {"b-4:7": "wall", "b-4:9": "wall", "b4:7": "wall", "b4:9": "wall"}
+	_ps_house(3, [B, B, B, B, W], [10, 10, 10, 10, 10], [4, 4, 4, 4, 6], [{"b-4:7": "doorway"}, {}, {},
+		lo.merged(plain_ends), hi], {1: [7, -1, 2], 2: [9, 1, 0], 3: [7, -1, 2], 4: [9, 3, 2]})
+	for a in [7, 9]:
+		for e in [-4, 4]:
+			_ps_on_wall_b(3, "corbel", B, a, e, PS_LV[4] - 1.25, signi(e))
+	var d := PS_LV[4] + 2.0
+	for a in [7, 9]:
+		for b in range(-5, 6, 2):
+			if not (a == 9 and b == 3):
+				_ps_add(3, "floor", W, a, d, b, 0)
+	var r := d + 0.25
+	for b in range(-5, 6, 2):
+		_ps_wall_a(3, "railing", 6, b, r, W)
+		_ps_wall_a(3, "railing", 10, b, r, W)
+	for a in [7, 9]:
+		_ps_wall_b(3, "railing", a, -6, r, W)
+		_ps_wall_b(3, "railing", a, 6, r, W)
+	_ps_wall_a(3, "railing", 8, 3, r, W)
+	_ps_wall_b(3, "railing", 9, 2, r, W)
+	# the Eyrie: railings between 6 wooden pillars (open on the side toward the deck's stairs), a pointed spire
+	var ey := _ps_p(3, 8, r, -3)
+	_hex_edges(ey, 0, func(j): return "" if j == 10 else "railing", W)
+	_hex_pillars(ey, 0, W)
+	_hex_layer("roof_spire", ey + Vector3(0, 2.0, 0), 0, -1, BRICK)   # (spire tiles only come in clay brick)
+
+
+## One flight of the wooden stair round the column, on side s (frame a 5, between the column and the house): from
+## that house's lower door up along the side to its upper door and on round the corner, where the next side's flight
+## starts. Railings on the column side, brick brackets on the house wall under it.
+func _ps_spiral(s: int) -> void:
+	var W := WOOD
+	var lo: float = PS_LV[s]
+	var hi: float = PS_LV[s + 1]
+	if s > 0:                                                          # (side 0 starts on the column's rock ledge)
+		_ps_add(s, "floor", W, 5, lo - 0.25, 3, 0)
+		_ps_wall_a(s, "railing", 4, 3, lo, W)
+		_ps_on_wall_a(s, "corbel", BRICK, 6, 3, lo - 1.25, -1)
+	_ps_add(s, "floor", W, 5, lo, 1, 0)
+	_ps_add(s, "stairs", W, 5, lo + 0.25, 1, 0)
+	for b in [-1, -3, -5]:
+		_ps_add(s, "floor", W, 5, hi - 0.25, b, 0)
+	for b in [-1, -3]:
+		_ps_wall_a(s, "railing", 4, b, hi, W)
+		_ps_on_wall_a(s, "corbel", BRICK, 6, b, hi - 1.25, -1)
+	if s != 3:                                                         # (the Bell Tower's wider top storey closes it)
+		_ps_wall_a(s, "railing", 6, -5, hi, W)
+	_ps_wall_b(s, "railing", 5, -6, hi, W)
+
+
+## The Arch Bridge (stone, the terrace's right side to the Kiln House, over the crack: two piers of carved columns,
+## arches between them) and the Kiln House (brick, x 19.2..23.2, z -3..3) on its rock lump: a lower storey with a
+## door and steps down to the lump, an upper one with the bridge's door, stairs between, a tile roof, two chimneys.
+func _ps_bridge_and_kiln() -> void:
+	var S := STONE
+	var B := BRICK
+	for i in 4:
+		var x := PS_RF + 1.0 + 2.0 * i
+		_add("floor", S, Vector3(x, 5.25, 0), 0)
+		for sz in [-1, 1]:
+			_wall_x("railing", x, sz, 5.5, S)
+	for x in [14.2, 16.2]:
+		for sz in [-1, 1]:
+			_wall_x("arch", x, sz, 4.25, S)
+	_add("floor", S, Vector3(12.5, 0.0, 0), 0)                          # the near pier's footing
+	for sz in [-0.55, 0.55]:
+		_add("column_base", S, Vector3(12.8, 0.25, sz), 0)
+		_add("column", S, Vector3(12.8, 0.75, sz), 0)
+		_add("column", S, Vector3(12.8, 2.75, sz), 0)
+		_add("column_capital", S, Vector3(12.8, 4.75, sz), 0)
+		_add("column_base", S, Vector3(17.6, 2.25, sz), 0)              # the far pier, on the lump
+		_add("column", S, Vector3(17.6, 2.75, sz), 0)
+		_add("column_capital", S, Vector3(17.6, 4.75, sz), 0)
+	var kx := [PS_RF + 9.0, PS_RF + 11.0]
+	var x0 := PS_RF + 8.0
+	var x1 := PS_RF + 12.0
+	var kz := [-2.0, 0.0, 2.0]
+	for x in kx:
+		for z in kz:
+			_add("foundation", B, Vector3(x, 2.25, z), 0)
+	_add("foundation_steps", B, Vector3(kx[0], 2.25, 4.0), 0)          # down to the lump from the lower door
+	var lv := [3.25, 5.5]
+	var north := [{1: "window_wall"}, {0: "window_wall", 1: "window_wall"}]
+	var south := [{0: "doorway", 1: "window_wall"}, {0: "window_wall"}]
+	for i in 2:
+		var y: float = lv[i]
+		for k in 2:
+			_wall_x(north[i].get(k, "wall"), kx[k], -3, y, B)
+			_wall_x(south[i].get(k, "wall"), kx[k], 3, y, B)
+		for z in kz:
+			_wall_z("doorway" if (i == 1 and z == 0.0) else "wall", x0, z, y, B)
+			_wall_z("window_wall" if (i == 1 and z == 0.0) else "wall", x1, z, y, B)
+	_add("door", B, Vector3(kx[0], 3.25, 3), 0)
+	_add("door", B, Vector3(x0, 5.5, 0), 1)
+	_add("floor", B, Vector3(kx[1], 3.25, 0), 0)                        # the stairs up (toward -z)
+	_add("stairs", B, Vector3(kx[1], 3.5, 0), 0)
+	for x in kx:
+		for z in kz:
+			if not (x == kx[1] and z == 0.0):
+				_add("floor", B, Vector3(x, 5.25, z), 0)
+	_wall_z("railing", kx[0] + 1.0, 0, 5.5, B)
+	_wall_x("railing", kx[1], 1, 5.5, B)
+	_ps_roof(1, -3, 3, x1, 1, 7.5, false, B)
+	for cz in [-1.5, 1.5]:                                             # the two kiln chimneys, on its back wall
+		for y in [2.25, 4.25, 6.25, 8.25]:
+			_wall_x("wall", 24.5, cz - 0.5, y, B)
+			_wall_x("wall", 24.5, cz + 0.5, y, B)
+			_wall_z("wall_narrow", 24.5 - 0.83, cz, y, B)
+			_wall_z("wall_narrow", 24.5 + 0.83, cz, y, B)
+
+
+## The Shrine Bridge (wood, from the Store House's back door at 10) and the Rock Shrine (stone, x -2..4, z -22..-18) on
+## the high shelf: one storey, a round door facing the bridge, a flat roof with battlements.
+func _ps_shrine() -> void:
+	var S := STONE
+	var W := WOOD
+	for z in [-13, -15]:
+		_add("floor", W, Vector3(1, 9.75, z), 0)
+		for sx in [0, 2]:
+			_wall_z("railing", sx, z, 10.0, W)
+	_add("floor", S, Vector3(1, 9.75, -17), 0)
+	var sx := [-1, 1, 3]
+	var sz := [-21, -19]
+	for x in sx:
+		for z in sz:
+			_add("floor", S, Vector3(x, 9.75, z), 0)
+			_add("floor", S, Vector3(x, 12.0, z), 0)
+		_wall_x("doorway" if x == 1 else "window_wall", x, -18, 10.0, S)
+		_wall_x("wall", x, -22, 10.0, S)
+		_on_wall_z("cornice", S, x, -18, 11.95, 1)
+		_wall_x("battlement", x, -18, 12.25, S)
+		_wall_x("battlement", x, -22, 12.25, S)
+	for z in sz:
+		_wall_z("window_wall" if z == -19 else "wall", -2, z, 10.0, S)
+		_wall_z("window_wall" if z == -19 else "wall", 4, z, 10.0, S)
+		_on_wall_x("cornice", S, -2, z, 11.95, -1)
+		_on_wall_x("cornice", S, 4, z, 11.95, 1)
+		_wall_z("battlement", -2, z, 12.25, S)
+		_wall_z("battlement", 4, z, 12.25, S)
+	_add("door", S, Vector3(1, 10.0, -18), 0)
 
 
 ## Does this bracket (corbel) cover a window's glass? (owner, Nov 25, F845: "these things cannot touch walls with
