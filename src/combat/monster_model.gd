@@ -780,12 +780,55 @@ static func add_crystals(model: Node3D, color: Color) -> void:
 	m.emission = color
 	m.emission_energy_multiplier = 2.5
 	var top := 0.3
+	var simple := false
 	for c in model.get_children():
 		if c is MeshInstance3D:
 			top = maxf(top, c.position.y)
+			simple = true
+	var at := Vector3(0, top + 0.1, 0.1)
+	var k := 1.0
+	if not simple:
+		# A model from the pictures (spiders, bats...): on the middle of its real back, sized to it (F961, owner
+		# Nov 28: "weird glowing butts, sometimes purple, sometimes red": they sat at a fixed spot near the back end).
+		var back := _back_top(model)
+		at = back.position
+		k = back.size.x
 	for i in 4:
-		var shard := _add(model, _cyl(0.0, 0.07, 0.35 - i * 0.04), m, Vector3((i - 1.5) * 0.09, top + 0.1, 0.1 + (i % 2) * 0.08))
+		var shard := _add(model, _cyl(0.0, 0.07 * k, (0.35 - i * 0.04) * k), m, at + Vector3((i - 1.5) * 0.09, 0.0, (i % 2) * 0.08) * k)
 		shard.rotation = Vector3(0.3 - (i % 2) * 0.5, 0, (i - 1.5) * 0.35)
+
+
+## Where the middle of a model's back is (its highest point over the middle of its body, a bit towards the head) and
+## how big to make its crystals (1 = a 1 m wide creature). Found from the model's own corners (in the holder's space).
+static func _back_top(model: Node3D) -> AABB:
+	var pts := PackedVector3Array()
+	for mi: MeshInstance3D in model.find_children("*", "MeshInstance3D", true, false):
+		if mi.mesh == null:
+			continue
+		var xf := Transform3D.IDENTITY
+		var n: Node = mi
+		while n != model and n is Node3D:
+			xf = (n as Node3D).transform * xf
+			n = n.get_parent()
+		for si in mi.mesh.get_surface_count():
+			var arr := mi.mesh.surface_get_arrays(si)
+			for v: Vector3 in arr[Mesh.ARRAY_VERTEX]:
+				pts.append(xf * v)
+	if pts.is_empty():
+		return AABB(Vector3(0, 0.4, 0.1), Vector3.ONE)
+	var box := AABB(pts[0], Vector3.ZERO)
+	for v in pts:
+		box = box.expand(v)
+	var mid := box.get_center() + Vector3(0, 0, -box.size.z * 0.1)  # (the head is at -Z)
+	var r := maxf(box.size.x, box.size.z) * 0.15
+	var top := -INF
+	for v in pts:
+		if Vector2(v.x - mid.x, v.z - mid.z).length() < r:
+			top = maxf(top, v.y)
+	if top == -INF:
+		top = box.end.y
+	var size := clampf(minf(box.size.x, box.size.z), 0.35, 1.2)
+	return AABB(Vector3(mid.x, top - 0.03 * size, mid.z), Vector3.ONE * size)
 
 
 ## 0 = normal eyes, 1 = bright flash (the "tell" just before a hit lands).

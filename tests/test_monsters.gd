@@ -1573,3 +1573,21 @@ func test_last_swing_heals_on_a_kill() -> void:
 	print("health after the kill: %.1f" % ps.vitals.health)
 	check(ps.vitals.health >= 58.9, "Last Swing 3 healed 9 (%.1f)" % ps.vitals.health)
 	_teardown()
+
+
+## F961 (owner, Nov 28): "some spiders and bats have weird glowing butts, sometimes purple, sometimes red": a crested
+## creature's crystals sat at a fixed spot near the back end. Now they stand on top of its back, in the middle.
+func test_crest_crystals_sit_on_the_back() -> void:
+	for kind in ["cave_spider", "cave_bat"]:
+		var d: Dictionary = Monsters.info(kind)
+		var m := MonsterModel.build(d.shape, d.color, d.size, false, kind, 3, "violet")
+		var before := m.get_child_count()
+		var box := MonsterModel._back_top(m)
+		MonsterModel.add_crystals(m, Monsters.VARIANTS.violet.color)
+		check_eq(m.get_child_count() - before, 4, "%s: 4 crystals" % kind)
+		for i in range(before, m.get_child_count()):
+			var p: Vector3 = (m.get_child(i) as Node3D).position
+			check(p.z < box.position.z + 0.2 * box.size.x, "%s: not at the back end (z %.2f)" % [kind, p.z])
+			check(p.y > box.position.y - 0.05, "%s: on top of its back, not inside it (y %.2f)" % [kind, p.y])
+			check(absf(p.z - 0.1) > 0.05, "%s: not the old fixed spot" % kind)
+		m.free()
