@@ -21,7 +21,7 @@ const BEARD := "res://assets/characters/dwarf/Hair_Beard.gltf"
 const BODY := "res://assets/characters/dwarf/dwarf_body.glb"
 ## (F737, owner Nov 28: new faces to pick from) each face is its own whole-dwarf file, dwarf_body_<face>.glb; face 1
 ## ("happy") is BODY. A test run can pick one with `face=<name>` after `--`.
-const FACES := ["happy", "topknot"]
+const FACES := ["happy", "topknot", "oldsly"]
 var face := _face_from_cmdline()
 
 
