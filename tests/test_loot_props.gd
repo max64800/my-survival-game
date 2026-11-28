@@ -272,3 +272,6 @@ func test_small_loot_is_not_a_step() -> void:
 	lp.place("d:test:9", "decor/rt_arrow_crate_spill.glb", Transform3D(Basis.IDENTITY, Vector3(2, 0, 0)))
 	check(Dwarf.is_small_thing(lp.props["d:test:9"].node), "the bolt crate is a small thing (bump, don't stand)")
 	check(not Dwarf.is_small_thing(null), "nothing isn't")
+	# F950 (owner, Nov 28): a flat floor board got a crate's "bump into it" hitbox. Flat pieces are floor.
+	lp.place("d:test:10", "decor/floor_grate.glb", Transform3D(Basis.IDENTITY, Vector3(-2, 0, 0)))
+	check(not Dwarf.is_small_thing(lp.props["d:test:10"].node), "a flat floor grate is floor you walk over, not a small thing")
