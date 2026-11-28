@@ -111,6 +111,7 @@ Fixed items get ~~crossed out~~, never deleted, so we can see the whole history.
 - [ ] **F972. The world feels too big for zone 1: shorter, easier tunnels so the next place is closer.** "Shrink the map without losing any POIs (places to find)." The white paths are fine. *From: you (PC, Nov 28, play test 2, flying over the map). Said: 1×*
 - [ ] **F973. One place per cave: every cave gets a POI or a dungeon; some caves are empty now.** *From: you (PC, Nov 28, play test 2, flying over the map). Said: 1×*
 - [ ] **F974. Idea: put the first dungeon (the one we made first) in the first cave, as a tutorial dungeon.** *From: you (PC, Nov 28, play test 2, flying over the map). Said: 1×*
+- [ ] **F983. Some tunnels between caves look like old mineshafts: about 25-30% of them.** Wooden beams and supports along the walls, some broken mining equipment, "to add a little oomph to the world". A mineshaft (or a ladder to climb) can also take you up or down a level, instead of stone bridges or hard-to-reach spots. Not all over the place. *From: you (PC, Nov 28, zone 1 shrink chat). Said: 1×*
 
 **Nov 27 play session (big list):**
 - [x] **F805. Sometimes the dwarf keeps sprinting when you are not holding Shift.** *From: you (PC, Nov 23). Said: 1×* **Fixed Nov 23:** `src/main.gd _notification` now releases "run" and "dodge" on `NOTIFICATION_APPLICATION_FOCUS_OUT` even when a menu has the mouse — so any Alt+Tab scenario clears the sprint key.
