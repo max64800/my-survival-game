@@ -33,9 +33,12 @@ func _run() -> void:
 	var auth: GameAuthority = _main.authority
 	var ps := auth.get_player(auth.local_peer_id())
 	var dwarf: Dwarf = ps.node
-	ps.inventory.slots[0] = {id = "crossbow_copper", count = 1}
-	ps.inventory.changed.emit()
-	auth.request_select_slot(auth.local_peer_id(), 0)
+	ps.inventory.add_worn("crossbow_copper")  # (worn and in hand, like the tests: F959)
+	for id in ["bolt_metal", "bolt_fang", "bolt_glow"]:  # (for the bolt wheel, F956)
+		ps.inventory.add(id, 6)
+	for i in Inventory.HOTBAR_SIZE:
+		if ps.inventory.get_slot(i).get("id", "") == "crossbow_copper":
+			auth.request_select_slot(auth.local_peer_id(), i)
 	_main.hud.set_paused(false)
 	Controls.set_captured(true)
 	await _wait(1.0)
@@ -58,6 +61,14 @@ func _run() -> void:
 	Input.action_release("use")
 	dwarf._pitch = -0.05
 	await _wait(1.0)
+	# F956: the bolt wheel (hold R with a bolt in), the mouse pushed right.
+	Input.action_press("reload")
+	await _wait(0.5)
+	dwarf.fight.wheel_aim = Vector2(90, 0)
+	await _wait(0.2)
+	await _shot("bolt_wheel")
+	Input.action_release("reload")
+	await _wait(0.3)
 	# The reload bar under the crosshair (owner, Nov 20): halfway through a reload.
 	ps.inventory.add("bolt_stone", 5)
 	dwarf.fight.loaded = false

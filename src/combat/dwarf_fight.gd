@@ -43,6 +43,13 @@ const DEATH_FALL := 0.9  ## s of the knock-back move before you wake at your bed
 var stun_meter := StunMeter.new(STUN_MAX, STUN_TIME)
 var reload_left := -1.0  ## crossbow: seconds of reloading left (-1 = not reloading)
 var reload_total := 1.0  ## crossbow: how long this reload takes in all (for the bar in the middle of the screen)
+## F956 (owner, Nov 28): holding R with the crossbow loaded opens a wheel of your bolt types; the mouse points at
+## one, letting go of R picks it. The host still checks you carry the bolt you shoot (MonsterManager.request_shoot).
+var chosen_bolt := ""
+var wheel_open := false
+var wheel_aim := Vector2.ZERO  ## px the mouse has pushed since the wheel opened (the camera holds still meanwhile)
+var _r_hold := -1.0  ## s R has been held with a loaded crossbow (-1 = not)
+const WHEEL_HOLD := 0.25
 
 
 func item() -> String:
@@ -506,9 +513,10 @@ func _crossbow_step(delta: float, move_dir := Vector3.ZERO) -> float:
 			if reload_left < 0.0:
 				loaded = true
 				Sfx.play("crossbow_reload", dwarf.global_position + Vector3.UP, -4.0)
-	if Input.is_action_just_pressed("reload") and _busy <= 0.0:  # R reloads (F938)
+	var r_wheel := _bolt_wheel_step(delta)
+	if not r_wheel and Input.is_action_just_pressed("reload") and _busy <= 0.0:  # R reloads (F938)
 		start_reload()
-	elif Input.is_action_just_pressed("dig") and _busy <= 0.0:
+	elif Input.is_action_just_pressed("dig") and _busy <= 0.0 and not wheel_open:
 		if loaded:
 			_shoot(aiming())
 		else:
@@ -537,10 +545,49 @@ func start_reload() -> void:
 	message.emit("Reloading…", Color(0.9, 0.9, 0.9))
 
 
-## The bolt the next shot uses (first one in Combat.BOLT_ORDER that we carry).
+## F956: R with the crossbow loaded: held a moment, the bolt wheel opens; letting go picks the bolt the mouse
+## points at. True = R belongs to the wheel this frame (no reload).
+func _bolt_wheel_step(delta: float) -> bool:
+	if Input.is_action_just_pressed("reload") and loaded:
+		_r_hold = 0.0
+		return true
+	if _r_hold < 0.0:
+		return false
+	if Input.is_action_pressed("reload"):
+		_r_hold += delta
+		if _r_hold >= WHEEL_HOLD and not wheel_open and not bolt_choices().is_empty():
+			wheel_open = true
+			wheel_aim = Vector2.ZERO
+		return true
+	if wheel_open:
+		var ch := bolt_choices()
+		var i := BoltWheel.slice_of(wheel_aim, ch.size())
+		if i >= 0:
+			chosen_bolt = ch[i]
+			message.emit("Shooting %s" % Items.display_name(chosen_bolt), Color(0.9, 0.9, 0.9))
+	wheel_open = false
+	_r_hold = -1.0
+	return true
+
+
+## The bolt types we carry, in Combat.BOLT_ORDER (the wheel's slices).
+func bolt_choices() -> Array:
+	var out := []
+	var ps := _ps()
+	if ps:
+		for id in Combat.BOLT_ORDER:
+			if ps.inventory.count_of(id) > 0:
+				out.append(id)
+	return out
+
+
+## The bolt the next shot uses: the one picked on the wheel (F956) while we carry it, else the first one in
+## Combat.BOLT_ORDER that we carry.
 func bolt() -> String:
 	var ps := _ps()
 	if ps:
+		if chosen_bolt != "" and ps.inventory.count_of(chosen_bolt) > 0:
+			return chosen_bolt
 		for id in Combat.BOLT_ORDER:
 			if ps.inventory.count_of(id) > 0:
 				return id

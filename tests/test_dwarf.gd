@@ -354,6 +354,58 @@ func test_aim_skips_things_behind_the_dwarf() -> void:
 	root.queue_free()
 
 
+## F956 (owner, Nov 28): holding R with the crossbow loaded opens a wheel of your bolt types; pointing the mouse at
+## one and letting go picks it, and the next shot uses it. A tap of R still reloads an empty crossbow.
+func test_holding_r_picks_the_bolt_type() -> void:
+	Controls.setup()
+	var root := _room([])
+	var auth := GameAuthority.new()
+	auth.drops_root = root
+	root.add_child(auth)
+	var dwarf := _dwarf_in(root)
+	var ps := auth.add_player(1, dwarf)
+	ps.inventory.add_worn("crossbow_copper")
+	ps.inventory.add("bolt_stone", 5)
+	ps.inventory.add("bolt_fang", 3)
+	for i in Inventory.HOTBAR_SIZE:
+		if ps.inventory.get_slot(i).get("id", "") == "crossbow_copper":
+			auth.request_select_slot(1, i)
+	var was_robot := Controls.robot
+	Controls.robot = true
+	Controls.set_captured(true)
+	for i in 20:
+		await tree.physics_frame
+	check_eq(dwarf.fight.bolt(), "bolt_stone", "stone bolts first, as before")
+	check_eq(dwarf.fight.bolt_choices(), ["bolt_stone", "bolt_fang"], "the wheel shows the two kinds we carry")
+	Input.action_press("reload")
+	for i in 30:
+		await tree.physics_frame
+	check(dwarf.fight.wheel_open, "holding R with a bolt in opens the wheel")
+	var yaw := dwarf._yaw
+	var push := InputEventMouseMotion.new()
+	push.relative = Vector2(0, 80)  # down: the second of two slices (the first is at the top)
+	dwarf._unhandled_input(push)
+	check_eq(dwarf._yaw, yaw, "the camera holds still while the wheel is open")
+	Input.action_release("reload")
+	for i in 3:
+		await tree.physics_frame
+	check(not dwarf.fight.wheel_open, "letting go of R closes it")
+	check_eq(dwarf.fight.bolt(), "bolt_fang", "and the next shot uses the bolt pointed at")
+	check(dwarf.fight.loaded and dwarf.fight.reload_left < 0.0, "no reload started (one was already in)")
+	ps.inventory.remove("bolt_fang", 3)
+	check_eq(dwarf.fight.bolt(), "bolt_stone", "out of fang bolts: back to stone ones")
+	dwarf.fight.loaded = false
+	Input.action_press("reload")
+	await tree.physics_frame
+	await tree.physics_frame
+	Input.action_release("reload")
+	check(dwarf.fight.reload_left > 0.0, "a tap of R on an empty crossbow still reloads")
+	check(BoltWheel.slice_of(Vector2(0, -80), 4) == 0 and BoltWheel.slice_of(Vector2(80, 0), 4) == 1 		and BoltWheel.slice_of(Vector2(5, 5), 4) == -1, "slices go clockwise from the top; a small push picks none")
+	Controls.set_captured(false)
+	Controls.robot = was_robot
+	root.queue_free()
+
+
 ## Owner, Nov 19: "with the crossbow my dwarf stops or only moves one way; and there's no reloading" (the walking
 ## code broke every frame and the reload never finished). Owner, Nov 20: reloading needs you to stand still; walking
 ## away stops it and it starts over; it takes twice as long as before.

@@ -91,6 +91,7 @@ const RELOAD_H := 30.0
 const RELOAD_COLOR := Color(0.55, 0.68, 0.82)  ## steel blue while it winds
 const RELOAD_DONE_COLOR := Color(1.0, 0.82, 0.3)  ## gold flash: loaded
 var _reload_bar: ProgressBar
+var _bolt_wheel: BoltWheel  ## F956: hold R with a loaded crossbow
 var box_panel: BoxPanel
 var farm_panel: FarmPanel  ## F892: E at a Farm Plot
 var build_mode: BuildMode
@@ -183,6 +184,8 @@ func _build() -> void:
 	_reload_box.position += Vector2(-RELOAD_W * 0.5, 64)
 	_reload_box.visible = false
 	root.add_child(_reload_box)
+	_bolt_wheel = BoltWheel.new()
+	root.add_child(_bolt_wheel)
 	_reload_bar = ProgressBar.new()
 	_reload_bar.name = "Reload"
 	_reload_bar.custom_minimum_size = Vector2(0, RELOAD_H - 12.0)
@@ -1372,6 +1375,18 @@ Take out your Build Hammer here to build it (walk away to stop)." % [nm, roundi(
 
 
 func _update_reload_bar(delta: float = 0.0) -> void:
+func _update_bolt_wheel(ps: GameAuthority.PlayerState) -> void:
+	var me := _local_dwarf()
+	if me == null or me.fight == null or not me.fight.wheel_open or not me.fight.is_crossbow() or ps == null:
+		_bolt_wheel.visible = false
+		return
+	var ids := me.fight.bolt_choices()
+	var have := {}
+	for id in ids:
+		have[id] = ps.inventory.count_of(id)
+	_bolt_wheel.show_wheel(ids, have, me.fight.bolt(), BoltWheel.slice_of(me.fight.wheel_aim, ids.size()))
+
+
 	var me := _local_dwarf()
 	var reloading := me != null and me.fight != null and me.fight.is_crossbow() and me.fight.reload_left >= 0.0
 	if reloading:
@@ -1393,6 +1408,7 @@ func _process(delta: float) -> void:
 	_update_work_bar(auth)
 	_update_reload_bar(delta)
 	_show_equip_ring(ps)
+	_update_bolt_wheel(ps)
 	if auth and not auth.my_cooldowns.is_empty() and ps:  # the grey cooldown shades climb every frame (owner F470)
 		for i in _slot_panels:
 			_show_cooldown(_slot_panels[i], ps.inventory.get_slot(i), auth)

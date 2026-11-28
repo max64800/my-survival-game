@@ -223,7 +223,9 @@ static func shift_is_really_up(event: InputEvent, run_held: bool) -> bool:
 func _unhandled_input(event: InputEvent) -> void:
 	if not input_enabled or not is_local:
 		return
-	if event is InputEventMouseMotion and Controls.captured():
+	if event is InputEventMouseMotion and Controls.captured() and fight and fight.wheel_open and fight.is_crossbow():
+		fight.wheel_aim = (fight.wheel_aim + event.relative).limit_length(200.0)  # (F956: the bolt wheel, not the camera)
+	elif event is InputEventMouseMotion and Controls.captured():
 		var sens := Controls.MOUSE_SENSITIVITY * Controls.mouse_scale
 		_yaw -= event.relative.x * sens
 		_pitch = clampf(_pitch - event.relative.y * sens, -1.35, AIM_PITCH_MAX if _aim_t > 0.5 else PITCH_MAX)
