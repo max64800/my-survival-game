@@ -14,6 +14,7 @@ Fixed items get ~~crossed out~~, never deleted, so we can see the whole history.
 
 ## Things that keep coming back 🔁
 
+- **F962 🔁 (F927), aiming up at bats (Nov 28).** F927 (Nov 27): aiming while looking up, the pivot rises, slides right and comes in. Nov 28: still very hard: the camera sits in his shoulder or the middle, and in a tall cave you can't aim high enough. Try next: a higher look-up limit while aiming, and the crosshair line tested against the dwarf at the steepest angle.
 - **F938 🔁 (F458/F459), crossbow reload on R (Nov 27).** R reloaded the crossbow (stand still, progress bar). F917 (Nov 27, abilities on Q/R/T) took the R key. Try: reload gets its own key back on R and abilities move, or reload on a different key the owner picks. **Nov 27 fix:** R is reload again; abilities on Q / T / G (owner picked).
 - **F940 🔁 (F900), the road between places (Nov 27).** Nov 25 F870: red-brown dirt patches with round stones; F900 changed it to a grey brick road. Nov 27: still not good, it bends; owner wants a sand road. Nov 27 tried: packed sand road pulled straight (F940 done); if it comes back, try a wider, flatter road carved into the floor.
 
@@ -70,7 +71,7 @@ Fixed items get ~~crossed out~~, never deleted, so we can see the whole history.
 | Controls + camera | F18, F23, F27, F385 | |
 | Making the game / tools | F4, F5, F6, F7, F16 |
 | Rebuilding the tower (price, menu, chest, lag) | (F557, F559, F560, F565, F567, F578, F579, F581 done Nov 21; F631, F633, F634, F635, F636, F565 🔁, F733 done Nov 22) | Nov 21: one play of the tower rebuild gave 8 notes. The price and the menu came back again. Nov 22: still needed a hammer and someone standing there, and the menu had more rough edges | |
-| Sound | F8, F15, F67, F353, F377, F551, F558, F577, F925, F934, F937, F944, F951 | Sounds must feel old-world: wood, stone, leather, metal. No beeps or whooshes. Every hit sounds like what it hits (F558 done Nov 21: wood no longer plays the rock sound) |
+| Sound | F8, F15, F67, F353, F377, F551, F558, F577, F925, F934, F937, F944, F951, F955 | Sounds must feel old-world: wood, stone, leather, metal. No beeps or whooshes. Every hit sounds like what it hits (F558 done Nov 21: wood no longer plays the rock sound) |
 | The start of the game (first 5 minutes) | F10, F11 | |
 | A world that feels alive (enemies, ruins, cave life) | F9, F21, F188-F190, F237, F404 🔁, F412-F415, F418, F479 | Columns asked for 3× (F9, F21, F189); caves feel hollow/empty (F9, F188); not enough places to discover (F237); more ruins (F479). Then too much: "we overdid it with the ground" (F404): calm floors, a few special things |
 | Fixes lost in merges | F350 | A big "save everyone's work" merge put older copies of files back and quietly deleted a finished fix. Every fix needs a test, so a lost fix shows up as a failing test |
@@ -104,14 +105,33 @@ Fixed items get ~~crossed out~~, never deleted, so we can see the whole history.
 - [ ] **F946. Looking straight up (e.g. picking vines overhead), the camera goes inside the dwarf and you see the inside of his belly.** F927 fixed this only while aiming; plain looking up needs it too (camera moves out / dwarf fades, never see inside him). *From: you (PC, Nov 28, play test). Said: 1×* 🛠 in progress (Nov 28 play test fixes, Nov 28)
 - [ ] **F947. Health and stamina bars: darker, more refined, less bright/arcade. The stamina numbers are white on yellow and very hard to read.** (F823 added the numbers.) *From: you (PC, Nov 28, play test). Said: 1×* 🛠 in progress (Nov 28 play test fixes, Nov 28)
 - [ ] **F948. A floating tree: a big root tree hangs in the air above the floor.** Screenshot: the trunk and roots end well above the ground. *From: you (PC, Nov 28, play test). Said: 1×* 🛠 in progress (Nov 28 play test fixes, Nov 28)
-- [ ] **F949. Workbench: switching Materials → Stations often makes the whole menu stretch, with a big empty space at the bottom right.** Back on Materials it's fine again. Happens often, not every time. *From: you (PC, Nov 28, play test). Said: 1×* 🛠 in progress (Nov 28 play test fixes, Nov 28)
+- [ ] **F949. Workbench: switching Materials → Stations often makes the whole menu stretch, with a big empty space at the bottom right.** Back on Materials it's fine again. Happens often, not every time. *From: you (PC, Nov 28, play test). Said: 2×* (Nov 28 play test 2: the Mason's Table too, screenshot; that game started 3:17 pm, before the fix went in at 3:47 pm) 🛠 in progress (Nov 28 play test fixes, Nov 28)
 - [ ] **F950. The new crate hitboxes are good, but a flat wooden floor board/hatch got one too, so you can't step over it.** Flat floor pieces must stay walkable (screenshot: the plank on the stone floor in a ruin). *From: you (PC, Nov 28, play test). Said: 1×* 🛠 in progress (Nov 28 play test fixes, Nov 28)
 - [ ] **F951. The wood-chopping and crafting sounds are too arcade-like.** (Same family as F934 and F707.) *From: you (PC, Nov 28, play test). Said: 1×* 🛠 in progress (Nov 28 play test fixes, Nov 28)
+
+**Nov 28 play test 2 (owner, while playing):**
+- [ ] **F952. Killed snails often can't be mined.** Maybe it started while the pickaxe was broken; after repairing it, one dead snail could be mined, the others still not. *From: you (PC, Nov 28, play test 2). Said: 1×*
+- [ ] **F953. Show on the left how long the lantern will last.** It ran out fast because it was fed wood, not crystals, and nothing said so. *From: you (PC, Nov 28, play test 2). Said: 1×*
+- [ ] **F954. When the lantern is refilled, show on the left which crystal it used.** *From: you (PC, Nov 28, play test 2). Said: 1×*
+- [ ] **F955. The campfire needs a better menu: show how long the cooking takes, also when cooking several at once.** (Its sound is still a crafting sound: F937.) *From: you (PC, Nov 28, play test 2). Said: 1×*
+- [ ] **F956. Choose which bolts to shoot: holding R when the crossbow is already loaded opens a wheel of your bolt types.** *From: you (PC, Nov 28, play test 2). Said: 1×*
+- [ ] **F957. Snails come back too fast near the base.** *From: you (PC, Nov 28, play test 2). Said: 1×*
+- [ ] **F958. Put the wooden shield back on the workbench.** There's no way to deal with bats early, and it's not clear how to build the Armoury Bench (maybe not unlocked yet; F894 moved shields there). *From: you (PC, Nov 28, play test 2). Said: 1×*
+- [ ] **F959. The mace says it's equipped but isn't in his hands, so block/parry silently fails.** *From: you (PC, Nov 28, play test 2). Said: 1×*
+- [ ] **F960. Finished leather drops inside the leather table; it should drop in front of it.** *From: you (PC, Nov 28, play test 2). Said: 1×*
+- [ ] **F961. Some spiders and bats (the other creature types) have weird glowing butts, sometimes purple, sometimes red.** *From: you (PC, Nov 28, play test 2). Said: 1×*
+- [ ] **F962. Aiming high to shoot bats is very hard: the camera sits right in his shoulder or in the middle, and in a tall cave you can't aim high enough to hit bats near the ceiling.** (F927 was the aim-and-look-up fix, Nov 27: see Things that keep coming back.) *From: you (PC, Nov 28, play test 2). Said: 1×*
+- [ ] **F963. At the start there's no drink you can craft: add an easy one.** *From: you (PC, Nov 28, play test 2). Said: 1×*
+- [ ] **F964. Bat fangs are too hard to get: raise the drop chance.** *From: you (PC, Nov 28, play test 2). Said: 1×*
+- [ ] **F965. Crystal torches belong in the Tools tab.** *From: you (PC, Nov 28, play test 2). Said: 1×*
+- [ ] **F966. Copper and tin ore are hard to spot: change how they look.** Tin is somewhat OK, copper was never seen. *From: you (PC, Nov 28, play test 2). Said: 1×*
+- [ ] **F967. Bats and beetles lose track in the caves: bats bob up and down instead of attacking, beetles get stuck on a rock instead of going over it.** *From: you (PC, Nov 28, play test 2). Said: 1×*
+- [ ] **F968. Abandoned columns: some of its stone blocks can be walked through.** (Screenshot: the broken wall of square blocks by the glowing pool.) *From: you (PC, Nov 28, play test 2). Said: 1×*
 
 **Nov 27 play session (big list):**
 - [ ] **F925. Getting hit by a bat sounds like a 'ding'. It shouldn't.** *From: you (PC, Nov 27, play session). Said: 1×* 🛠 code done Nov 27, waiting for your round 12 sound picks (the page is open)
 - [ ] **F934. Skill-up sounds (jumping, cooking, crafting…) are way too arcade-like. Change them.** *From: you (PC, Nov 27, play session). Said: 2×* (Nov 28: crafting and level-up still too arcade, see F944, F951) 🛠 code done Nov 27, waiting for your round 12 sound picks (the page is open)
-- [ ] **F937. Cooking at a campfire sounds like fixing something.** *From: you (PC, Nov 27, play session). Said: 1×* 🛠 code done Nov 27, waiting for your round 12 sound picks (the page is open)
+- [ ] **F937. Cooking at a campfire sounds like fixing something.** *From: you (PC, Nov 27, play session). Said: 2×* (Nov 28: "still the very old crafting sound, not cooking", see F955) 🛠 code done Nov 27, waiting for your round 12 sound picks (the page is open)
 - [x] **F805. Sometimes the dwarf keeps sprinting when you are not holding Shift.** *From: you (PC, Nov 23). Said: 1×* **Fixed Nov 23:** `src/main.gd _notification` now releases "run" and "dodge" on `NOTIFICATION_APPLICATION_FOCUS_OUT` even when a menu has the mouse — so any Alt+Tab scenario clears the sprint key.
 - [x] **F809. The two leaves of a double door don't match:** one has the iron bands, the other has none (the same door used twice). Each leaf needs its matching design. *From: you (PC, Nov 23, screenshot of the Twin Gate's big door). Said: 1×* **Fixed Nov 23:** `stonehold_v2.py gate_leaf()` now adds two copper bands to the BACK face (at y=0.6 and y=1.8, embedded in the battens, no rivets on back — passes all model rules). Both leaves of the double gate show copper bands from outside. GLB and icon rebuilt.
 
