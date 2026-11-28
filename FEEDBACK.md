@@ -104,8 +104,7 @@ Fixed items get ~~crossed out~~, never deleted, so we can see the whole history.
 - [ ] **F951. The wood-chopping and crafting sounds are too arcade-like.** (Same family as F934 and F707.) *From: you (PC, Nov 28, play test). Said: 1×* 🛠 in progress (Nov 28 play test fixes, Nov 28)
 
 **Nov 28 play test 2 (owner, while playing):**
-- [ ] **F956. Choose which bolts to shoot: holding R when the crossbow is already loaded opens a wheel of your bolt types.** *From: you (PC, Nov 28, play test 2). Said: 1×*
-- [ ] **F966. Copper and tin ore are hard to spot: change how they look.** Tin is somewhat OK, copper was never seen. *From: you (PC, Nov 28, play test 2). Said: 1×* 🛠 in progress (Nov 28 play test fixes, Nov 28)
+- [ ] **F956. Choose which bolts to shoot: holding R when the crossbow is already loaded opens a wheel of your bolt types.** *From: you (PC, Nov 28, play test 2). Said: 1×* 🛠 in progress (Nov 28 play test fixes, Nov 28)
 - **Nov 28 play test 2, flying over the map (owner): talk these through first ("brainstorm and discuss before changing the cave system"), after the other Nov 28 items.**
 - [ ] **F969. Some rune shrines sit inside caves, joined to nothing: a player could never find them.** *From: you (PC, Nov 28, play test 2, flying over the map). Said: 1×*
 - [ ] **F970. Finding your way is very hard: "no way to understand where you need to go".** Needs some way to find places. *From: you (PC, Nov 28, play test 2, flying over the map). Said: 1×*
