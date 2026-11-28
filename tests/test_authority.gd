@@ -182,6 +182,20 @@ func test_lantern_refill_uses_a_crystal() -> void:
 	check(auth.request_refill(1), "refill with a crystal")
 	check_eq(ps.inventory.count_of("crystal_blue"), 1, "one crystal used")
 	check_near(ps.fuel, 10.0 + Items.fuel_seconds("crystal_blue"), 0.01, "fuel went up")
+	# F953/F954 (owner, Nov 28): the left side says which one it burned and how long the lantern lasts now
+	var told := []
+	auth.lantern_refilled.connect(func(id: String, added: float, fuel: float) -> void: told.append([id, added, fuel]))
+	ps.inventory.remove("crystal_blue", 1)
+	ps.inventory.add("rootwood", 1)
+	ps.fuel = 140.0
+	auth.request_refill(1)
+	check_eq(told, [["rootwood", 60.0, 200.0]], "it tells which one it burned and the time left")
+	var feed := PickupFeed.new()
+	tree.root.add_child(feed)
+	feed.lantern_refilled("rootwood", 60.0, 200.0)
+	check_eq(feed.shown(), 1, "a row on the left")
+	check_eq(PickupFeed._text("rootwood", -1, "lantern +1:00, 3:20 left"), "-1  Rootwood  ·  lantern +1:00, 3:20 left", "...saying it")
+	feed.free()
 	_teardown()
 
 

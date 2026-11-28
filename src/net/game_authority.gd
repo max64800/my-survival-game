@@ -17,6 +17,7 @@ signal learned_blueprint(what: String, page_id: String, why: String)
 
 signal dig_feedback(peer_id: int, result: Dictionary)
 signal fuel_changed(peer_id: int, fuel: float)
+signal lantern_refilled(id: String, added: float, fuel: float)  ## our own lantern just burned one `id` (F953/F954: shown on the left)
 
 const REACH := 3.0  ## meters from the dwarf's chest to what they're hitting (was 4.5; owner F149: walk up to things)
 const DIG_RADIUS := 1.35  ## size of the scoop one finished dig removes
@@ -2960,7 +2961,9 @@ func request_refill(peer_id: int) -> bool:
 				Sfx.ui("refill")
 			if peer_id != local_peer_id():
 				_rpc_fuel.rpc_id(peer_id, ps.fuel)
-			say.call("Lantern refilled with %s." % Items.display_name(id))
+				_rpc_refilled.rpc_id(peer_id, id, Items.fuel_seconds(id), ps.fuel)
+			else:
+				lantern_refilled.emit(id, Items.fuel_seconds(id), ps.fuel)  # (F954: which crystal it used, on the left)
 			return true
 	say.call("Nothing to burn! Glow crystals (hit them with a pickaxe) or rootwood work.")
 	return false
@@ -3472,6 +3475,11 @@ func _rpc_progress(data: Dictionary) -> void:
 	var me := get_player(local_peer_id())
 	if me:
 		me.progress.load_data(data)
+
+
+@rpc("authority", "reliable")
+func _rpc_refilled(id: String, added: float, fuel: float) -> void:
+	lantern_refilled.emit(id, added, fuel)
 
 
 @rpc("authority", "reliable")

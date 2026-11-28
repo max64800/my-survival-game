@@ -817,6 +817,9 @@ func start_game(p_seed: int, snap: Dictionary = {}, save: Dictionary = {}) -> vo
 func _spawn_dwarf(peer_id: int, pos: Vector3, local: bool) -> Dwarf:
 	var d := Dwarf.new()
 	d.name = "Dwarf_%d" % peer_id
+	authority.lantern_refilled.connect(func(id: String, added: float, fuel: float) -> void:  # F953/F954: on the left
+		if hud.pickup_feed:
+			hud.pickup_feed.lantern_refilled(id, added, fuel))
 	d.peer_id = peer_id
 	d.is_local = local
 	d.color_index = player_slots.get(peer_id, 0)

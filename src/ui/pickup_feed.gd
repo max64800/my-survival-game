@@ -51,14 +51,15 @@ func watch(inv: Inventory, quiet: bool, held := "") -> void:
 	_started = true
 
 
-## n < 0: spent (a "-3  Stone" row in red, its own row next to the "+" one).
-func add(id: String, n: int) -> void:
-	var key := id if n > 0 else "-" + id
+## n < 0: spent (a "-3  Stone" row in red, its own row next to the "+" one). `note`: said after it, on its own row
+## (F953/F954: "-1  White Glow Crystal · lantern +10:00, 12:30 left").
+func add(id: String, n: int, note := "") -> void:
+	var key := (id if n > 0 else "-" + id) + ("|" + note.get_slice(" ", 0) if note != "" else "")
 	if _rows.has(key):
 		var r: Dictionary = _rows[key]
 		r.count += n
 		r.left = SHOW
-		(r.label as Label).text = _text(id, r.count)
+		(r.label as Label).text = _text(id, r.count, note)
 		(r.node as Control).modulate.a = 1.0
 		move_child(r.node, get_child_count() - 1)  # the newest at the bottom
 		return
@@ -93,7 +94,7 @@ func add(id: String, n: int) -> void:
 	pic.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	pic.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	h.add_child(pic)
-	var l := UiKit.label(h, _text(id, n), 19, UiKit.TEXT if n > 0 else Color(1.0, 0.55, 0.45))
+	var l := UiKit.label(h, _text(id, n, note), 19, UiKit.TEXT if n > 0 else Color(1.0, 0.55, 0.45))
 	l.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	l.add_theme_color_override("font_outline_color", Color.BLACK)
 	l.add_theme_constant_override("outline_size", 4)
@@ -101,8 +102,19 @@ func add(id: String, n: int) -> void:
 	_rows[key] = {node = row, count = n, label = l, left = SHOW}
 
 
-static func _text(id: String, n: int) -> String:
-	return "%s%d  %s" % ["+" if n > 0 else "-", absi(n), Items.display_name(id)]
+static func _text(id: String, n: int, note := "") -> String:
+	return "%s%d  %s%s" % ["+" if n > 0 else "-", absi(n), Items.display_name(id), "  ·  " + note if note != "" else ""]
+
+
+## F953/F954 (owner, Nov 28): the lantern burned one `id` (+`added` s); `fuel` s are left now. Wood gives a minute,
+## a crystal ten, so this says why the light ran out so soon.
+func lantern_refilled(id: String, added: float, fuel: float) -> void:
+	add(id, -1, "lantern +%s, %s left" % [clock(added), clock(fuel)])
+
+
+static func clock(seconds: float) -> String:
+	var s := int(round(seconds))
+	return "%d:%02d" % [s / 60, s % 60]
 
 
 func _process(delta: float) -> void:
