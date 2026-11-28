@@ -17,6 +17,7 @@
 # - the beard 43 cm wide at the jaw, in three braids: the side ones to the chest (copper ring 36 cm below the crown,
 #   tufts to 48 cm), the middle one to the belly (ring 46 cm, tuft to 60 cm).
 import math
+import os
 import random
 import sys
 import time
@@ -46,6 +47,40 @@ R = random.Random(7)
 SKIN, LIDS, HAIR = [], [], []
 BVH = {}
 MS = MH = None
+
+# ---------------------------------------------------------------- the faces to choose from (F737, owner Nov 28 night: "3 new
+# faces, black hair, different face, hair, more warrior like, a few scars, more grumpy"; picture
+# assets/concepts/dwarf/dwarf_faces_grumpy_v1.png, owner picked it). Face 1 ("happy") is the first, approved head: every
+# setting left out of a face keeps face 1's look. dwarf_body.py picks one with face=<name> (one .glb per face).
+FACES = {
+	"happy": {},
+	# the picture's top row: jet-black hair swept back over the whole head into a topknot with a copper ring, a scar from
+	# the forehead down through his squinting left eye, a crooked nose, a heavier jaw, low frowning brows, a drooping
+	# moustache, a square beard coming to a point in the middle and two braids (no middle braid)
+	"topknot": dict(
+		pic="dwarf_face_topknot_head.png",
+		hair_rgb=(0.2, 0.14, 0.11), skin_rgb=(0.84, 0.55, 0.42),
+		jaw=(0.1, 0.066, 0.09), brow_ridge=(0.09, 0.024, 0.034), nose_u=0.007, nose_r=(0.036, 0.032, 0.034),
+		lids={-1: (34, 17), 1: (24, 15)},  # (upper, lower lid opening in degrees: narrowed eyes, the scarred one squints)
+		frown=True, short_back=True, moustache="droop", cap="topknot", beard_point=True,
+		braids=[("braid_-1", -0.128), ("braid_1", 0.128)],
+		# scars in face coordinates (u sideways, v up from the eye level; + u = his left), drawn as raised pale lines
+		scars=[[(0.03, 0.09), (0.038, 0.066), (0.046, 0.042), (0.052, 0.024), (0.058, -0.016), (0.064, -0.038), (0.071, -0.06)],
+			[(-0.016, -0.084), (-0.009, -0.1)]],
+	),
+}
+FACE_NAME = "happy"
+FACE = FACES["happy"]
+SCARS3D = []  # each scar's line on the melted head (for the paint)
+
+
+def set_face(name):
+	"""Pick which face the next build() makes."""
+	global FACE_NAME, FACE, SKIN_RGB, HAIR_RGB, PIC
+	FACE_NAME, FACE = name, FACES[name]
+	SKIN_RGB = FACE.get("skin_rgb", SKIN_RGB_1)
+	HAIR_RGB = FACE.get("hair_rgb", HAIR_RGB_1)
+	PIC = ROOT / "assets" / "concepts" / "dwarf" / FACE.get("pic", "dwarf_happy_head.png")
 
 
 def Hd(u, v, w):
@@ -358,8 +393,8 @@ def build_face():
 	the brow ridge, like the picture's."""
 	cl = Clay((-0.15, -0.3, -0.13), (0.15, 0.13, 0.215), 0.002)
 	cl.add(cl.ell((0, 0.0, -0.006), (0.117, 0.11, 0.106)), 0.01)                  # the skull, bald on top
-	cl.add(cl.ell((0, -0.068, 0.02), (0.092, 0.062, 0.086)), 0.03)               # jaw and lower face
-	cl.add(cl.ell((0, 0.029, 0.078), (0.086, 0.019, 0.03)), 0.022)               # brow ridge
+	cl.add(cl.ell((0, -0.068, 0.02), FACE.get("jaw", (0.092, 0.062, 0.086))), 0.03)               # jaw and lower face
+	cl.add(cl.ell((0, 0.029, 0.078), FACE.get("brow_ridge", (0.086, 0.019, 0.03))), 0.022)               # brow ridge
 	for s in (-1, 1):
 		cl.add(cl.ell((s * 0.072, -0.022, 0.056), (0.03, 0.02, 0.03)), 0.03)  # cheekbone (soft: owner Nov 17, "sausages")
 		# one big round cheek, pushing the lower lid up, touching the side of the nose and running down to the moustache
@@ -373,8 +408,9 @@ def build_face():
 		# fill under the side of the nose: the pocket between the nostril wing, the cheek, the round nose's underside and
 		# the moustache baked as a dark hole (owner, Nov 17 night; measured by nose_pockets(): 66% shut in at u 5, v -6, w 13)
 		cl.add(cl.ell((s * 0.044, -0.06, 0.127), (0.02, 0.014, 0.02)), 0.02)
-	cl.add(cl.tube((0, 0.014, 0.088), (0, -0.02, 0.128), 0.013, 0.018), 0.012)   # nose bridge
-	cl.add(cl.ell((0, -0.042, 0.155), (0.034, 0.031, 0.033)), 0.012)             # the big round nose
+	nu = FACE.get("nose_u", 0.0)  # (a broken nose: bent to one side below the bridge)
+	cl.add(cl.tube((0, 0.014, 0.088), (nu * 0.6, -0.02, 0.128), 0.013, 0.018), 0.012)   # nose bridge
+	cl.add(cl.ell((nu, -0.042, 0.155), FACE.get("nose_r", (0.034, 0.031, 0.033))), 0.012)             # the big round nose
 	cl.add(cl.ell((0, -0.083, 0.103), (0.054, 0.027, 0.04)), 0.02)               # upper lip (under the moustache)
 	cl.add(cl.ell((0, -0.105, 0.121), (0.029, 0.011, 0.019)), 0.006)             # lower lip
 	cl.add(cl.ell((0, -0.124, 0.097), (0.039, 0.025, 0.033)), 0.015)             # chin
@@ -385,7 +421,8 @@ def build_face():
 	cl.mesh("face", MS, SKIN)
 	del cl
 	for s in (-1, 1):
-		build_lids(s)
+		bu, bl = FACE.get("lids", {}).get(s, (32, 22))
+		build_lids(s, Bu=bu, Bl=bl)
 		build_ear(s)
 
 
@@ -499,13 +536,25 @@ def build_hair():
 		cl.add(cl.ell((s * 0.122, 0.045, -0.07), (0.055, 0.06, 0.064)), 0.035)    # the side puffs, above and behind the ears
 	# down the back onto the upper back: three strands side by side, fanning out a little (owner, Nov 17 evening: one
 	# round tube read as "a very big sausage"; three melt into a wider, flatter fall of hair)
-	for x0, x1 in ((-0.035, -0.06), (0.0, 0.0), (0.035, 0.06)):
+	for x0, x1 in ((-0.035, -0.06), (0.0, 0.0), (0.035, 0.06)) if not FACE.get("short_back") else ():
 		cl.add(cl.tube((x0, -0.05, -0.12), (x1, -0.22 + 0.02 * abs(x1) / 0.06, -0.225), 0.05, 0.04), 0.03)
 	r = np.sqrt(cl.U ** 2 + cl.W ** 2)
 	phi = np.degrees(np.arctan2(cl.U, -cl.W))
 	el = np.degrees(np.arctan2(cl.V, r))
-	cl.keep(np.radians(el - (56 - 32 * (np.minimum(np.abs(phi), 112) / 112) ** 1.3)) * 0.12, 0.012)  # below the hairline
-	cl.keep(np.radians(np.abs(phi) - (117 - 30 * np.clip((10 - el) / 20, 0, 1))) * 0.12, 0.012)  # behind the temples; behind the ears lower down
+	if FACE.get("cap"):
+		# (the whole scalp: no bald dome; in front the hair starts at the top of the forehead, 62 degrees up, and above
+		# 38 degrees it may reach round past the temples; the front of the mass is squashed onto the skull, swept back)
+		cl.keep(np.radians((62 - 150 * np.clip((150 - np.abs(phi)) / 40, 0, 1)) - el) * 0.12, 0.012)  # (above the forehead line)
+		cl.keep(np.radians(np.abs(phi) - (117 - 30 * np.clip((10 - el) / 20, 0, 1) + 70 * np.clip((el - 38) / 16, 0, 1))) * 0.12, 0.012)
+		cl.keep(cl.ell((0, -0.006, -0.006), (0.135, 0.13, 0.128)) - np.clip((0.02 - cl.W) / 0.06, 0, 1) * 0.2 - np.clip((-0.02 - cl.V) / 0.03, 0, 1) * 0.2, 0.01)
+		if FACE.get("short_back"):
+			# (round 2, owner: "a different haircut than the first dwarf ... remove all of his back hair"): cropped close
+			# round the back of the head, ending at the nape; in front of the ears it still runs down into the beard
+			cl.keep(cl.ell((0, -0.008, -0.012), (0.16, 0.13, 0.128)) - np.clip((cl.W - 0.0) / 0.04, 0, 1) * 0.3, 0.01)
+			cl.keep((-0.095 - cl.V) - np.clip((cl.W + 0.01) / 0.03, 0, 1) * 0.3, 0.012)
+	else:
+		cl.keep(np.radians(el - (56 - 32 * (np.minimum(np.abs(phi), 112) / 112) ** 1.3)) * 0.12, 0.012)  # below the hairline
+		cl.keep(np.radians(np.abs(phi) - (117 - 30 * np.clip((10 - el) / 20, 0, 1))) * 0.12, 0.012)  # behind the temples; behind the ears lower down
 	del r, phi, el
 	for s in (-1, 1):
 		cl.cut(cl.ell((s * (EAR_C[0] + 0.01), EAR_C[1], EAR_C[2] + 0.012), (0.06, 0.058, 0.054)), 0.012)  # a notch: the ears stay free
@@ -519,7 +568,7 @@ def build_hair():
 	BVH["hairmass"] = bvh_of([HAIR[-1]])
 	ears = [Hd(s * EAR_C[0], EAR_C[1], EAR_C[2]) for s in (-1, 1)]
 	rows = [(-3, 12, 0.07), (-15, 13, 0.08), (-27, 14, 0.085), (-40, 14, 0.09), (-54, 13, 0.095), (-68, 11, 0.1), (-84, 9, 0.11), (-100, 7, 0.12)]
-	for ri, (d_el, cnt, L) in enumerate(rows):
+	for ri, (d_el, cnt, L) in enumerate(rows if "rows" not in DBG_SKIP else []):
 		for j in range(cnt):
 			phi = -114 + 228 * (j + 0.5 * (ri % 2)) / cnt + jit(4)
 			if abs(phi) > 116:
@@ -528,6 +577,8 @@ def build_hair():
 			R0, n = hit_round("hairmass", phi, el)
 			if R0 is None or min((R0 - e).length for e in ears) < 0.055:
 				continue
+			if FACE.get("short_back") and abs(phi) < 80 and R0.z - C.z < -0.06:
+				continue  # (the short back: nothing starts below the nape)
 			p = math.radians(phi)
 			rh = Dv(math.sin(p), 0, -math.cos(p))
 			low = ri / (len(rows) - 1)
@@ -555,7 +606,7 @@ def build_hair():
 	out = (BACK - ax * BACK.dot(ax)).normalized()  # the tube's back, square to its length
 	across = ax.cross(out).normalized()
 	RT = random.Random(23)  # (its own dice: the brows, beard and braids built after this keep their exact look)
-	for ri, t in enumerate((0.3, 0.52, 0.74, 0.95)):
+	for ri, t in enumerate((0.3, 0.52, 0.74, 0.95) if not FACE.get("short_back") else ()):
 		cnt = 7 if ri % 2 == 0 else (8 if ri == 3 else 6)
 		for j in range(cnt):
 			th = math.radians(-112 + 224 * (j + 0.5) / cnt + RT.uniform(-5, 5))
@@ -584,7 +635,7 @@ def build_hair():
 	# them, Nov 17), from high on the back of the head, through the middle of the hair layer, to the lowest tips
 	BACKS.clear()
 	pts = []
-	for el in (30, 15, 0, -15, -30, -42):
+	for el in (30, 15, 0, -15, -30, -42) if not FACE.get("short_back") else ():
 		P, n = hit_round("hairmass", 0, el)
 		if P is None:
 			continue
@@ -610,10 +661,72 @@ def build_hair():
 			end = pts[-1] + ax * 0.1
 		pts += [pts[-1].lerp(end, 0.5), end]  # (two even links to the end: the game puts the last tip in line)
 		BACKS.append(pts)
+	if FACE.get("cap") == "topknot":
+		build_topknot()
+		return
 	# the little curl on top of the bald head
 	for k, phi in enumerate((-14, 0, 16)):
 		scalp_lock(phi, 72 + jit(2), [(0.012, 0.0, 0.006, -0.004), (0.026, 0.0, 0.004, -0.012), (0.03, 0.0, -0.006, -0.02)],
 			k=R.uniform(0.85, 1.1), width=0.016, thick=0.01, grooves=1)
+
+
+DBG_SKIP = [a for a in os.environ.get("DWARF_SKIP", "").split(",") if a]  # (debug: leave parts out to see what covers what)
+KNOTS = []  # copper rings that aren't on a braid (the topknot's): hair inside them is pinched in like a braid's
+
+
+def build_topknot():
+	"""(F737 face "topknot") All the hair on top combed back and up into a knot on the crown: a bun, a copper ring
+	round it, and a tuft spilling out of the ring and falling back over the back of the head (the picture's top row)."""
+	rk = random.Random(31)
+	K = Hd(0, 0.138, -0.04)                     # the ring's middle, on top of the head a little behind the crown
+	ax = Dv(0, 1.0, -0.45).normalized()         # the ring leans back
+	r_in, r_out, ring_h = 0.026, 0.034, 0.03
+	cl = Clay((-0.08, 0.05, -0.12), (0.08, 0.2, 0.04), 0.0025)
+	cl.add(cl.ell((0, 0.112, -0.03), (0.05, 0.03, 0.055)), 0.01)   # the bun's foot, melting into the hair on top
+	ku, kv, kw = 0.0, 0.138, -0.04
+	cl.add(cl.tube((0, 0.105, -0.026), (ku + ax.x * 0.026, kv + ax.z * 0.026, kw - ax.y * 0.026), r_in - 0.002, r_in - 0.002), 0.008)  # through the ring
+	cl.mesh("topknot_bun", MH, HAIR)
+	del cl
+	h = ring_h / 2
+	prof = [(r_in, -h + 0.003), (r_in + 0.002, -h), (r_out + 0.0015, -h), (r_out + 0.0032, -h + 0.0042), (r_out + 0.0015, -h + 0.0085),
+		(r_out, -h + 0.011), (r_out, h - 0.011), (r_out + 0.0015, h - 0.0085), (r_out + 0.0032, h - 0.0042), (r_out + 0.0015, h),
+		(r_in + 0.002, h), (r_in, h - 0.003)]
+	RINGS.append(lathe("topknot_ring", K, ax, prof, ck.color("h_copper", (0.78, 0.46, 0.26), rough=0.4, metal=0.6)))
+	KNOTS.append({"ring": K.copy(), "axis": ax.copy(), "r_in": r_in, "h": ring_h})
+	# the tuft: out of the ring, up, then back and down over the back of the head
+	s1 = ax.cross(Vector((1, 0, 0))).normalized()   # (in the ring's plane: front-back)
+	s2 = Vector((1, 0, 0))
+	n_t = 9
+	for j in range(n_t):
+		a = 2 * math.pi * j / n_t + rk.uniform(-0.25, 0.25)
+		rad = s1 * math.cos(a) + s2 * math.sin(a)
+		L = rk.uniform(0.85, 1.1)
+		side = s2 * (0.03 * math.sin(a))
+		pts = [K - ax * 0.012 + rad * r_in * 0.3, K + ax * (h + 0.01) + rad * r_in * 0.85,
+			K + (ax * 0.05 + BACK * 0.025 + rad * 0.026 + side) * L, K + (ax * 0.06 + BACK * 0.075 + rad * 0.02 + side * 1.6) * L,
+			K + (ax * 0.035 + BACK * 0.12 + DN * 0.02 + rad * 0.012 + side * 2.0) * L]
+		lock(pts, 0.034, 0.02, rad, n=16, grooves=2, rd=0.24, twist=rk.uniform(-0.4, 0.4), name=f"topknot_tuft{j}")
+	# the hair on top, combed toward the knot, each lock lying on the hair (not standing off it)
+	tree = BVH["hairmass"]
+	foot = Hd(0, 0.112, -0.03)
+	for ri, el in enumerate((42, 50, 58, 66, 74) if "caplocks" not in DBG_SKIP else ()):
+		cnt = max(6, int(24 * math.cos(math.radians(el))))
+		for j in range(cnt):
+			phi = -180 + 360 * (j + 0.5 * (ri % 2)) / cnt + rk.uniform(-4, 4)
+			if abs(phi) < 117 and el < hairline(phi) + 2:
+				continue  # (the rows of locks round the sides and back already cover it)
+			if el < 66 - 150 * min(1.0, max(0.0, (150 - abs(phi)) / 40)):
+				continue  # (below the front hairline: bare forehead)
+			P, n = hit_round("hairmass", phi, el + rk.uniform(-2, 2))
+			if P is None or (P - foot).length < 0.045:
+				continue
+			L = min(0.075, (P - foot).length - 0.03) * rk.uniform(0.9, 1.1)
+			pts = []
+			for f in (-0.12, 0.33, 0.66, 1.0):
+				Q = P + ((foot - P) - n * (foot - P).dot(n)).normalized() * (L * f)
+				loc, nq, _, _ = tree.find_nearest(Q)
+				pts.append(loc + nq * (-0.008 if f < 0 else 0.004 + 0.003 * (f > 0.5)))
+			lock(pts, 0.034 * rk.uniform(0.9, 1.1), 0.017, n, grooves=2, rd=0.22, twist=rk.uniform(-0.3, 0.3))
 
 
 def build_brows():
@@ -626,11 +739,20 @@ def build_brows():
 				f = (k + 0.33 * layer) / cnt
 				# inner ends raised (a kind, happy arch, not a cross V: F193)
 				u, v = s * (0.012 + 0.088 * f), v0 + dv * math.sin(math.pi * (0.1 + 0.8 * f)) + 0.008 * (1 - f) ** 2
+				if FACE.get("frown"):
+					# (F737 grumpy faces: the inner ends pulled down to the nose, a flatter arch, low over the eyes)
+					# (round 2, owner: "he looks very sleepy, not angry": a straight bar slanting down to the nose, an angry V;
+					# the brow runs right over the scar, owner: "I don't mind him to have the second brow, even over the scar")
+					u, v = s * (0.01 + 0.084 * f), v0 - 0.006 + 0.026 * f + 0.004 * layer * f
+				if FACE.get("frown") and layer == 2:
+					continue  # (two layers, not three: a thick straight bar, not face 1's huge bush)
 				P, n = hit_front("face", u, v)
 				if P is None:
 					continue
 				L = (0.026 + 0.016 * f) * R.uniform(0.85, 1.15)
 				up = 0.004 + 0.022 * f ** 1.5
+				if FACE.get("frown"):
+					up, wid, th, lift, L = 0.002 + 0.008 * f ** 1.5, wid * 0.9, th * 0.8, lift * 0.5, L * 0.8  # (flat brows lying close)
 				lock([P - n * 0.004, P + n * lift + Dv(s * L * 0.35, 0.002 + up * 0.2, 0), P + n * (lift + 0.002) + Dv(s * L * 0.7, 0.004 + up * 0.5, 0),
 					P + n * lift + Dv(s * L, up, -0.004)], wid, th, n, grooves=2, rd=0.24, twist=jit(0.3))
 
@@ -649,6 +771,19 @@ def wface(u, v, lift):
 def build_moustache():
 	"""A big curling handlebar: three locks a side growing out from UNDER the nose (the nose stays whole), out over the
 	smile, the ends curling up and back; the lower lip shows in the middle."""
+	if FACE.get("moustache") == "droop":
+		# (F737 grumpy faces: out from under the nose and straight down past the corners of the mouth, no curl)
+		for s in (-1, 1):
+			for uv, wid, th, lift in (
+				([(0.008, -0.08), (0.035, -0.088), (0.058, -0.1), (0.07, -0.122), (0.074, -0.148), (0.072, -0.17)], 0.032, 0.02, 0.008),
+				([(0.014, -0.078), (0.042, -0.086), (0.064, -0.1), (0.078, -0.124), (0.084, -0.15)], 0.026, 0.016, 0.015),
+				([(0.03, -0.083), (0.054, -0.094), (0.07, -0.112), (0.08, -0.138)], 0.022, 0.014, 0.013)):
+				ws = [wface(s * u, v, lift) for u, v in uv]
+				for i in range(1, len(ws)):
+					ws[i] = max(ws[i], ws[i - 1] - 0.03)  # (the rays at the mouth's corner fall into it: the lock dived in, round 1)
+				pts = [Hd(s * u, v, w) for (u, v), w in zip(uv, ws)]
+				lock(pts, wid, th, FWD, n=18, grooves=3, rd=0.22)
+		return
 	for s in (-1, 1):
 		for uv, wid, th, lift in (
 			([(0.008, -0.081), (0.04, -0.091), (0.08, -0.103), (0.113, -0.103), (0.136, -0.089), (0.14, -0.071), (0.128, -0.063)], 0.032, 0.02, 0.008),
@@ -695,7 +830,7 @@ def build_beard():
 				0.044, 0.025, n, grooves=3, twist=jit(0.4))
 		# between the braids: one short lock straight down (round 2's two long slanting ones crossed into the braids)
 		P, n = hit_round("skull", side * 152, -46)
-		if P is not None:
+		if P is not None and not FACE.get("beard_point"):  # (F737 round 2: it glued the braids to the beard's point)
 			lock([P - n * 0.006, P + n * 0.016 + DN * 0.03 + FWD * 0.02, P + DN * 0.07 + FWD * 0.04],
 				0.036, 0.02, n, grooves=3, twist=jit(0.3))
 	# the chin (into the middle braid)
@@ -707,10 +842,12 @@ def build_beard():
 	for s in (-1, 1):  # (between the braids: hanging locks; round filler there showed as two balls)
 		P, n = hit_round("skull", s * 138, -52)
 		if P is not None:
-			for k in range(2):
+			for k in range(2 if not FACE.get("beard_point") else 1):
 				off = Vector((s * 0.018 * k, 0, 0))
 				lock([P - n * 0.006 + off, P + n * 0.012 + DN * 0.035 + FWD * 0.02 + off, P + DN * 0.075 + FWD * 0.035 + off * 1.3,
 					P + DN * 0.105 + FWD * 0.04 + off * 1.5], 0.034, 0.02, n, grooves=3, twist=jit(0.3))
+	if FACE.get("beard_point"):
+		build_beard_point()
 	for u in (0.0,):
 		for v in (-0.15,):
 			sf = max([x for x in (shirt_front(u, v + dv) for dv in (0.03, 0.0, -0.036)) if x is not None] or [0.0])
@@ -721,6 +858,7 @@ def build_beard():
 # ---------------------------------------------------------------- braids, copper rings, tufts
 RINGS = []
 BRAIDS = []  # each braid's path (top to tuft tip), ring and size: for the swing bones and the ring check
+POINTS = []  # (F737) a beard point with no ring: its own swing bones like a braid (no ring check)
 BACKS = []   # the back hair's swing-chain paths (Blender points, nape to tips)
 # the hair hanging down the back (the "ponytail"): its own swing bones, from the nape down onto the upper back
 PONYTAIL = [(0.0, -0.03, -0.13), (0.0, -0.1, -0.18), (0.0, -0.17, -0.22), (0.0, -0.24, -0.25)]
@@ -850,7 +988,35 @@ def braid(name, u_top, v_top, v_ring, v_end, W0, W1, D0, D1, r_in, r_out, ring_h
 	return pR
 
 
+def build_beard_point():
+	"""(F737, no middle braid) The middle of the beard: rows of locks from the chin down the chest, narrowing to one
+	point between the two braids, each lying on the body (the shirt front) with the usual gap."""
+	rp = random.Random(41)
+	for ri, (v0, half, cnt) in enumerate(((-0.13, 0.036, 3), (-0.17, 0.032, 3), (-0.21, 0.024, 2), (-0.25, 0.014, 2), (-0.285, 0.0, 1))):
+		for j in range(cnt):
+			u0 = 0.0 if cnt == 1 else -half + 2 * half * j / (cnt - 1)
+			u0 += rp.uniform(-0.004, 0.004)
+			L = 0.085 + 0.01 * ri
+			pts = []
+			for f in (0.0, 0.35, 0.7, 1.0):
+				u, v = u0 * (1.0 - 0.55 * f), v0 - L * f
+				sf = max([x for x in (shirt_front(u, v + dv) for dv in (0.02, 0.0)) if x is not None] or [0.075])
+				pts.append(Hd(u, v, max(sf, 0.07) + GAP + 0.024 + 0.004 * (1 - f)))
+			lock(pts, 0.036 - 0.004 * ri, 0.022, FWD, n=16, grooves=3, rd=0.24, twist=rp.uniform(-0.3, 0.3))  # (narrower, round 2: a gap to each braid)
+	# (round 3, owner: "his middle braid is attached to his shirt": it lay on the shirt and followed the chest. Now it
+	# stands 1 cm further off and gets its own swing bones down its middle, like the first face's middle braid.)
+	path = []
+	for v in np.linspace(-0.12, -0.405, 8):
+		sf = max([x for x in (shirt_front(0.0, v + dv) for dv in (0.02, 0.0)) if x is not None] or [0.075])
+		path.append(Hd(0.0, v, max(sf, 0.07) + GAP + 0.026))
+	POINTS.append({"name": "braid_mid", "path": path, "reach": 0.03})  # (0.05 reached the side braids: 138 glued edges)
+
+
 def build_braids():
+	if FACE.get("braids"):
+		for k, (name, u) in enumerate(FACE["braids"]):
+			braid(name, u, -0.13, -0.29, -0.43, 0.088, 0.068, 0.054, 0.046, 0.034, 0.042, 0.046, w_top=0.075, tuft_n=8, seed=2 + k)
+		return
 	braid("braid_mid", 0.0, -0.14, -0.35, -0.49, 0.13, 0.09, 0.06, 0.05, 0.04, 0.048, 0.044, w_top=0.1, tuft_n=9, seed=1)  # (thicker: owner F214)
 	for s in (-1, 1):  # (further out: at 11.5 cm their tops clashed with the middle braid, owner round 2b)
 		# (at 14.5 cm the thicker braids touched the middle one and melted together: a sheet when they swung apart)
@@ -934,6 +1100,16 @@ def sculpt_face(high, skin):
 	for i in np.nonzero(near & (skin > 0.5))[0]:  # skin grain and a few soft bumps on the bald head
 		p = Vector(co[i])
 		h[i] += calm[i] * (0.00022 * noise.fractal(p * 320, 0.5, 2.0, 2) + 0.0005 * noise.noise(p * 30))
+	if FACE.get("frown"):  # (F737 grumpy faces: two deep frown lines between the brows, and lines from the nose down)
+		for s in (-1, 1):
+			groove(on_face([(s * 0.008, 0.012), (s * 0.011, 0.03), (s * 0.012, 0.046)]), 0.0022, 0.0017, 0.4)
+			groove(on_face([(s * 0.038, -0.05), (s * 0.05, -0.07), (s * 0.058, -0.09)]), 0.0016, 0.0018, 0.3)
+	for sc in FACE.get("scars", []):  # old scars: a raised, puckered line with a little dip each side
+		pts = on_face(sc)
+		if len(pts) >= 2:
+			SCARS3D.append(pts)
+			d = line_dist(co[near], pts)
+			h[near] += 0.0018 * np.exp(-(d / 0.0026) ** 2) - 0.0009 * np.exp(-((d - 0.0048) / 0.0016) ** 2)
 	h *= skin
 	put(high, co + no * h[:, None])
 
@@ -1001,7 +1177,7 @@ def pinch_rings(high, hair):
 	just above and below, it eases back out over 1.5 cm."""
 	co, _ = arrays(high)
 	moved = 0
-	for b in BRAIDS:
+	for b in BRAIDS + KNOTS:
 		c, ax = np.array(tuple(b["ring"])), np.array(tuple(b["axis"].normalized()))
 		rel = co - c
 		t = rel @ ax
@@ -1212,7 +1388,8 @@ def plain(name, rgb, rough=0.75, metal=0.0):
 	return m
 
 
-SKIN_RGB, HAIR_RGB = (0.86, 0.62, 0.5), (0.74, 0.36, 0.16)
+SKIN_RGB_1, HAIR_RGB_1 = (0.86, 0.62, 0.5), (0.74, 0.36, 0.16)  # (face 1's; set_face() picks a face's own)
+SKIN_RGB, HAIR_RGB = SKIN_RGB_1, HAIR_RGB_1
 
 
 def build(body_objs, fast=False, log=print):
@@ -1221,14 +1398,16 @@ def build(body_objs, fast=False, log=print):
 	t0 = time.time()
 	MS = ck.color("h_skin", SKIN_RGB, rough=0.7)
 	MH = ck.color("h_hair", HAIR_RGB, rough=0.8)
-	SKIN.clear(), LIDS.clear(), HAIR.clear(), RINGS.clear(), BRAIDS.clear()
+	SKIN.clear(), LIDS.clear(), HAIR.clear(), RINGS.clear(), BRAIDS.clear(), POINTS.clear(), KNOTS.clear(), SCARS3D.clear()
 	BVH["body"] = bvh_of(body_objs)
 	build_face()
 	BVH["skull"] = bvh_of(SKIN[:1])
 	BVH["face"] = bvh_of(SKIN + LIDS)
 	build_hair()
-	build_brows()
-	build_moustache()
+	if "brows" not in DBG_SKIP:
+		build_brows()
+	if "moustache" not in DBG_SKIP:
+		build_moustache()
 	build_beard()
 	build_braids()
 	# eyes: one smooth ball each, painted later (iris, pupil, shine), never melted
@@ -1331,6 +1510,13 @@ def build(body_objs, fast=False, log=print):
 	# (round 2b's crease-depth lines were too faint to see once baked: now drawn from how the hair is built)
 	ink = hard_lines(high, PRE) * soft
 	cols = cols * (1.0 - 0.8 * ink)[:, None]
+	for pts in SCARS3D:  # (F737) the scars: pale pink in the middle, a darker red edge
+		d = line_dist(co_, pts)
+		mid = np.exp(-(d / 0.0028) ** 2) * (1 - soft)
+		rim = np.exp(-((d - 0.005) / 0.0018) ** 2) * (1 - soft)
+		pale = np.array(cs.lin((0.97, 0.72, 0.66))) / 0.74
+		cols = cols * (1 - 0.9 * mid[:, None]) + pale[None, :] * 0.9 * mid[:, None]
+		cols = cols * (1.0 - 0.45 * rim[:, None] * np.array([0.35, 1.0, 1.0])[None, :])  # (round 1's thin faint line didn't show)
 	log(f"HEAD hard lines on {int((ink > 0.5).sum())} hair points; dark creases on {int((soft * deep > 0.5).sum())}")
 	at = me.color_attributes.new("tint", "FLOAT_COLOR", "POINT")
 	at.data.foreach_set("color", np.concatenate([cols, np.ones((len(cols), 1))], 1).ravel())

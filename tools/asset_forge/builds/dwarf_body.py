@@ -41,6 +41,8 @@ SKEL, OUT = ARGS[0], ARGS[1]
 FAST = "fast" in ARGS[2:]
 FAST_GLB = "glb" in ARGS[2:]  # fast glb: the grey, unpainted dwarf, weighted and saved (for shape pages; F916, Nov 26)
 REVIEW = next((a[7:] for a in ARGS[2:] if a.startswith("review=")), None)
+FACE = next((a[5:] for a in ARGS[2:] if a.startswith("face=")), "happy")  # (F737: which face, dwarf_head.FACES)
+dh.set_face(FACE)
 CLOTHES = "clothes" in ARGS[2:]  # (Nov 18: the bare dwarf in linen underpants first; the clothes go on later as layers)
 ck.reset()
 R = random.Random(11)
@@ -71,6 +73,8 @@ shirt = ck.color("shirt", (0.86, 0.8, 0.68), rough=0.9)
 shorts = ck.color("shorts", (0.46, 0.31, 0.2), rough=0.9)
 wraps = ck.color("wraps", (0.8, 0.72, 0.58), rough=0.9)
 leather = ck.color("leather", (0.42, 0.27, 0.16), rough=0.75)  # (the wrist wraps, F943)
+bronze_m = ck.color("cuff_bronze", (0.5, 0.31, 0.15), rough=0.5, metal=0.55)  # (the bracers, F737)
+gold_m = ck.color("cuff_gold", (0.93, 0.68, 0.26), rough=0.35, metal=0.65)
 
 UP = Vector((0, 0, 1))
 FWD = Vector((0, -1, 0))  # Blender: the dwarf faces -Y
@@ -394,29 +398,59 @@ for side in ("l", "r"):
 	# (F943, owner Nov 28 later: a thin line still showed where the hand's wrist piece crosses the forearm skin, after two
 	# tries at blending the skins; owner picked "leather wrist wrap") two turns of a chunky leather strap round the forearm
 	# over that crossing (it lies 4.5-8.5 cm up from the wrist, the crossing at ~6.5 cm), each tilted a little, the upper
-	# turn lying over the lower, and the strap's end tucked under at the back of the wrist. Named body_hand_cuff_*, so the
-	# game hides it under gauntlets like the bare hand.
+	# turn lying over the lower. Named body_hand_cuff*, so the game hides it under gauntlets like the bare hand.
+	# (F737 round 3, owner: "on all three dwarves, the forearm bracelets look like strips... add some gold, make them
+	# nicer, similar to bronze armor with engravings") Now one chunky bronze bracer over the same spot, 4.3-8.9 cm up from
+	# the wrist: a raised gold bead round each edge, a gold zigzag cord laid in a carved channel round the middle, a punched
+	# pit in every tooth of the zigzag, and a round gold boss with a ring cut into it on top. Bronze and gold are two
+	# pieces (body_hand_cuff_* and body_hand_cuff_gold_*): the gold sinks into the bronze, never sits on its surface.
 	ax = (el_ - wr).normalized()
-	c0, c1 = wr + ax * 0.043, wr + ax * 0.088
-	pts_c = [c0, c1]
-	lo = Vector([min(p[i] for p in pts_c) - 0.07 for i in range(3)])
-	hi = Vector([max(p[i] for p in pts_c) + 0.07 for i in range(3)])
-	cl = clay((lo.x, lo.z, lo.y), (hi.x, hi.z, hi.y), 0.002)
-	a_ = np.array(QV(c1), np.float32) - np.array(QV(c0), np.float32)
-	a_ /= np.linalg.norm(a_)
-	perp = np.cross(a_, np.array([0.0, 1.0, 0.0], np.float32))
-	perp /= np.linalg.norm(perp)
-	for k, (at, tilt, lift, half) in enumerate(((0.054, 0.07, 0.009, 0.0125), (0.076, 0.045, 0.0115, 0.0125))):
-		cc = wr + ax * at
-		C = np.array(QV(cc), np.float32)
-		n_ = a_ * math.cos(tilt) + np.cross(perp, a_) * math.sin(tilt)  # (the strap's edge planes, tipped a little)
-		slab = np.abs((cl.U - C[0]) * n_[0] + (cl.V - C[1]) * n_[1] + (cl.W - C[2]) * n_[2]) - half
-		shell = etube(cl, QV(c0), QV(c1), forearm_r(el_, wr, c0) + lift, forearm_r(el_, wr, c1) + lift, 0.9, 1.05)
-		cl.add(np.maximum(shell, slab), 0.0015)  # (a small blend: two clear turns, a groove between)
-	tuck = wr + ax * 0.064 + Vector((0.0, 1.0, 0.0)) * (forearm_r(el_, wr, wr + ax * 0.064) * 1.05 + 0.011)
-	cl.add(cl.ell(QV(tuck), (0.009, 0.0045, 0.011)), 0.004)  # (the strap's end, tucked under at the back of the wrist)
-	finish(cl.mesh(f"hand_cuff_{side}", leather, PARTS), 2500)
-	del cl
+	c0, c1 = wr + ax * 0.043, wr + ax * 0.089
+	lo = Vector([min(p[i] for p in (c0, c1)) - 0.07 for i in range(3)])
+	hi = Vector([max(p[i] for p in (c0, c1)) + 0.07 for i in range(3)])
+	A0, A1 = np.array(QV(c0), np.float32), np.array(QV(c1), np.float32)
+	a_ = (A1 - A0) / np.linalg.norm(A1 - A0)
+	upv = np.array([0.0, 1.0, 0.0], np.float32)
+	e1 = upv - a_ * float(a_ @ upv)
+	e1 /= np.linalg.norm(e1)  # (straight up, across the arm: where the boss sits)
+	e2 = np.cross(a_, e1)
+	mid, half, lift = 0.5 * float(np.linalg.norm(A1 - A0)), 0.019, 0.0075
+	pieces = {}
+	for part in ("bronze", "gold"):
+		cl = clay((lo.x, lo.z, lo.y), (hi.x, hi.z, hi.y), 0.0011)
+		pu, pv, pw = cl.U - A0[0], cl.V - A0[1], cl.W - A0[2]
+		t = pu * a_[0] + pv * a_[1] + pw * a_[2] - mid  # along the arm, 0 at the bracer's middle
+		th = np.arctan2(pu * e2[0] + pv * e2[1] + pw * e2[2], pu * e1[0] + pv * e1[1] + pw * e1[2])  # round it, 0 = top
+		e = etube(cl, QV(c0), QV(c1), forearm_r(el_, wr, c0) + lift, forearm_r(el_, wr, c1) + lift, 0.9, 1.05)
+		n_teeth, amp = 9, 0.0075
+		ph = (th / (2 * np.pi) * n_teeth) % 1.0
+		tz = amp * (4 * np.abs(ph - 0.5) - 1.0)  # the zigzag's line along the arm
+		slope = 4 * amp * n_teeth / (2 * np.pi * 0.04)
+		dz = np.abs(t - tz) / np.sqrt(1 + slope * slope)
+		side_d = np.sqrt(t * t + (np.abs(th) * 0.04) ** 2)  # how far from the boss's centre, along the surface
+		if part == "bronze":
+			cl.add(np.maximum(e, np.abs(t) - half), 0.002)
+			cl.cut(np.sqrt(dz * dz + e * e) - 0.003, 0.0008)  # the channel the gold cord lies in
+			for k in range(n_teeth):  # a punched pit inside every tooth, between the cord and the beads
+				for sgn in (-1, 1):
+					ang = 2 * np.pi * (k + (0.0 if sgn > 0 else 0.5)) / n_teeth
+					if abs((ang + np.pi) % (2 * np.pi) - np.pi) < 0.45:
+						continue  # (not under the boss)
+					pd = np.sqrt((t + sgn * 0.0095) ** 2 + ((((th - ang) + np.pi) % (2 * np.pi) - np.pi) * 0.04) ** 2 + e * e)
+					cl.cut(pd - 0.0027, 0.0006)
+		else:
+			for sgn in (-1, 1):  # the beads round both edges, half sunk into the bronze
+				cl.add(np.sqrt((t - sgn * half) ** 2 + (e + 0.0006) ** 2) - 0.0042, 0.0012)
+			cord = np.sqrt(dz * dz + (e + 0.001) ** 2) - 0.0022
+			cl.add(np.maximum(cord, 0.0135 - side_d), 0.001)  # (the cord stops at the boss)
+			boss = np.maximum(side_d - 0.0125, np.abs(e - 0.0015) - 0.0032)
+			cl.add(boss, 0.0025)
+			cl.cut(np.sqrt((side_d - 0.0078) ** 2 + (e - 0.0047) ** 2) - 0.0011, 0.0005)  # the ring cut into the boss
+			cl.add(np.sqrt(side_d ** 2 + (e - 0.0042) ** 2) - 0.0036, 0.0015)  # its round middle
+		pieces[part] = cl
+	finish(pieces["bronze"].mesh(f"hand_cuff_{side}", bronze_m, PARTS), 4000)
+	finish(pieces["gold"].mesh(f"hand_cuff_gold_{side}", gold_m, PARTS), 4000)
+	del pieces, cl
 
 if CLOTHES:
 	# ---- shorts: a baggy seat and legs, folds, rolled cuffs
@@ -760,8 +794,14 @@ PAINT = {
 	"shirt": dict(base=(0.86, 0.8, 0.66), dark=(0.48, 0.41, 0.3), light=(0.98, 0.95, 0.86), weave=0.0011, per=0.008, size=2048, checks=0.0, threads=0.4),
 	"shorts": dict(base=(0.5, 0.33, 0.2), dark=(0.22, 0.13, 0.07), light=(0.68, 0.5, 0.33), weave=0.0011, per=0.008, size=2048, checks=0.045),
 	"leather": dict(base=(0.42, 0.26, 0.15), dark=(0.2, 0.11, 0.06), light=(0.6, 0.42, 0.27), weave=0.0, per=1.0, size=512),  # (F943 wrist wraps)
+	# (F737 bracers: bronze like the armour, dark patina in the cuts; gold bright on the raised beads, cord and boss)
+	"cuff_bronze": dict(base=(0.36, 0.2, 0.08), dark=(0.08, 0.05, 0.025), light=(0.6, 0.36, 0.16), weave=0.0, per=1.0, size=512),
+	"cuff_gold": dict(base=(0.8, 0.52, 0.12), dark=(0.36, 0.2, 0.04), light=(1.0, 0.8, 0.36), weave=0.0, per=1.0, size=512),
 	"wraps": dict(base=(0.84, 0.79, 0.67), dark=(0.48, 0.42, 0.32), light=(0.97, 0.94, 0.86), weave=0.0007, per=0.006, size=1024, checks=0.0),
 }
+# (F737) a face with its own skin colour: the body's skin paint is tinted the same way, so the neck and hands match it
+for key in ("base", "dark", "light"):
+	PAINT["skin"][key] = tuple(c * n / o for c, n, o in zip(PAINT["skin"][key], dh.SKIN_RGB, dh.SKIN_RGB_1))
 
 
 def weave(q, n, amp, per):
@@ -900,7 +940,8 @@ def path_s(pts, p):
 # Real hair chains (owner, round 2b: "the 3 braids need a lot of skeleton points where it bends"): 7 bones down each
 # whole braid, from under the chin to the tuft's tip, and 4 down each of three strands of back hair, all hanging from
 # the head. The game swings them and keeps them out of the body with collision balls (HairSwing).
-for bd, tag in zip(dh.BRAIDS, ("m", "a", "b")):
+for bd in dh.BRAIDS + dh.POINTS:  # (by name: a face with two braids has no middle one, F737)
+	tag = {"braid_mid": "m", "braid_-1": "a", "braid_1": "b"}[bd["name"]]
 	joints = chain_along(bd["path"], [k / 7 for k in range(8)])
 	CHAINS[f"hair_braid_{tag}"] = (bd, joints, "Head")
 for k, pts in enumerate(dh.BACKS):
@@ -974,7 +1015,7 @@ if torso_o is not None:
 	tkd.balance()
 	tnames = {vg.index: vg.name for vg in torso_o.vertex_groups}
 	for o in meshes:
-		if not ("pants" in o.name or o.name in ("body_shirt", "body_shorts") or o.name.startswith("body_hand_cuff_")):
+		if not ("pants" in o.name or o.name in ("body_shirt", "body_shorts") or o.name.startswith("body_hand_cuff")):
 			continue
 		for vg in list(o.vertex_groups):
 			o.vertex_groups.remove(vg)

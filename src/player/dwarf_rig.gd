@@ -19,6 +19,23 @@ const BEARD := "res://assets/characters/dwarf/Hair_Beard.gltf"
 ## Our own hand-built dwarf (tools/asset_forge/builds/dwarf_body.py, approved picture assets/concepts/dwarf/). When it
 ## exists it replaces the pack's outfit, head and beard above; the skeleton and every animation stay the same.
 const BODY := "res://assets/characters/dwarf/dwarf_body.glb"
+## (F737, owner Nov 28: new faces to pick from) each face is its own whole-dwarf file, dwarf_body_<face>.glb; face 1
+## ("happy") is BODY. A test run can pick one with `face=<name>` after `--`.
+const FACES := ["happy", "topknot"]
+var face := _face_from_cmdline()
+
+
+static func _face_from_cmdline() -> String:
+	for a in OS.get_cmdline_user_args():
+		if a.begins_with("face="):
+			return a.substr(5)
+	return "happy"
+
+
+## The whole-dwarf file for this face (face 1's when the face has none yet).
+func body_path() -> String:
+	var p := "res://assets/characters/dwarf/dwarf_body_%s.glb" % face
+	return p if face != "happy" and ResourceLoader.exists(p) else BODY
 ## Round 1 of the hand-built dwarf is a grey shape waiting for the owner's OK, so it is only worn when switched on:
 ## start the game with "newdwarf" (godot --path . -- newdwarf), or set use_body before build(). After the OK: true.
 const BODY_ON := true  # (owner, Nov 18: "import this into the game so I can play as him")
@@ -291,7 +308,7 @@ func build(tint: Color) -> void:
 	var prop := DwarfProportions.new()
 	skeleton.add_child(prop)
 	prop.setup(skeleton)
-	if use_body and ResourceLoader.exists(BODY):
+	if use_body and ResourceLoader.exists(body_path()):
 		prop.head_follow = BODY_HEAD_FOLLOW
 		prop.set_arm_gap(skeleton, BODY_ARM_GAP)
 		prop.set_neck_lift(skeleton, BODY_NECK_LIFT)
@@ -327,8 +344,8 @@ func build(tint: Color) -> void:
 	shield_grip.name = "ShieldGrip"
 	shield_grip.transform = shield_transform("")
 	left_hand.add_child(shield_grip)
-	if use_body and ResourceLoader.exists(BODY):
-		_wear_body(BODY)  # (bareheaded like the picture: no starting cap; armour helmets still work)
+	if use_body and ResourceLoader.exists(body_path()):
+		_wear_body(body_path())  # (bareheaded like the picture: no starting cap; armour helmets still work)
 	else:
 		_build_helmet()
 		_build_beard()
