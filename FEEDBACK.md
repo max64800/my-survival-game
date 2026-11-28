@@ -109,8 +109,8 @@ Fixed items get ~~crossed out~~, never deleted, so we can see the whole history.
 - [ ] **F954. When the lantern is refilled, show on the left which crystal it used.** *From: you (PC, Nov 28, play test 2). Said: 1×*
 - [ ] **F955. The campfire needs a better menu: show how long the cooking takes, also when cooking several at once.** (Its sound is still a crafting sound: F937.) *From: you (PC, Nov 28, play test 2). Said: 1×*
 - [ ] **F956. Choose which bolts to shoot: holding R when the crossbow is already loaded opens a wheel of your bolt types.** *From: you (PC, Nov 28, play test 2). Said: 1×*
-- [ ] **F957. Snails come back too fast near the base.** *From: you (PC, Nov 28, play test 2). Said: 1×*
-- [ ] **F958. Put the wooden shield back on the workbench.** There's no way to deal with bats early, and it's not clear how to build the Armoury Bench (maybe not unlocked yet; F894 moved shields there). *From: you (PC, Nov 28, play test 2). Said: 1×*
+- [ ] **F957. Snails come back too fast near the base.** *From: you (PC, Nov 28, play test 2). Said: 1×* 🛠 in progress (Nov 28 play test fixes, Nov 28)
+- [ ] **F958. Put the wooden shield back on the workbench.** There's no way to deal with bats early, and it's not clear how to build the Armoury Bench (maybe not unlocked yet; F894 moved shields there). *From: you (PC, Nov 28, play test 2). Said: 1×* 🛠 in progress (Nov 28 play test fixes, Nov 28)
 - [ ] **F959. The mace says it's equipped but isn't in his hands, so block/parry silently fails.** *From: you (PC, Nov 28, play test 2). Said: 1×*
 - [ ] **F960. Finished leather drops inside the leather table; it should drop in front of it.** *From: you (PC, Nov 28, play test 2). Said: 1×*
 - [ ] **F961. Some spiders and bats (the other creature types) have weird glowing butts, sometimes purple, sometimes red.** *From: you (PC, Nov 28, play test 2). Said: 1×*
