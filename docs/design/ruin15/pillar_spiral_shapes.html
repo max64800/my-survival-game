@@ -1,0 +1,444 @@
+<title>Pillar Spiral Shape Model</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alegreya+Sans+SC:wght@700&family=Alegreya+Sans:wght@400;700&display=swap">
+<style>
+/* Layout: one cave stage with the shape model, a side panel naming every part. Single dark look. */
+:root {
+	--rock: #17130f; --panel: #221b16; --ink: #ecdcc6; --dim: #b9a58c; --ember: #e8a24a; --line: #3d3128;
+	--display: "Alegreya Sans SC", Georgia, serif; --body: "Alegreya Sans", "Segoe UI", sans-serif;
+	color-scheme: dark;
+}
+html, body { height: 100%; margin: 0; }
+body { background: var(--rock); color: var(--ink); font: 16px/1.5 var(--body); }
+.wrap { display: flex; gap: 16px; height: 100%; padding-block: 16px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); box-sizing: border-box; }
+.stage { position: relative; flex: 1 1 auto; min-width: 0; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; background: #0d0a08; }
+canvas { display: block; width: 100%; height: 100%; }
+.bar { position: absolute; left: 12px; top: 12px; right: 12px; display: flex; flex-wrap: wrap; gap: 8px; }
+button { font: 700 15px var(--body); color: var(--ink); background: var(--panel); border: 1px solid var(--line); border-radius: 5px; padding: 6px 12px; cursor: pointer; }
+button[aria-pressed="true"] { background: var(--ember); color: #1c140d; border-color: var(--ember); }
+button:focus-visible { outline: 2px solid var(--ember); outline-offset: 2px; }
+.hint { position: absolute; right: 12px; bottom: 10px; color: var(--dim); font-size: 13px; }
+.tag { font: 700 13px var(--body); color: #1c140d; background: rgba(232,162,74,.92); padding: 1px 7px; border-radius: 4px; white-space: nowrap; pointer-events: none; }
+aside { flex: 0 0 360px; overflow-y: auto; background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 18px 20px; box-sizing: border-box; }
+h1 { font: 700 30px/1.1 var(--display); margin: 0 0 8px; text-wrap: balance; }
+h2 { font: 700 15px var(--display); letter-spacing: .08em; color: var(--ember); margin: 20px 0 6px; }
+p { margin: 0 0 10px; color: var(--dim); }
+ul { list-style: none; margin: 0; padding: 0; }
+li { padding: 7px 0; border-bottom: 1px dashed var(--line); color: var(--dim); }
+li b { color: var(--ink); }
+.key { display: flex; gap: 14px; flex-wrap: wrap; margin: 4px 0 10px; }
+.key span { display: inline-flex; align-items: center; gap: 6px; color: var(--ink); font-size: 14px; }
+.key i { width: 14px; height: 14px; border-radius: 3px; display: inline-block; }
+.ask { background: #2c231c; border-left: 3px solid var(--ember); padding: 10px 12px; border-radius: 4px; }
+.ask p { color: var(--ink); }
+@media (max-width: 800px) { .wrap { flex-direction: column; height: auto; } .stage { height: 70vh; flex: none; } aside { flex: none; } }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+<div class="wrap">
+	<div class="stage" id="stage">
+		<div class="bar" role="group" aria-label="Camera and view">
+			<button id="c_front" aria-pressed="true">Front</button>
+			<button id="c_left" aria-pressed="false">Left</button>
+			<button id="c_right" aria-pressed="false">Right</button>
+			<button id="c_close" aria-pressed="false">Close on the spiral</button>
+			<button id="c_above" aria-pressed="false">From above</button>
+			<button id="way" aria-pressed="false">Show the way</button>
+			<button id="ceil" aria-pressed="false">Ceiling off</button>
+			<button id="rockoff" aria-pressed="false">Cave wall off</button>
+			<button id="names" aria-pressed="true">Names on</button>
+		</div>
+		<div class="hint">Drag to turn &middot; scroll to zoom &middot; right-drag to move</div>
+	</div>
+	<aside>
+		<h1>Ruin 15: the Pillar Spiral</h1>
+		<p>A very simple shape model, not real pieces yet. It's the plan, shown in plain blocks.</p>
+		<div class="key">
+			<span><i style="background:#8b867c"></i>Stonehold stone</span>
+			<span><i style="background:#a4553a"></i>Hearthbrick brick</span>
+			<span><i style="background:#8a6440"></i>Shack wood</span>
+			<span><i style="background:#8a3f2c"></i>Tile roofs</span>
+			<span><i style="background:#5b4433"></i>Shingle roofs</span>
+			<span><i style="background:#e8a24a"></i>The way</span>
+		</div>
+		<h2>The idea</h2>
+		<p>A giant rock <b>pillar</b> stands from the cave floor all the way up to the ceiling, 25 m tall. Dwarves built a round stone hall around its foot. Then they built wooden stairs that wind up around the pillar like the stripe on a candy cane, with one house on each side. Each house is a storey taller than the one before.</p>
+		<p>It's the first ruin with <b>all three materials</b>: stone at the bottom (flat roofs), brick in the middle (tile roofs), wood on top (shingle roofs).</p>
+		<p>It's the first ruin you climb <b>round and round</b>. Press <b>Show the way</b> to see it, and <b>Close on the spiral</b> to look at the stairs.</p>
+		<h2>The parts</h2>
+		<ul>
+			<li><b>Grand stair + Ring Hall.</b> A wide stair up to a big round door with lanterns. Behind it, a round stone hall 22 m wide that wraps all the way around the pillar's foot. Its flat roof is a terrace with battlements.</li>
+			<li><b>The Spiral.</b> Wooden stairs hugging the rock: up one floor on the right side, one at the back, one on the left, one at the front. A flat landing at every corner.</li>
+			<li><b>Lamp House</b> (right). Brick, 2 storeys, the lowest roof.</li>
+			<li><b>Store House</b> (back). Brick, with a wooden top storey sticking out on brackets. Its back door opens onto a little bridge.</li>
+			<li><b>Bunk House</b> (left). Brick, 3 storeys, a wooden top storey on brackets.</li>
+			<li><b>Bell Tower</b> (front, right over the main door). The tallest: 4 brick storeys, a wider wooden storey, then the <b>Eyrie</b>, an 8-sided lookout under a pointed roof near the ceiling. <b>The best chest</b> is here.</li>
+			<li><b>Arch Bridge + Kiln House.</b> A stone bridge from the terrace over a crack in the floor to a brick kiln house with two chimneys on a rock lump.</li>
+			<li><b>Shrine Bridge + Rock Shrine.</b> From the Store House to a small stone shrine dug into the cave wall on a high rock shelf.</li>
+		</ul>
+		<h2>Built into the cave</h2>
+		<p>The pillar goes right through the middle. Five ground levels: the crack, the low floor in front, the cave floor, the rock lump, the high shelf. Two bridges cross gaps, the shrine is dug into the wall, and the Eyrie sits just under the ceiling.</p>
+		<h2>Lessons kept</h2>
+		<p>Every door opens onto a landing, a terrace or a bridge at its own height. Nothing hangs over the main door. No ramps to windows, no ladders: stairs all the way, each with free floor at the top and bottom.</p>
+		<h2>Heights</h2>
+		<p>Ring Hall 4.5 m, Kiln House 10 m, Lamp House 11 m, Rock Shrine 12 m, Store House 13.5 m, Bunk House 16 m, Bell Tower 22 m. The ceiling is at 25 m.</p>
+		<h2>When it's a ruin</h2>
+		<p>The left stairs of the spiral have fallen, so you climb up through the Bunk House inside instead. The Eyrie's roof leans, the bell lies on the terrace, a chimney is broken, and rocks from the ceiling lie on the terrace. Rebuild it to learn the blueprint.</p>
+		<h2>Your call</h2>
+		<div class="ask">
+			<p>Is this the pillar ruin you pictured? Tell me what to add, take away or move. Once you OK the shapes, I build it from our real pieces.</p>
+		</div>
+	</aside>
+</div>
+<script type="importmap">
+{ "imports": {
+	"three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+	"three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }
+</script>
+<script type="module">
+import * as THREE from "three";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import { CSS2DRenderer, CSS2DObject } from "three/addons/renderers/CSS2DRenderer.js";
+
+const stage = document.getElementById("stage");
+const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+stage.prepend(renderer.domElement);
+const labels = new CSS2DRenderer();
+labels.domElement.style.cssText = "position:absolute;inset:0;pointer-events:none";
+stage.appendChild(labels.domElement);
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x0d0a08);
+scene.fog = new THREE.Fog(0x0d0a08, 120, 230);
+const camera = new THREE.PerspectiveCamera(40, 1, 0.5, 400);
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+scene.add(new THREE.HemisphereLight(0xffe2bf, 0x3a2a1e, 1.0));
+const sun = new THREE.DirectionalLight(0xffc98a, 2.0);   // a lantern glow from front-left
+sun.position.set(-30, 50, 40);
+sun.castShadow = true;
+sun.shadow.mapSize.set(2048, 2048);
+Object.assign(sun.shadow.camera, { left: -50, right: 50, top: 50, bottom: -50, near: 1, far: 170 });
+scene.add(sun);
+
+// Colours: stone, darker stone, stone trim, brick, brick trim, wood, beams, shingles, tiles, iron, dark openings, rock
+const M = {};
+for (const [k, c] of Object.entries({ stone: 0x8b867c, stone2: 0x76716a, trim: 0xb9b1a2, brick: 0xa4553a, btrim: 0x7d3f2b,
+	wood: 0x8a6440, beam: 0xa87b4f, roof: 0x5b4433, tile: 0x8a3f2c, iron: 0x3b3835, dark: 0x1a1210, rock: 0x66564a, bell: 0xc9a25a }))
+	M[k] = new THREE.MeshStandardMaterial({ color: c, roughness: 0.9 });
+M.glow = new THREE.MeshStandardMaterial({ color: 0xffc070, emissive: 0xffa040, emissiveIntensity: 1.4 });
+const floorM = new THREE.MeshStandardMaterial({ color: 0x4d4034, roughness: 1 });
+const pillarM = new THREE.MeshStandardMaterial({ color: 0x6e5d50, roughness: 1, flatShading: true });
+const ceilM = new THREE.MeshStandardMaterial({ color: 0x4a3d33, roughness: 1, side: THREE.DoubleSide });
+
+function add(geo, mat, x, y, z, ry = 0) {
+	const m = new THREE.Mesh(geo, typeof mat === "string" ? M[mat] : mat);
+	m.position.set(x, y, z);
+	m.rotation.y = ry;
+	m.castShadow = m.receiveShadow = true;
+	scene.add(m);
+	return m;
+}
+// a box by its corners: x0..x1, y0..y1, z0..z1
+const box = (x0, x1, y0, y1, z0, z1, mat) => add(new THREE.BoxGeometry(x1 - x0, y1 - y0, z1 - z0), mat, (x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2);
+// a beam from one point to another
+function beam(a, b, t = 0.25, mat = "beam") {
+	const A = new THREE.Vector3(...a), B = new THREE.Vector3(...b), L = A.distanceTo(B);
+	const m = add(new THREE.BoxGeometry(t, L, t), mat, 0, 0, 0);
+	m.position.copy(A).add(B).multiplyScalar(0.5);
+	m.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), B.clone().sub(A).normalize());
+	return m;
+}
+const post = (x, z, y0, y1, t = 0.3, mat = "beam") => box(x - t / 2, x + t / 2, y0, y1, z - t / 2, z + t / 2, mat);
+function rail(x0, z0, x1, z1, y, mat = "beam") {
+	const L = Math.hypot(x1 - x0, z1 - z0), ry = -Math.atan2(z1 - z0, x1 - x0);
+	add(new THREE.BoxGeometry(L, 0.12, 0.12), mat, (x0 + x1) / 2, y + 1, (z0 + z1) / 2, ry);
+	const n = Math.max(1, Math.round(L / 1.5));
+	for (let i = 0; i <= n; i++) { const f = i / n; add(new THREE.BoxGeometry(0.12, 1, 0.12), mat, x0 + (x1 - x0) * f, y + 0.5, z0 + (z1 - z0) * f); }
+}
+// a bracket under an overhang: a wedge, wide at the top
+function corbel(x, y, z, mat = "beam") { add(new THREE.CylinderGeometry(0.35, 0.12, 1.0, 4), mat, x, y - 0.5, z, Math.PI / 4); }
+function windows(face, at, u0, u1, y, w = 0.8, h = 1.3, step = 2) {
+	for (let u = u0; u <= u1 + 0.01; u += step) {
+		if (face === "z") box(u - w / 2, u + w / 2, y, y + h, at - 0.06, at + 0.06, "dark");
+		else box(at - 0.06, at + 0.06, y, y + h, u - w / 2, u + w / 2, "dark");
+	}
+}
+function roundDoor(x, z, y, w, h) {
+	box(x - w / 2, x + w / 2, y, y + h - w / 2, z - 0.06, z + 0.06, "dark");
+	add(new THREE.CylinderGeometry(w / 2, w / 2, 0.12, 16, 1, false, 0, Math.PI), "dark", x, y + h - w / 2, z).rotation.set(Math.PI / 2, Math.PI / 2, 0);
+}
+function roundDoorX(x, z, y, w, h) {
+	box(x - 0.06, x + 0.06, y, y + h - w / 2, z - w / 2, z + w / 2, "dark");
+	add(new THREE.CylinderGeometry(w / 2, w / 2, 0.12, 16), "dark", x, y + h - w / 2, z).rotation.z = Math.PI / 2;
+}
+// gable roofs: ridge along x (over z0..z1) or along z (over x0..x1), eaves at y
+function roofX(x0, x1, z0, z1, y, mat = "roof") {
+	const half = (z1 - z0) / 2 + 0.4, sh = new THREE.Shape();
+	sh.moveTo(-half, 0); sh.lineTo(half, 0); sh.lineTo(0, half * 0.75); sh.closePath();
+	add(new THREE.ExtrudeGeometry(sh, { depth: x1 - x0 + 0.8, bevelEnabled: false }), mat, x0 - 0.4, y, (z0 + z1) / 2, Math.PI / 2);
+}
+function roofZ(x0, x1, z0, z1, y, mat = "roof") {
+	const half = (x1 - x0) / 2 + 0.4, sh = new THREE.Shape();
+	sh.moveTo(-half, 0); sh.lineTo(half, 0); sh.lineTo(0, half * 0.75); sh.closePath();
+	add(new THREE.ExtrudeGeometry(sh, { depth: z1 - z0 + 0.8, bevelEnabled: false }), mat, (x0 + x1) / 2, y, z0 - 0.4);
+}
+// a flight of 8 steps from a0 to a1 along x or z, y0 -> y1, 2 m wide centred on c; railing on the line railSide
+function flight(axis, a0, a1, y0, y1, c, railSide) {
+	const n = 8;
+	for (let i = 0; i < n; i++) {
+		const u0 = a0 + (a1 - a0) * i / n, u1 = a0 + (a1 - a0) * (i + 1) / n;
+		const yt = y0 + (y1 - y0) * (i + 1) / n;
+		if (axis === "x") box(Math.min(u0, u1), Math.max(u0, u1), yt - 0.14, yt, c - 1, c + 1, "beam");
+		else box(c - 1, c + 1, yt - 0.14, yt, Math.min(u0, u1), Math.max(u0, u1), "beam");
+	}
+	const P = (u, y, s) => axis === "x" ? [u, y, s] : [s, y, u];
+	beam(P(a0, y0 - 0.15, railSide), P(a1, y1 - 0.15, railSide), 0.2, "wood");
+	beam(P(a0, y0 + 1, railSide), P(a1, y1 + 1, railSide), 0.12);
+	for (const f of [0.33, 0.66]) {
+		const u = a0 + (a1 - a0) * f, y = y0 + (y1 - y0) * f;
+		beam(P(u, y - 0.1, railSide), P(u, y + 1, railSide), 0.1);
+	}
+}
+// a landing deck of the Spiral, with posts at the given corners down to the terrace (4.5)
+function deck(x0, x1, z0, z1, y, posts = []) {
+	box(x0, x1, y - 0.2, y, z0, z1, "wood");
+	for (const [x, z] of posts) post(x, z, 4.5, y - 0.2, 0.3);
+}
+function ringSlots(r, y, sides, w = 0.8, h = 1.3) {
+	for (const k of sides) {
+		const a = k * Math.PI / 6;
+		add(new THREE.BoxGeometry(w, h, 0.12), "dark", Math.sin(a) * (r + 0.02), y + h / 2, Math.cos(a) * (r + 0.02), a);
+	}
+}
+function merlons(x0, z0, x1, z1, y, mat = "stone") {
+	const L = Math.hypot(x1 - x0, z1 - z0), ry = -Math.atan2(z1 - z0, x1 - x0), n = Math.max(1, Math.round(L / 1.6));
+	for (let i = 0; i < n; i++) { const f = (i + 0.5) / n; add(new THREE.BoxGeometry(0.8, 0.75, 0.45), mat, x0 + (x1 - x0) * f, y + 0.375, z0 + (z1 - z0) * f, ry); }
+}
+const tags = [];
+function tag(text, x, y, z) {
+	const d = document.createElement("div");
+	d.className = "tag";
+	d.textContent = text;
+	const o = new CSS2DObject(d);
+	o.position.set(x, y, z);
+	scene.add(o);
+	tags.push(o);
+}
+
+// ---- the cave: floor (0), a low floor in front (-2.25), a crack on the right (-4.5), a rock lump past it (2.25),
+// ---- a rock shelf at the back (9), the cave wall, the ceiling (25) and the great pillar in the middle ----
+box(-40, 14, -6, 0, -22, 15, floorM);
+box(18, 40, -6, 0, -22, 15, floorM);
+box(14, 18, -6, -4.5, -22, 15, floorM);                                 // the crack's bottom
+box(-40, 40, -6, -2.25, 15, 50, floorM);                               // the low floor in front
+box(19, 30, 0, 2.25, -10, 8, M.rock);                                  // the rock lump
+for (let i = 0; i < 8; i++) box(21, 23, 0, 2.0 - 0.25 * i, 8 + i * 0.45, 8.45 + i * 0.45, M.rock);   // steps cut down the lump
+box(-14, 8, 0, 9, -22, -13, M.rock);                                   // the high rock shelf
+const ROCK = [];
+const rk = (x0, x1, y0, y1, z0, z1) => { const m = box(x0, x1, y0, y1, z0, z1, M.rock); ROCK.push(m); return m; };
+rk(-40, 40, -6, 28, -34, -22);                                         // the cave wall
+rk(-40, -14, 0, 4, -22, -16); rk(8, 40, 0, 6, -22, -17);               // low rock at its foot
+for (const [x0, x1, y0, y1, d] of [[-32, -24, 4, 10, 2.2], [14, 22, 6, 11, 1.6], [26, 34, 2, 8, 1.8], [-24, -16, 14, 18, 1.2], [10, 18, 16, 20, 1.0]])
+	rk(x0, x1, y0, y1, -22 - 0.2, -22 + d);                            // lumps on the cave wall
+const CEIL = [box(-40, 40, 25, 29, -34, 40, ceilM)];
+CEIL[0].castShadow = false;
+const pts = [[4.8, -0.5], [4.4, 3], [4.0, 7], [3.7, 12], [3.8, 17], [4.4, 21], [6.2, 23.6], [9.5, 25.2]].map(([r, y]) => new THREE.Vector2(r, y));
+const pillar = add(new THREE.LatheGeometry(pts, 9), pillarM, 0, 0, 0, 0.3);
+pillar.castShadow = false;
+tag("The pillar (cave rock)", 0, 20, 5.5);
+tag("Crack in the floor", 16, -2.5, 13);
+tag("Rock lump", 28.5, 3.5, 7);
+tag("Rock shelf", -11, 10.5, -14);
+
+// ---- the Ring Hall: a 12-sided stone ring 22 m wide (R = 3) round the pillar's foot, 0..4.5, terrace on top ----
+const RF = 11.19, RV = RF / Math.cos(Math.PI / 12);                    // flat sides 11.19 m from the middle
+const ring = (r, y0, y1, mat) => add(new THREE.CylinderGeometry(r, r, y1 - y0, 12), mat, 0, (y0 + y1) / 2, 0, Math.PI / 12);
+ring(RV, 0, 4.5, "stone");
+ring(RV + 0.15, 2.13, 2.37, "trim");
+ring(RV + 0.25, 4.3, 4.65, "trim");                                    // the cornice under the terrace
+ringSlots(RF, 0.9, [1, 2, 4, 5, 7, 8, 10, 11], 0.8, 1.2);
+ringSlots(RF, 2.9, [1, 2, 4, 5, 7, 8, 10, 11], 0.7, 1.0);
+for (let k = 0; k < 12; k++) {                                         // battlements round the terrace (not at the bridge)
+	if (k === 3) continue;
+	const a = k * Math.PI / 6;
+	for (const s of [-0.16, 0, 0.16]) {
+		const b = a + s, r = RF - 0.3;
+		add(new THREE.BoxGeometry(0.8, 0.75, 0.45), "stone", Math.sin(b) * r, 4.65 + 0.375, Math.cos(b) * r, b);
+	}
+}
+box(-8, -6, 4.5, 4.56, 5, 7, "dark");                                  // the stair hole up from the hall
+rail(-8, 5, -8, 7, 4.56); rail(-8, 5, -6, 5, 4.56);
+tag("Ring Hall (stone)", -14, 3, 8);
+
+// ---- the front plinth, grand stair, main door, lanterns ----
+box(-6, 6, -2.25, 0, RF - 0.5, 16, "stone2");
+box(-6.1, 6.1, -0.15, 0.1, RF - 0.5, 16.1, "trim");
+for (let i = 0; i < 8; i++) box(-2, 2, -2.25, -0.25 * (i + 1), 16 + i * 0.45, 16.45 + i * 0.45, "trim");
+rail(-6, 16, -2, 16, 0.1, "trim"); rail(2, 16, 6, 16, 0.1, "trim");
+rail(-6, RF, -6, 16, 0.1, "trim"); rail(6, RF, 6, 16, 0.1, "trim");
+roundDoor(0, RF + 0.06, 0, 2.6, 3.9);
+for (const x of [-2.6, 2.6]) { post(x, 14.8, 0, 2.2, 0.22, "iron"); box(x - 0.22, x + 0.22, 2.2, 2.7, 14.58, 15.02, "glow"); }
+tag("Grand stair + main door", 0, -0.5, 22);
+
+// ---- the Spiral: wooden stairs round the pillar, one floor up on each side (right, back, left, front) ----
+flight("z", 2, -2, 4.5, 6.75, 5.25, 6.4);                              // right side 4.5 -> 6.75
+deck(4, 6.5, -6.5, -2, 6.75, [[6.5, -6.5], [6.5, -2]]);
+deck(2, 4, -6.5, -4, 6.75, [[2, -6.5]]);
+flight("x", 2, -2, 6.75, 9, -5.25, -6.4);                              // back 6.75 -> 9
+deck(-6.5, -2, -6.5, -4, 9, [[-6.5, -6.5], [-2, -6.5]]);
+deck(-6.5, -4, -4, -2, 9, [[-6.5, -2]]);
+flight("z", -2, 2, 9, 11.25, -5.25, -6.4);                             // left 9 -> 11.25
+deck(-6.5, -4, 2, 6.5, 11.25, [[-6.5, 2], [-6.5, 6.5]]);
+deck(-4, -2, 4, 6.5, 11.25, [[-2, 6.5]]);
+flight("x", -2, 2, 11.25, 13.5, 5.25, 6.4);                            // front 11.25 -> 13.5
+deck(2, 6.5, 4, 6.5, 13.5, [[2, 6.5], [6.5, 6.5]]);
+tag("The Spiral (wooden stairs)", 7.5, 8.5, 1.5);
+
+// ---- Lamp House (right): brick, 2 storeys, tile roof ----
+box(6.5, 10.5, 4.5, 9, -4, 4, "brick");
+box(6.35, 10.65, 6.65, 6.85, -4.15, 4.15, "btrim");
+roofZ(6.5, 10.5, -4, 4, 9, "tile");
+roundDoorX(6.44, 3, 4.5, 1.3, 2.0); roundDoorX(6.44, -3, 6.75, 1.3, 2.0);
+windows("x", 10.56, -2, 2, 5.1, 0.7, 1.1, 2); windows("x", 10.56, -2, 2, 7.3, 0.7, 1.1, 2);
+for (const z of [-3.2, 3.2]) { post(10.75, z, 6.2, 7, 0.12, "iron"); box(10.6, 10.95, 7, 7.4, z - 0.18, z + 0.18, "glow"); }
+tag("Lamp House", 12.5, 10.5, -3);
+
+// ---- Store House (back): brick 2 storeys, wooden storey jutting 1 m back on brackets, shingle roof ----
+box(-4, 4, 4.5, 9, -10.5, -6.5, "brick");
+box(-4.15, 4.15, 6.65, 6.85, -10.65, -6.35, "btrim");
+box(-4, 4, 9, 11.25, -11.5, -6.5, "wood");
+for (const [x, z] of [[-4, -11.5], [4, -11.5], [-4, -6.5], [4, -6.5]]) post(x, z, 9, 11.25, 0.28);
+for (const x of [-3, -1, 1, 3]) corbel(x, 9, -11);
+roofX(-4, 4, -11.5, -6.5, 11.25);
+roundDoor(3.2, -6.44, 6.75, 1.3, 2.0); roundDoor(-3, -6.44, 9, 1.3, 2.0);
+roundDoor(0, -11.56, 9, 1.3, 2.0);                                     // the back door onto the Shrine Bridge
+windows("z", -10.56, -2.5, 2.5, 5.3, 0.7, 1.0, 2.5); windows("z", -11.56, -3, 3, 9.6, 0.7, 0.9, 6);
+tag("Store House", 0, 15, -9);
+
+// ---- Bunk House (left): brick 3 storeys, wooden storey jutting 1 m left on brackets, shingle roof ----
+box(-10.5, -6.5, 4.5, 11.25, -4, 4, "brick");
+for (const y of [6.75, 9]) box(-10.65, -6.35, y - 0.1, y + 0.1, -4.15, 4.15, "btrim");
+box(-11.5, -6.5, 11.25, 13.5, -4, 4, "wood");
+for (const [x, z] of [[-11.5, -4], [-11.5, 4], [-6.5, -4], [-6.5, 4]]) post(x, z, 11.25, 13.5, 0.28);
+for (const z of [-3, -1, 1, 3]) corbel(-11, 11.25, z);
+roofZ(-11.5, -6.5, -4, 4, 13.5);
+roundDoorX(-6.44, -3, 9, 1.3, 2.0); roundDoorX(-6.44, 3, 11.25, 1.3, 2.0);
+for (const y of [5.1, 7.3, 9.6]) windows("x", -10.56, -2, 2, y, 0.7, 1.0, 2);
+windows("x", -11.56, -2.5, 2.5, 11.9, 0.7, 0.9, 2.5);
+tag("Bunk House", -14.5, 15.5, 0);
+
+// ---- Bell Tower (front): brick 4 storeys, wider wooden storey on brackets (sides only), 8-sided Eyrie, spire ----
+box(-4, 4, 4.5, 13.5, 6.5, 10.5, "brick");
+for (const y of [6.75, 9, 11.25]) box(-4.15, 4.15, y - 0.1, y + 0.1, 6.35, 10.65, "btrim");
+for (const y of [5.1, 7.4, 9.6]) windows("z", 10.56, -1.5, 1.5, y, 0.7, 1.1, 3);
+box(-1.1, 1.1, 11.8, 13.0, 10.5, 10.62, "dark");                       // a tall window right over the main door
+roundDoor(-3, 6.44, 11.25, 1.3, 2.0); roundDoor(3, 6.44, 13.5, 1.3, 2.0);
+box(-4.25, 4.25, 13.4, 13.6, 6.25, 10.75, "btrim");
+box(-5, 5, 13.6, 15.75, 6.5, 10.5, "wood");                            // juts 1 m left and right, flush at the front
+for (const [x, z] of [[-5, 6.5], [5, 6.5], [-5, 10.5], [5, 10.5]]) post(x, z, 13.6, 15.75, 0.28);
+for (const z of [7.5, 9.5]) { corbel(-4.5, 13.6, z); corbel(4.5, 13.6, z); }
+windows("z", 10.56, -3, 3, 14.2, 0.7, 1.0, 3);
+box(-5.2, 5.2, 15.75, 15.95, 6.3, 10.7, "beam");                       // its deck
+rail(-5, 10.5, 5, 10.5, 15.95); rail(-5, 6.5, -5, 10.5, 15.95); rail(5, 6.5, 5, 10.5, 15.95); rail(-5, 6.5, 5, 6.5, 15.95);
+const EZ = 8.5;
+add(new THREE.CylinderGeometry(1.95, 1.95, 2.25, 8), "wood", 0, 15.95 + 1.125, EZ).rotation.y = Math.PI / 8;
+for (let j = 0; j < 8; j++) {
+	const a = j * Math.PI / 4, r = 1.95 * Math.cos(Math.PI / 8) + 0.03;
+	add(new THREE.BoxGeometry(0.6, 1.0, 0.06), "dark", Math.sin(a) * r, 16.8, EZ + Math.cos(a) * r, a);
+}
+add(new THREE.CylinderGeometry(2.2, 2.2, 0.25, 8), "beam", 0, 18.3, EZ).rotation.y = Math.PI / 8;
+add(new THREE.CylinderGeometry(0.1, 2.8, 3.8, 8), "roof", 0, 18.42 + 1.9, EZ).rotation.y = Math.PI / 8;
+add(new THREE.CylinderGeometry(0.22, 0.5, 0.6, 10), "bell", 0, 22.4, EZ);   // the bell on top
+add(new THREE.SphereGeometry(0.2, 8, 6), "iron", 0, 22.9, EZ);
+tag("Bell Tower", -6.5, 12, 11);
+tag("Eyrie + best chest", 0, 24.2, EZ);
+
+// ---- Arch Bridge (stone) over the crack to the Kiln House on the rock lump ----
+box(RF - 0.3, 19, 3.6, 4.5, -1, 1, "stone");
+rail(RF + 0.2, -1, 19, -1, 4.5, "trim"); rail(RF + 0.2, 1, 19, 1, 4.5, "trim");
+box(12.6, 13.6, 0, 3.6, -1, 1, "stone2"); box(16.8, 17.8, -4.5, 3.6, -1, 1, "stone2");
+tag("Arch Bridge", 15.3, 7, 2.5);
+box(19, 27, 2.25, 6.75, -4, 4, "brick");
+box(18.85, 27.15, 4.4, 4.6, -4.15, 4.15, "btrim");
+roofX(19, 27, -4, 4, 6.75, "tile");
+box(20.5, 21.5, 6.75, 11, -2.5, -1.5, "btrim"); box(24.5, 25.5, 6.75, 11.5, 1.5, 2.5, "btrim");   // two chimneys
+roundDoorX(18.94, 0, 4.5, 1.3, 2.0);
+roundDoor(23, 4.06, 2.25, 1.4, 2.1);
+box(25.2, 26.4, 2.4, 3.3, 4.0, 4.12, "glow");                          // the kiln's mouth glowing
+windows("z", 4.06, 20.5, 20.5, 4.9, 0.7, 1.0);
+tag("Kiln House", 23, 12.5, 0);
+
+// ---- Shrine Bridge (wood) from the Store House's back door to the Rock Shrine on the shelf ----
+box(-1, 1, 8.8, 9, -13.2, -11.5, "wood");
+rail(-1, -13.2, -1, -11.6, 9); rail(1, -13.2, 1, -11.6, 9);
+box(-4, 4, 9, 11.75, -22, -15.5, "stone");
+box(-4.15, 4.15, 11.6, 11.9, -22, -15.35, "trim");
+merlons(-4, -15.5, 4, -15.5, 11.9); merlons(-4, -21, -4, -15.5, 11.9); merlons(4, -21, 4, -15.5, 11.9);
+roundDoor(0, -15.44, 9, 1.4, 2.1);
+windows("z", -15.44, -2.6, 2.6, 9.9, 0.6, 1.0, 5.2);
+for (const x of [-1.4, 1.4]) { post(x, -14.6, 9, 10.6, 0.16, "iron"); box(x - 0.18, x + 0.18, 10.6, 11, -14.78, -14.42, "glow"); }
+tag("Shrine Bridge", 3.5, 10.5, -12.5);
+tag("Rock Shrine", -7, 12.5, -19);
+
+// ---- the way: up the grand stair, through the Ring Hall, round the Spiral, up the Bell Tower; side trips ----
+const WAY = [[0, -2.25, 27], [0, -2.25, 20], [0, 0, 16], [0, 0, 11.2], [0, 0, 9.5], [-5, 0, 9.5], [-7, 2.25, 8.5], [-7, 4.5, 6],
+	[-5.25, 4.5, 5.25], [5.25, 4.5, 5.25], [5.25, 4.5, 2], [5.25, 6.75, -2], [5.25, 6.75, -5.25], [2, 6.75, -5.25], [-2, 9, -5.25],
+	[-5.25, 9, -5.25], [-5.25, 9, -2], [-5.25, 11.25, 2], [-5.25, 11.25, 5.25], [-2, 11.25, 5.25], [2, 13.5, 5.25], [3, 13.5, 5.25],
+	[3, 13.5, 8.5], [0, 15.95, EZ]];
+const SIDE = [[[9, 4.5, 0], [19, 4.5, 0], [22, 4.5, 0]], [[-3, 9, -5.25], [-3, 9, -8.5], [0, 9, -9], [0, 9, -15.5], [0, 9, -18]]];
+const wayM = new THREE.MeshBasicMaterial({ color: 0xe8a24a, depthTest: false, transparent: true, opacity: 0.9 });
+const sideM = new THREE.MeshBasicMaterial({ color: 0xffe0a8, depthTest: false, transparent: true, opacity: 0.6 });
+const wayParts = [];
+function line(P, mat, t) {
+	for (let i = 1; i < P.length; i++) {
+		const m = beam([P[i - 1][0], P[i - 1][1] + 0.35, P[i - 1][2]], [P[i][0], P[i][1] + 0.35, P[i][2]], t, mat);
+		m.castShadow = false; m.renderOrder = 5; wayParts.push(m);
+	}
+}
+line(WAY, wayM, 0.2);
+SIDE.forEach(p => line(p, sideM, 0.14));
+for (const [x, y, z, s] of [[0, 17, EZ, 30], [7, 7, 0, 40], [-7, 11, 0, 40], [0, 9, -9, 35], [0, 3, 18, 40], [22, 6, 6, 30], [0, 12, -14, 25]]) {
+	const l = new THREE.PointLight(0xffd8a8, s, 18, 1.4); l.position.set(x, y, z); scene.add(l);
+}
+
+// ---- camera spots and buttons ----
+const CAMS = { front: [[-26, 15, 62], [2, 10, 0]], left: [[-64, 15, 16], [0, 10, -2]], right: [[64, 15, 26], [6, 9, -2]],
+	close: [[20, 44, 22], [0, 8, 0]], above: [[0, 92, 26], [3, 4, -3]] };
+let cam = "front", wayOn = false, namesOn = true, rockOff = false, ceilOff = false;
+function refresh() {
+	tags.forEach(t => (t.visible = namesOn));
+	ROCK.forEach(m => (m.visible = !rockOff));
+	CEIL.forEach(m => (m.visible = !ceilOff && cam !== "above" && cam !== "close"));
+	wayParts.forEach(m => (m.visible = wayOn));
+}
+function look(k) {
+	cam = k;
+	camera.position.set(...CAMS[k][0]); controls.target.set(...CAMS[k][1]); controls.update();
+	for (const c in CAMS) document.getElementById("c_" + c).setAttribute("aria-pressed", c === k);
+	refresh();
+}
+for (const c in CAMS) document.getElementById("c_" + c).onclick = () => look(c);
+function toggle(id, get, set) {
+	const b = document.getElementById(id);
+	b.onclick = () => { set(!get()); b.setAttribute("aria-pressed", get()); refresh(); };
+	return b;
+}
+const wb = toggle("way", () => wayOn, v => (wayOn = v));
+const cb = toggle("ceil", () => ceilOff, v => (ceilOff = v));
+toggle("rockoff", () => rockOff, v => (rockOff = v));
+toggle("names", () => namesOn, v => { namesOn = v; document.getElementById("names").textContent = v ? "Names on" : "Names off"; });
+const h = location.hash.slice(1).split(",");
+if (h.includes("way")) { wayOn = true; wb.setAttribute("aria-pressed", true); }
+if (h.includes("noceil")) { ceilOff = true; cb.setAttribute("aria-pressed", true); }
+look(CAMS[h[0]] ? h[0] : "front");
+function resize() {
+	const w = stage.clientWidth, hh = stage.clientHeight;
+	renderer.setSize(w, hh, false); labels.setSize(w, hh);
+	camera.aspect = w / hh; camera.updateProjectionMatrix();
+}
+new ResizeObserver(resize).observe(stage);
+resize();
+renderer.setAnimationLoop(() => { controls.update(); renderer.render(scene, camera); labels.render(scene, camera); });
+</script>
