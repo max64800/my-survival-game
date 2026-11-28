@@ -109,3 +109,7 @@ func test_bites_cooking_and_skill_ups_have_their_own_sounds() -> void:
 	check_eq(GameAuthority.craft_sound_name("workbench"), "craft", "the workbench still hammers")
 	check(Sfx.has(GameAuthority.craft_sound_name("campfire")), "the campfire's sound exists")
 	check(Sfx.has(Sfx.pick("skill_up", "level_up")), "a skill-up has a sound")
+	# Round 13 (owner's picks, Nov 28): a metal plate tap for a skill-up, 4 axe blows, 2 hammers, 2 sizzles.
+	for want: Array in [["skill_up", 1], ["chop", 4], ["craft", 2], ["cook", 2]]:
+		check_eq(Sfx._variants(want[0]).size(), want[1], "round 13: %s has the owner's %d picks" % want)
+	check_eq(GameAuthority.craft_sound_name("campfire"), "cook", "the campfire sizzles")

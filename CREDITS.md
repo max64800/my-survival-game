@@ -126,13 +126,13 @@ All CC0 (public domain), checked on each page. Trimmed, loudness-matched and con
 | Drink / Drinking liquid | Breviceps | https://freesound.org/s/445970/ | CC0 | refill_1 |
 | ItemPickup.wav | nicholasdaryl | https://freesound.org/s/563465/ | CC0 | pickup_0 |
 | Concrete SMASH 2 | magnuswaker | https://freesound.org/s/522099/ | CC0 | dig_break_0 |
-| Chopping wood 02 | micahlg | https://freesound.org/s/421929/ | CC0 | chop_0 |
-| Chopping wood 01 | micahlg | https://freesound.org/s/421928/ | CC0 | chop_1 |
+| Chopping wood 02 | micahlg | https://freesound.org/s/421929/ | CC0 | chop_0 (replaced Nov 28 by round 13) |
+| Chopping wood 01 | micahlg | https://freesound.org/s/421928/ | CC0 | chop_1 (replaced Nov 28 by round 13) |
 | Surge Leech 2 | scorpion67890 | https://freesound.org/s/205754/ | CC0 | beetle_hiss_0 |
 | Water drops with reverb | Patrick_Corra | https://freesound.org/s/696438/ | CC0 | cave_drip_0 (not wired yet) |
-| hammer_hit | link4541 | https://freesound.org/s/816051/ | CC0 | craft_0 |
-| Bing1.wav | BMacZero | https://freesound.org/s/96132/ | CC0 | craft_1 |
-| Repair_metal.wav | zbig77 | https://freesound.org/s/244985/ | CC0 | craft_2 |
+| hammer_hit | link4541 | https://freesound.org/s/816051/ | CC0 | craft_0 (replaced Nov 28 by round 13) |
+| Bing1.wav | BMacZero | https://freesound.org/s/96132/ | CC0 | craft_1 (replaced Nov 28 by round 13) |
+| Repair_metal.wav | zbig77 | https://freesound.org/s/244985/ | CC0 | craft_2 (replaced Nov 28 by round 13) |
 | Right Gravel Footstep 5 | Ali_6868 | https://freesound.org/s/384880/ | CC0 | step_0 |
 | Knight Right Footstep on Gravel 5 (With Chainmail) | Ali_6868 | https://freesound.org/s/384890/ | CC0 | step_1 |
 | sandwalking_step1.wav | BranndyBottle | https://freesound.org/s/464699/ | CC0 | step_2 |
@@ -267,3 +267,12 @@ The new `refill_0..1` (lantern) replace the older refill rows above (heavy_swall
 | Crossbow Shot | LeMudCrab | https://freesound.org/s/163453/ | CC0 | crossbow_shot_0 (round 11) |
 | Mechanical switch (latch) 02 | xkeril | https://freesound.org/s/815493/ | CC0 | crossbow_reload_0 (round 11) |
 | Bolt Lock 5 | LordForklift | https://freesound.org/s/448416/ | CC0 | key_unlock_0 (round 11) |
+| Metal Plate Hit 5 | loganzsound | https://freesound.org/s/784156/ | CC0 | skill_up_0 (round 13) |
+| chop2.mp3 | FairCashew | https://freesound.org/s/684857/ | CC0 | chop_0 (round 13) |
+| Chop.ogg | egomassive | https://freesound.org/s/536736/ | CC0 | chop_1 (round 13) |
+| Axe Chop.mp3 | Evcy | https://freesound.org/s/583272/ | CC0 | chop_2 (round 13) |
+| Axe Cut #9 | birdswkaren | https://freesound.org/s/712103/ | CC0 | chop_3 (round 13) |
+| hammer v1.wav | blukotek | https://freesound.org/s/337816/ | CC0 | craft_0 (round 13) |
+| Outside Hammer | sgrowe | https://freesound.org/s/342542/ | CC0 | craft_1 (round 13) |
+| frying steak.wav | simosco | https://freesound.org/s/235537/ | CC0 | cook_0 (round 13) |
+| frying in pan.aif | purge63 | https://freesound.org/s/94227/ | CC0 | cook_1 (round 13) |
