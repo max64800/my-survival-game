@@ -825,6 +825,7 @@ func _try_blink(target: Node3D, to: Vector3, mgr: Node) -> bool:
 
 ## Bats (owner F460): loop round you in a loose, wobbly circle (each bat its own size and way round), then dive
 ## through you. Only one bat of a pack starts a dive every DIVE_GAP seconds, so they take turns.
+var _dive_blocked := 0.0  ## host: seconds a bat ready to dive has had rock between it and you
 func _circle_and_dive(delta: float, target: Node3D, dist: float, mgr: Node) -> void:
 	if _dive_wait > 50.0:
 		_new_circle(target)
@@ -835,8 +836,20 @@ func _circle_and_dive(delta: float, target: Node3D, dist: float, mgr: Node) -> v
 	go.y = 0.0
 	_move(delta, go.normalized() if go.length() > 0.3 else Vector3.ZERO, data.run * (1.0 + (Monsters.PACK_BOOST.speed if boosted else 0.0)))
 	_dive_wait -= delta
-	if _dive_wait <= 0.0 and dist >= DIVE_MIN and dist <= DIVE_MAX and mgr.may_dive(self) and _clear_line(target):
-		_start_dive(target, mgr)
+	if _dive_wait <= 0.0 and dist >= DIVE_MIN and dist <= DIVE_MAX:
+		# F967 (owner, Nov 28: "bats bob up and down instead of attacking"): rock between it and you used to take the
+		# pack's dive turn anyway (no bat dived), and it kept circling the same blocked spot. Now it only takes the turn
+		# with a clear line, and after a second blocked it flies a new, tighter circle to find one.
+		if not _clear_line(target):
+			_dive_blocked += delta
+			if _dive_blocked > 1.0:
+				_new_circle(target)
+				_orbit_r = randf_range(3.2, 4.5)
+				_dive_wait = 0.0
+				_dive_blocked = 0.0
+		elif mgr.may_dive(self):
+			_dive_blocked = 0.0
+			_start_dive(target, mgr)
 
 
 ## A fresh circle round the target, starting where it is now; a few seconds before its next dive.
@@ -881,12 +894,27 @@ var _rest_until := {}
 var raising: Array = []  ## (host) the Prop Warden's Rally Slam: the statue ids he is raising now
 
 
+## F967 (owner, Nov 28: "beetles get stuck on a rock instead of going over it"): a beetle charged a rock between you,
+## was dazed by it, charged it again, for good, and never walked over to climb it. A straight charge needs nothing solid
+## in its path at knee height, except what a charge smashes (a boulder, a ruin column).
+func _charge_clear(target: Node3D) -> bool:
+	if target == null or not is_inside_tree():
+		return true
+	var up := Vector3.UP * 0.5 * float(data.get("size", 1.0))
+	var q := PhysicsRayQueryParameters3D.create(global_position + up, target.global_position + up,
+		World.TERRAIN_LAYER | PieceNode.PIECE_LAYER)
+	var hit := get_world_3d().direct_space_state.intersect_ray(q)
+	return hit.is_empty() or Boulders.id_of(hit.collider) >= 0 or PoiField.column_id_of(hit.collider) >= 0
+
+
 ## `mgr` (when given) lets a raise move be picked only while there is a fallen miner to raise.
 func _pick_attack(dist: float, mgr: Node = null) -> Dictionary:
 	var options := []
 	for a in attack_options():
 		if a.has("raise_miners") and (mgr == null or mgr.raisable_statues(self).is_empty()):
 			continue
+		if a.get("lunge", false) and data.get("straight_charge", false) and mgr != null and target_peer != 0 				and not _charge_clear(mgr.player_node(target_peer)):
+			continue  # (rock in the way: it walks over to you and climbs it instead, F967)
 		if dist <= a.reach and dist >= a.get("min_reach", 0.0) and (not a.get("lunge", false) or dist > 2.0 or (a.get("small_lunge", false) and data.get("ghost", false))) 				and _clock >= float(_rest_until.get(a.name, 0.0)):
 			options.append(a)
 	if options.is_empty():
@@ -1002,12 +1030,14 @@ func may_step(p: Vector3, from := Vector3.INF) -> bool:
 ## edge is a lip a hand high; a ghost's round feet pressed against it as a wall and it stood there for good. A ghost
 ## (mist, it barely touches the ground) rises over a low edge when there is room just above it.
 const STEP_UP := 0.45
-func _step_up(dir: Vector3) -> void:
+var _wall_push := 0.0  ## host: seconds it has been walking into a wall (a rock too tall to step onto)
+const PUSH_CLIMB := 0.8  ## s: a climber walking into rock this long climbs over it, even when you're not above it (F967)
+func _step_up(dir: Vector3, height := STEP_UP) -> void:
 	var flat := Vector3(dir.x, 0.0, dir.z).normalized() * 0.3
-	if test_move(global_transform, Vector3.UP * STEP_UP):
+	if test_move(global_transform, Vector3.UP * height):
 		return  # a ceiling over it
 	var was := global_position
-	global_position += Vector3.UP * STEP_UP
+	global_position += Vector3.UP * height
 	var hit := move_and_collide(flat, true)
 	if hit and hit.get_normal().y < 0.5:
 		global_position = was  # a real wall up there too: no step
@@ -1062,8 +1092,12 @@ func _move(delta: float, dir: Vector3, speed: float) -> void:
 	else:
 		_rest = 0.0
 	move_and_slide()
-	if data.get("ghost", false) and dir.length() > 0.1 and is_on_floor() and is_on_wall():
-		_step_up(dir)
+	var pushing: bool = not data.get("flies", false) and dir.length() > 0.1 and is_on_wall() 		and Vector3(dir.x, 0.0, dir.z).normalized().dot(-get_wall_normal()) > 0.3
+	_wall_push = _wall_push + delta if pushing else maxf(0.0, _wall_push - delta * 0.5)  # (touching a wall flickers frame to frame)
+	if pushing and is_on_floor():
+		# A low lump of rock in its way: it steps up onto it (ghosts over stair lips; F967, owner Nov 28: "beetles get
+		# stuck on a rock instead of going over it": walkers pressed against a knee-high rock for good).
+		_step_up(dir, STEP_UP if data.get("ghost", false) else STEP_UP * clampf(_size, 0.8, 1.6))
 	if global_position.y < CaveMaker.Y_MIN - 20.0:
 		global_position = home + Vector3.UP
 	if _falling != "" and is_on_floor():
@@ -1190,8 +1224,8 @@ func _try_cling(dir: Vector3) -> void:
 	if Vector3(dir.x, 0.0, dir.z).normalized().dot(-wn) < 0.3:
 		return  # (it brushes along the wall, it isn't walking into it)
 	var above := _goal != Vector3.INF and _goal.y > global_position.y + 0.6
-	if not above and not (data.get("wall_runner", false) and state == State.CHASE):
-		return
+	if not above and not (data.get("wall_runner", false) and state == State.CHASE) and _wall_push < PUSH_CLIMB:
+		return  # (a rock it can't step onto and has pushed against a while: it climbs over it, F967)
 	var hit := _feel(global_position + Vector3.UP * 0.4, -wn, 1.2)
 	if hit.is_empty() or not may_cling(how, hit.normal):
 		return
@@ -1245,6 +1279,8 @@ func _crawl(delta: float, dir: Vector3, speed: float) -> void:
 	var want := dir
 	if _goal != Vector3.INF and dir.length() > 0.1:
 		want = _goal - global_position  # (the wall leads up or down to it)
+		if absf(n.y) < FLOOR_UP and want.dot(-n) > 0.3:
+			want += Vector3.UP * want.length()  # (you're behind this rock, level with it: up and over, F967)
 	var t := want - n * want.dot(n)
 	if t.length() < 0.05 or speed <= 0.0 or dir.length() < 0.1:
 		# Sitting still: twice a second it checks the rock is still there (a dwarf may dig it away).

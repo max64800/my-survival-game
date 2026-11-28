@@ -1591,3 +1591,43 @@ func test_crest_crystals_sit_on_the_back() -> void:
 			check(p.y > box.position.y - 0.05, "%s: on top of its back, not inside it (y %.2f)" % [kind, p.y])
 			check(absf(p.z - 0.1) > 0.05, "%s: not the old fixed spot" % kind)
 		m.free()
+
+
+## F967 (owner, Nov 28): "beetles get stuck on a rock instead of going over it". A knee-high rock between a beetle and
+## you: it steps up over it and reaches you; a tall one it climbs over.
+func test_beetle_goes_over_a_rock() -> void:
+	await _setup()
+	await _solid_ground()
+	# A flat slab for both (the cave floor is bumpy: it climbed anyway where you stood higher up).
+	var top := player.global_position + Vector3.UP * 0.6
+	var slab := _block(Vector3(24, 1, 6), top - Vector3(0, 0.5, 0))
+	player.global_position = top
+	var uid: int = auth.monsters._next_uid
+	auth.monsters._ev_spawn(uid, "rock_beetle", top + Vector3(-7, 0.3, 0), false, 0)
+	var m := auth.monsters.get_monster(uid)
+	var rock := _block(Vector3(1.2, 1.3, 6), top + Vector3(-3.5, 0.65, 0))  # (as wide as the slab: no way round)
+	m.alert(1)
+	var closest := INF
+	for i in 900:
+		await tree.physics_frame
+		ps.vitals.health = 100.0
+		closest = minf(closest, Vector2(m.global_position.x - top.x, m.global_position.z - top.z).length())
+		if closest < 2.0:
+			break
+	check(closest < 2.0, "a 1.3 m rock: it climbs over it to you (closest %.1f m)" % closest)
+	slab.free()
+	rock.free()
+	_teardown()
+
+
+func _block(size: Vector3, at: Vector3) -> StaticBody3D:
+	var b := StaticBody3D.new()
+	b.collision_layer = World.TERRAIN_LAYER
+	var cs := CollisionShape3D.new()
+	var box := BoxShape3D.new()
+	box.size = size
+	cs.shape = box
+	b.add_child(cs)
+	world.add_child(b)
+	b.global_position = at
+	return b
