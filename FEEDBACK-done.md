@@ -251,6 +251,8 @@ Nothing was deleted. Newest fixes go at the top of their group. If a fixed thing
 - [x] ~~**F937. Cooking at a campfire sounds like fixing something.** *From: you (PC, Nov 27, play session). Said: 2×* (Nov 28: "still the very old crafting sound, not cooking", see F955)~~ ✅ Nov 28: the campfire now sizzles: your 2 frying picks (round 13).
 - [x] ~~**F951. The wood-chopping and crafting sounds are too arcade-like.** (Same family as F934 and F707.) *From: you (PC, Nov 28, play test). Said: 1×*~~ ✅ Nov 28: chopping uses your 4 axe blows, crafting your 2 hammers (round 13).
 
+- [x] ~~**F925. Getting hit by a bat sounds like a 'ding'. It shouldn't.** *From: you (PC, Nov 27, play session). Said: 1×*~~ ✅ Nov 28: rounds 12-14 found no bite you liked, so (your idea) a bite now plays only the dwarf's own "oof" grunt that every hit already plays; the mace knock on top is gone.
+
 ## Done (older)
 
 - [x] ~~**F72. Creatures need variety, like the cave itself.**~~ Done Nov 14 (Claude 3, waiting for your look). Every part has its own texture (waxy shell, rock knobs, three pebble colors, mossy rock, glowing gem clusters, grainy shield). Each creature now has hand-built versions and the game picks one per creature, plus a slightly different size: beetles 4 each (horn curved / bent / broken / forked, gems amber / teal / violet, more or less moss), bats 4 colors (+ torn ears), snails 3 colors. Co-op friends see the same individual. *From: you. Said: 1×*

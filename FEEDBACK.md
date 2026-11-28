@@ -101,7 +101,7 @@ Fixed items get ~~crossed out~~, never deleted, so we can see the whole history.
 ## Open (still to do)
 
 **Nov 28 play test:**
-- [ ] **F944. The level-up sound is too arcade-like. Change it.** (Same family as F934, skill-up sounds.) *From: you (PC, Nov 28, play test). Said: 1×* (Nov 28: round 13 all NO) 🛠 in progress (Nov 28 play test fixes, Nov 28): round 14 page open, waiting for your picks
+- [ ] **F944. The level-up sound is too arcade-like. Change it.** (Same family as F934, skill-up sounds.) *From: you (PC, Nov 28, play test). Said: 1×* (Nov 28: round 13 all NO) (Nov 28: round 14 all NO too: earthy and metal both miss) 🛠 in progress (Nov 28 play test fixes, Nov 28): asking you which new direction to try
 
 **Nov 28 play test 2 (owner, while playing):**
 - **Nov 28 play test 2, flying over the map (owner): talk these through first ("brainstorm and discuss before changing the cave system"), after the other Nov 28 items.**
@@ -114,7 +114,6 @@ Fixed items get ~~crossed out~~, never deleted, so we can see the whole history.
 - [ ] **F974. Idea: put the first dungeon (the one we made first) in the first cave, as a tutorial dungeon.** *From: you (PC, Nov 28, play test 2, flying over the map). Said: 1×*
 
 **Nov 27 play session (big list):**
-- [ ] **F925. Getting hit by a bat sounds like a 'ding'. It shouldn't.** *From: you (PC, Nov 27, play session). Said: 1×* (Nov 28: round 13 all NO) 🛠 in progress (Nov 28 play test fixes, Nov 28): round 14 page open, waiting for your picks
 - [x] **F805. Sometimes the dwarf keeps sprinting when you are not holding Shift.** *From: you (PC, Nov 23). Said: 1×* **Fixed Nov 23:** `src/main.gd _notification` now releases "run" and "dodge" on `NOTIFICATION_APPLICATION_FOCUS_OUT` even when a menu has the mouse — so any Alt+Tab scenario clears the sprint key.
 - [x] **F809. The two leaves of a double door don't match:** one has the iron bands, the other has none (the same door used twice). Each leaf needs its matching design. *From: you (PC, Nov 23, screenshot of the Twin Gate's big door). Said: 1×* **Fixed Nov 23:** `stonehold_v2.py gate_leaf()` now adds two copper bands to the BACK face (at y=0.6 and y=1.8, embedded in the battens, no rivets on back — passes all model rules). Both leaves of the double gate show copper bands from outside. GLB and icon rebuilt.
 

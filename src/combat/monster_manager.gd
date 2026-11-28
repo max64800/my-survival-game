@@ -1189,7 +1189,10 @@ func _judge_incoming() -> void:
 		match result.result:
 			"parry": _parry_feel(m, dwarf)
 			"block": Sfx.ui("block_thud", -4.0)  # a normal block: a dull thud (F870); a perfect parry rings
-			"hit": Sfx.ui(you_hit_sound(m.kind if m else "", result.damage), -2.0)
+			"hit":
+				var snd := you_hit_sound(m.kind if m else "", result.damage)
+				if snd != "":
+					Sfx.ui(snd, -2.0)  # a beast's bite: only the dwarf's "oof" (F925)
 		defended.emit(result)
 		if result.result == "parry":
 			ask_parried(hit.uid, result.stun)
@@ -1523,10 +1526,11 @@ const BEASTS := ["cave_bat", "rock_beetle", "great_rock_beetle", "cave_spider", 
 
 ## The sound when a creature's blow lands on YOU. F925 (owner, Nov 27: "getting hit by a bat sounds like a 'ding'"):
 ## the old "hit" is a sword landing, so a bite rang like metal. Beasts now land with a soft body hit
-## ("bitten", sound round 12; the mace's dull knock until it is picked); armed creatures keep the weapon sounds.
+## Rounds 12-14 found no bite the owner liked; Nov 28 the owner chose the dwarf's own "oof" (the `hurt` grunt that
+## every hit already plays), so a beast's bite adds no sound on top. Armed creatures keep the weapon sounds.
 static func you_hit_sound(kind: String, damage: float) -> String:
 	if kind in BEASTS:
-		return Sfx.pick("bitten", "hit_blunt")
+		return ""
 	return "hit_heavy" if damage >= 15 else "hit"
 
 

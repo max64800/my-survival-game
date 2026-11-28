@@ -101,8 +101,8 @@ func test_round_6_and_7_sounds() -> void:
 func test_bites_cooking_and_skill_ups_have_their_own_sounds() -> void:
 	for kind: String in ["cave_bat", "cave_spider", "rock_beetle"]:
 		var s := MonsterManager.you_hit_sound(kind, 6.0)
-		check(s != "hit" and s != "hit_heavy", "%s bites with a body hit, not a sword (%s)" % [kind, s])
-		check(Sfx.has(s), "%s: its bite sound exists" % kind)
+		check_eq(s, "", "%s's bite adds no ring, only the dwarf's 'oof' (F925, owner Nov 28)" % kind)
+	check(Sfx._variants("hurt").size() >= 1, "the dwarf's 'oof' that every hit plays exists")
 	check_eq(MonsterManager.you_hit_sound("lost_miner", 6.0), "hit", "an armed skeleton still lands a weapon hit")
 	check_eq(MonsterManager.you_hit_sound("ghost_lord", 20.0), "hit_heavy", "a big armed blow is heavy")
 	check(GameAuthority.craft_sound_name("campfire") != "craft" or not Sfx.has("cook"), "the campfire sizzles once 'cook' is in")
