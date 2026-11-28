@@ -209,6 +209,21 @@ RUINS = {
 		"out_pool": ["rubble_brick", "beam_snapped", "rags", "shield_wood", "spear_broken", "bones", "crate_stack",
 			"keg", "helmet", "armour_pile", "torch_dropped", "sword_snapped"],
 	},
+	"minehead_ruin": {
+		"seed": 899,
+		"yard": False,
+		"props": True,
+		"out_reach": 30.0,
+		"camp_reach": 30.0,
+		"out_want": (4, 6),
+		"out_box": [(-22.0, 7.0, 4.0, 13.0)],   # (RuinMinehead.carve_points: the yard in front of the terrace, at its ground)
+		"paths": [[(1.0, 8.0), (1.0, 13.0)], [(-12.0, 6.0), (-12.0, 13.0)], [(-22.0, 2.0), (-22.0, 10.0)]],
+		"keep": [(-17.0, 9.5), (-6.5, 9.5), (-20.0, 10.0), (0.0, 10.0), (-3.0, 11.0)],
+		"pool": ["tools", "ore_basket", "timber_stack", "rubble_wood", "scrap", "lantern", "rags", "bones",
+			"furn_bucket_metal", "furn_bucket_wood", "crate_stack", "keg", "torch_dropped", "meal", "beam_snapped"],
+		"out_pool": ["tools", "ore_basket", "timber_stack", "rubble_wood", "beam_snapped", "scrap", "rags", "bones",
+			"crate_stack", "furn_bucket_wood", "torch_dropped"],
+	},
 }
 REPEAT = {"candles", "meal", "cookpot_tipped"}   # (owner: one of each kind per room; candles and pots may repeat)
 
@@ -328,6 +343,14 @@ DECOR = {
 		A("mg_helmet_pegs", "wall", up=1.2), A("map_torn_wall", "wall", up=1.2, hi=3.5), A("hs_spear_rack", "wall"),
 		A("war_drum_split", "mid"), A("hs_fallen_shield_wall", "mid"), A("mg_spear_rack_fallen", "mid"),
 		A("lw_cart_jammed", "ground"),
+	],
+	# An old mine's top (its plan has ore carts, rails, baskets, a sorting table): miners' things, lamp and rope racks,
+	# pit props, a broken ore crusher and a derailed cart, a coal pile and a lamp barrow outside.
+	"minehead_ruin": [
+		A("mp_lamp_shelf", "wall"), A("mp_rope_rack", "wall"), A("mp_prop_rack", "wall"), A("mg_tool_chest", "wall"),
+		A("ore_sample_shelf", "wall"), A("op_hat_on_pick", "wall"), A("lw_lamp_rack_wall", "wall", up=1.0),
+		A("crossed_pickaxes", "wall", up=1.5), A("ore_crusher_broken", "mid"), A("hw_derailed_cart", "mid"),
+		A("lw_lamp_fallen_spill", "mid"), A("coal_pile_shovel", "ground"), A("lw_lamp_barrow", "ground"),
 	],
 	# (the Kiln House on its lump, the Rock Shrine on the high shelf: x0, x1, z0, z1 in its box)
 	# A town round a rock column: house things in the four houses and the Ring Hall, pots and moulds in the Kiln House,
