@@ -15343,3 +15343,24 @@ a natural rock column this big may be rare (grow one, or a thinner pillar).
   7 Days to Die does it: cities are put into the world while it loads, so nothing is built when you walk up.
   The next step is to carve ruin rooms into the rock while the cave is made.
 - Not ours: `test_authority.test_needs_pickaxe_selected` fails (a sword still "hits" rock), and that code wasn't touched here.
+
+
+## 2026-11-28 — Bare dwarf body fixes (F943)
+
+**What we did**
+- Shirt now covers the shoulders next to the neck (new neck hole shape and a small collar lip).
+- Wrist: the hand piece now copies the forearm's shading, so there is no line where they meet.
+- Toes: rounder joins and a soft cut between the toes.
+- Beard braids stay on the chest when he runs; only the ends swing (hair_swing.gd "loose" part per braid joint).
+- Bare-dwarf page: a "4× slow" button under Move (Version 4).
+- After the owner's next 3 pictures: removed the muscle lump behind the neck (smaller, lower trapezius tube), lowered the collar with a neck base, and made him stand straighter (chest leans back 10°, `set_stand_tall` in dwarf_proportions.gd, `BODY_STAND_TALL` in dwarf_rig.gd).
+- Rebuilt the body and all 5 armours (hide, copper, bronze, copper plate, bronze plate). The armour-fit test passes.
+
+**Mistakes and hurdles**
+- The wrist line stayed because the hand and the forearm are two separate meshes. Copying the nearest single shading point gave blotches; averaging the 8 nearest points fixed it.
+- I first put the stand-tall lean into DwarfWeight, which is switched off in the game, so nothing changed. I moved it to DwarfProportions, which is always on.
+- Leaning the chest back while tipping the head forward pushed the chin beard into the shirt. Tipping the head back a little with the chest (share -0.6) fixed it.
+- The quick Blender build only makes pictures, not a model, so in-game shots need the full build.
+- One armour rebuild ran past the 10-minute limit; it finished fine in the background.
+- The braid back-hair test fails (tip moves 14 cm, limit 10). I checked it with the old body, the old hair code and with no lean: it still fails, so it was already broken before this work. The stun, camera-slide and aim tests fail in parts other chats are changing. The fist test gives different numbers each run.
+- The neck skin is still mostly hidden by hair and beard after 2 tries, so the owner checks it next.
