@@ -79,6 +79,7 @@ const BOXES := {
 	"dungeon/floor_grooved.glb": [[Vector3(0, 0.12, 0), Vector3(2, 0.24, 2)]],
 	"dungeon/trap_tripwire_wall.glb": [[Vector3(0, 1, 0), Vector3(2, 2, 0.29)]],
 	"dungeon/trap_tripwire_wall_stone.glb": [[Vector3(0, 1, 0), Vector3(2, 2, 0.29)]],
+	"dungeon/trap_crossbow_wall_stone.glb": [[Vector3(0, 1, 0), Vector3(2, 2, 0.29)]],  # (Brassgate's guard slot)
 	"dungeon/tripwire.glb": [[Vector3(0, 0.12, 0), Vector3(1, 0.08, 0.1)]],  # (stretched to the tunnel's width; hit it to cut it)
 	"dungeon/tripwire_iron.glb": [[Vector3(0, 0.12, 0), Vector3(1, 0.08, 0.1)]],
 	"dungeon/trap_bear_jaws.glb": [[Vector3(0, 0.02, 0), Vector3(0.8, 0.04, 0.5)]],  # (low: you walk onto it)
@@ -95,6 +96,7 @@ const BOXES := {
 	"dungeon/recipe_stand.glb": [[Vector3(0, 0.48, 0), Vector3(0.7, 0.97, 0.62)]],
 	"dungeon/recipe_stand_stone.glb": [[Vector3(0, 0.48, 0), Vector3(0.62, 0.97, 0.5)]],  # (Hald's, F856)
 	"dungeon/trap_push_wall.glb": [[Vector3(0, 1, 0), Vector3(2, 2, 0.29)]],
+	"dungeon/trap_push_wall_stone.glb": [[Vector3(0, 1, 0), Vector3(2, 2, 0.29)]],  # (Brassgate, F975)
 	# Mossprop Workings: the old prop frame's two posts and cap (you walk between the posts); the rope slide's two posts
 	# (top on the deck, bottom 10.24 m down and 18.9 m out in Base Camp; the rope itself has no body).
 	"dungeon/prop_old.glb": [[Vector3(-0.8, 1.35, 0), Vector3(0.3, 2.7, 0.3)], [Vector3(0.8, 1.45, 0), Vector3(0.3, 2.6, 0.3)],

@@ -26,6 +26,13 @@
 #                           bolt as dungeon_mine.trap_tripwire_wall, so the game fires it the same way)
 #   tripwire_iron           its wire (F853): a thin rusty iron wire instead of the white string, same size and halves
 #                           ("wire_l", "wire_r") as dungeon_mine.tripwire
+#   trap_crossbow_wall_stone the Brassgate Vault's tripwire crossbow (F975 step 3, owner Nov 28): a Stonehold wall with
+#                           a low wide guard slot cut through one course, dark behind, an iron-framed crossbow in it
+#                           (wooden stock, iron bow, string) and an iron bolt on it. Parts "frame" and "bolt" (the
+#                           bolt lies on the game's MineTraps.DART_HOLE line, so the game fires it like the dart wall)
+#   trap_push_wall_stone    the Brassgate Vault's push wall (F975 step 3): a Stonehold wall with one big ashlar block
+#                           set in a dark gap (the clue), 2 m deep into the rock. Parts "frame" and "block" (the same
+#                           opening as dungeon_pell.trap_push_wall, so the game slams it out the same way)
 import math
 import sys
 from pathlib import Path
@@ -443,6 +450,81 @@ def tripwire_iron():
 	return groups
 
 
+
+# ---------------------------------------------------------------- the Brassgate Vault's crossbow and push wall (F975)
+def _cut_courses(w, h, d, x0, x1, keep):
+	"""Stone courses with a rectangular opening x0..x1 through every row that `keep(ya, yb)` picks (rows stay whole
+	stones; the opening's top and bottom follow the rows). Returns the opening (x0, x1, bottom, top) and the new parts.
+	The dark backing sheet is cut 1 cm wider than the stones (no shimmer on the cut faces)."""
+	rows = []
+
+	def hole(ya, yb):
+		if keep(ya, yb):
+			rows.append((ya, yb))
+			return (x0, x1)
+		return None
+	before = set(bpy.data.objects)
+	S.courses(w, h, d, hole=hole, back=False)
+	hb, ht = min(r[0] for r in rows), max(r[1] for r in rows)
+	S.backing(K.Frame(oz=0.0), -w / 2 + E, w / 2 - E, E, h - E, d, hole=(x0 - 0.01, x1 + 0.01, hb - 0.01, ht + 0.01))
+	made = [o for o in bpy.data.objects if o not in before and o.type == "MESH"]
+	for o in made:
+		if o.get("role") is None:
+			o["role"] = "mortar"
+	return (x0, x1, hb, ht), made
+
+
+def trap_crossbow_wall_stone(w=2.0, h=2.0, d=0.3):
+	"""Owner, Nov 28 (F975): "a thin wire across a hall; touching it fires a bolt from the wall". A guard slot (one
+	course cut out, 0.5 m wide) at the dart hole's height, a dark hollow behind it, a crossbow in it aimed out."""
+	hx, hy = DART_HOLE
+	(x0, x1, hb, ht), made = _cut_courses(w, h, d, hx - 0.25, hx + 0.25, lambda ya, yb: ya < hy < yb)
+	back = -d / 2 + E
+	# the dark hollow behind the slot (the guard's room), its front 4 mm inside the stones' backs
+	K.blk((hx, (hb + ht) / 2, back - 0.13 + 0.004), (x1 - x0 + 0.06, ht - hb + 0.06, 0.26), kit.mat("charcoal", -0.6), bevel=0.0)
+	# the crossbow: a wooden stock on two iron cradles, its iron bow across near the front, the string drawn back
+	wood = kit.tex_mat("wood", "dark")
+	stock_y = hy - 0.035
+	K.blk((hx, stock_y, back + 0.07), (0.05, 0.045, 0.24), wood, bevel=0.006)            # (its back in the hollow)
+	for zz in (back + 0.02, back + 0.14):                                                  # cradles down to the slot's floor
+		K.blk((hx, (hb + stock_y - 0.022) / 2, zz), (0.07, stock_y - 0.022 - hb + 0.004, 0.025), iron(), bevel=0.003)
+	bz = back + 0.185
+	for sgn in (-1, 1):   # the bow: two iron arms swept back from the stock's nose
+		bar((hx, stock_y, bz), (hx + sgn * 0.2, stock_y, bz - 0.05), 0.016, iron(), deep=0.012)
+		bar((hx + sgn * 0.2, stock_y, bz - 0.05), (hx, stock_y + 0.006, back + 0.03), 0.004, kit.mat("bone", -0.35), bevel=0.0)
+	frame = {o.name for o in bpy.data.objects if o.type == "MESH"}
+	# the bolt on the stock, its iron head just inside the slot (a plain iron crossbow bolt, no poison)
+	b0 = meshes()
+	L = 0.32
+	tip_z = d / 2 - E - 0.03
+	kit.cylinder(0.008, L, K.G((hx, hy, tip_z - 0.05 - L / 2)), kit.tex_mat("wood", "c"), rot=(90, 0, 0), verts=8, bevel=0.0)
+	kit.cone(0.014, 0.002, 0.06, K.G((hx, hy, tip_z - 0.03)), iron("a"), rot=(90, 0, 0), verts=8, bevel=0.0)
+	for fw, fh in ((0.05, 0.004), (0.004, 0.05)):   # two stiff crossed fins at its back
+		K.blk((hx, hy, tip_z - 0.05 - L + 0.05), (fw, fh, 0.07), kit.mat("bone", 0.0), bevel=0.0)
+	return {"frame": frame, "bolt": meshes() - b0}
+
+
+PUSH_HOLE = (0.69, 0.23, 1.52)   # = dungeon_pell.PUSH_HOLE (half width, bottom, top), so MineTraps fits it
+PUSH_DEPTH = 2.0                 # = dungeon_pell.PUSH_DEPTH: it slams out 1.8 m, its back stays in the rock
+
+
+def trap_push_wall_stone(w=2.0, h=2.0, d=0.3):
+	"""The stone twin of dungeon_pell.trap_push_wall: the rows round a 1.4 m opening, one huge ashlar block in it with
+	a dark finger-wide gap all round (the only clue: owner, Nov 20, no scrape marks), 2 m deep into the rock."""
+	hw, b0, b1 = PUSH_HOLE
+	(x0, x1, hb, ht), made = _cut_courses(w, h, d, -hw, hw, lambda ya, yb: yb > b0 + 0.05 and ya < b1 - 0.05)
+	front = d / 2 - E
+	for sgn in (-1, 1):   # dark runners down the opening's sides, set back (what the block slides on)
+		K.blk((sgn * (hw - 0.012), (hb + ht) / 2, -0.35), (0.024, ht - hb - 0.004, 0.6), kit.mat("charcoal", -0.6), bevel=0.002)
+	frame = {o.name for o in bpy.data.objects if o.type == "MESH"}
+	b4 = meshes()
+	g = 0.022   # the gap round it
+	core = S.block((0.0, (hb + ht) / 2, front - 0.01 - PUSH_DEPTH / 2), (2 * hw - 2 * g, ht - hb - 2 * g, PUSH_DEPTH - 0.02),
+		cut=0.05, tilt=0.0, dent=0.02, free="")
+	core["role"] = "stone"
+	return {"frame": frame, "block": meshes() - b4}
+
+
 def save(name, groups=None):
 	"""Apply modifiers, join each group into one named part (or everything into "model"), export .glb."""
 	objs = [o for o in bpy.data.objects if o.type == "MESH"]
@@ -490,7 +572,8 @@ def save(name, groups=None):
 BUILDS = {"entrance_stone": entrance_stone, "gate_iron": gate_iron, "lever_iron": lever_iron,
 	"wall_cracked_stone": wall_cracked_stone, "trap_chest_spikes_stone": trap_chest_spikes_stone,
 	"floor_loose_flagstone": floor_loose_flagstone, "recipe_stand_stone": recipe_stand_stone,
-	"trap_tripwire_wall_stone": trap_tripwire_wall_stone, "tripwire_iron": tripwire_iron}
+	"trap_tripwire_wall_stone": trap_tripwire_wall_stone, "tripwire_iron": tripwire_iron,
+	"trap_crossbow_wall_stone": trap_crossbow_wall_stone, "trap_push_wall_stone": trap_push_wall_stone}
 
 if __name__ == "__main__":
 	for name, fn in BUILDS.items():

@@ -747,6 +747,9 @@ func start_game(p_seed: int, snap: Dictionary = {}, save: Dictionary = {}) -> vo
 		# The Smeltery Terraces (owner, Nov 25, F845), the same way. Robots: only with smeltcheck.
 		if not dungeon_test and (not _robot_run or OS.get_cmdline_user_args().has("smeltcheck")):
 			authority.world_state["smeltery"] = "pending"
+		# Brickcrown Keep (owner, Nov 25, F895), the same way. Robots: only with brickcheck.
+		if not dungeon_test and (not _robot_run or OS.get_cmdline_user_args().has("brickcheck")):
+			authority.world_state["brickcrown"] = "pending"
 		# The Mine-head Works (owner, Nov 25, F899), the same way. Robots: only with minecheck.
 		if not dungeon_test and (not _robot_run or OS.get_cmdline_user_args().has("minecheck")):
 			authority.world_state["minehead"] = "pending"
@@ -776,6 +779,8 @@ func start_game(p_seed: int, snap: Dictionary = {}, save: Dictionary = {}) -> vo
 		authority.add_child(RuinTwinGate.new(authority))
 	if authority.is_host() and authority.world_state.has("smeltery"):
 		authority.add_child(RuinSmeltery.new(authority))
+	if authority.is_host() and authority.world_state.has("brickcrown"):
+		authority.add_child(RuinBrickcrown.new(authority))
 	if authority.is_host() and authority.world_state.has("minehead"):
 		authority.add_child(RuinMinehead.new(authority))
 	if authority.is_host() and authority.world_state.has("cliff_galleries"):
@@ -812,6 +817,9 @@ func start_game(p_seed: int, snap: Dictionary = {}, save: Dictionary = {}) -> vo
 	dwarf.fight.message.connect(func(t: String, _c: Color): hud.show_toast(t, 1.5))
 	authority.monsters.defended.connect(_on_defended)
 	authority.hud_message.connect(func(t: String): hud.show_toast(t, 3.0))
+	authority.lantern_refilled.connect(func(id: String, added: float, fuel: float) -> void:  # F953/F954: on the left
+		if hud.pickup_feed:
+			hud.pickup_feed.lantern_refilled(id, added, fuel))
 	authority.learned_recipe.connect(func(r: String): hud.learned_cards.show_recipe(r))
 	authority.learned_blueprint.connect(func(w: String, page: String, why: String): hud.learned_cards.show_blueprint(w, page, why))
 	hud.peer_id = me
@@ -826,9 +834,6 @@ func start_game(p_seed: int, snap: Dictionary = {}, save: Dictionary = {}) -> vo
 func _spawn_dwarf(peer_id: int, pos: Vector3, local: bool) -> Dwarf:
 	var d := Dwarf.new()
 	d.name = "Dwarf_%d" % peer_id
-	authority.lantern_refilled.connect(func(id: String, added: float, fuel: float) -> void:  # F953/F954: on the left
-		if hud.pickup_feed:
-			hud.pickup_feed.lantern_refilled(id, added, fuel))
 	d.peer_id = peer_id
 	d.is_local = local
 	d.color_index = player_slots.get(peer_id, 0)
@@ -998,13 +1003,13 @@ func _process(delta: float) -> void:
 			save_now("Autosaved")
 	if world == null or _ready_to_play:
 		return
+	if not is_instance_valid(dwarf):
+		return  # F417: no dwarf yet (or it is gone): this line once failed 2219 times in a row
 	var p := dwarf.global_position
 	var area := AABB(p - Vector3(6, 6, 6), Vector3(12, 12, 12))
 	# Loading bar: how much of the ground around you is ready (rings from 2 m out to 6 m).
 	var rings_ready := 0
 	for r in [2.0, 3.0, 4.0, 5.0, 6.0]:
-	if not is_instance_valid(dwarf):
-		return  # F417: no dwarf yet (or it is gone): this line once failed 2219 times in a row
 		if world.terrain.is_area_meshed(AABB(p - Vector3.ONE * r, Vector3.ONE * r * 2.0)):
 			rings_ready += 1
 	hud.set_loading_progress(0.15 + 0.85 * rings_ready / 5.0)
@@ -1042,16 +1047,16 @@ func save_now(note: String = "Saved") -> void:
 		if dungeon_test and hud and note == "Saved":
 			hud.show_toast("Test world: never saved", 2.0)
 		return
-	var err := SaveGame.save(self)
-	if hud:
-		hud.show_toast(note if err == "" else "Save failed: " + err, 2.0)
-
-
 	# F417: a big ruin builds a little each frame. A save (F5, quitting) first finishes it, so no save holds half a
 	# ruin that would be built again on top when the world loads.
 	for ruin in get_tree().get_nodes_in_group(RuinTower.BUILDING_GROUP):
 		while is_instance_valid(ruin) and ruin.is_in_group(RuinTower.BUILDING_GROUP):
 			ruin._process(0.0)
+	var err := SaveGame.save(self)
+	if hud:
+		hud.show_toast(note if err == "" else "Save failed: " + err, 2.0)
+
+
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_WM_CLOSE_REQUEST and _ready_to_play:
 		save_now()  # saving when you quit (spec 5.11)
@@ -1239,6 +1244,11 @@ func _unhandled_input(event: InputEvent) -> void:
 			var box: Dictionary = authority.storage.get_box(bid)
 			if not box.is_empty() and is_instance_valid(box.node):
 				ChestOpen.open(box.node)
+				var dbi := DungeonBuild.instance  # (F975: Brassgate's treasury chests stab whoever opens them unshot)
+				if dbi and is_instance_valid(dbi) and dbi.mine:
+					var sp := dbi.mine.open_spikes_near((box.node as Node3D).global_position)
+					if sp >= 0:
+						dbi.ask_use(sp)
 			hud.open_box(bid)
 			Controls.set_captured(false)
 			return

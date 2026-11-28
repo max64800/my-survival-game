@@ -24,7 +24,7 @@ CAVE_Z = MOUTH_Z + 4.0  # the round door at the end of the way in (DungeonMap.FA
 GAP = 0.5               # DungeonMap.GAP: the rock stands this far behind the wall lines
 rng = random.Random(7021)
 
-NOT_ROOMS = set()   # (no pits here yet)
+NOT_ROOMS = {"chute_pit"}   # spaces that are no floor cells of their own (the Coin Chute's spike pit)
 GROUP = {"mint_a": "mint_stair", "mint_b": "mint_stair", "mint_c": "mint_stair", "mint_foot": "mint_stair",
 	"back_a": "back_stair", "back_b": "back_stair", "back_c": "back_stair", "back_foot": "back_stair"}
 NATURAL = {"mint_stair", "back_stair"}   # rock overhead (no stone ceiling): the stairs
@@ -125,7 +125,8 @@ def top_at(key):
 # grooved floor under the coin presses (the crushers) in the Workers' Hall.
 SPECIAL_FLOOR = {(54, 48, 1): "floor_loose_flagstone"}
 GROOVED = {(56, 20, 2), (58, 20, 2)}
-FAKE_FLOOR = set()   # (the Coin Chute's push wall and spikes: step 3)
+# The Coin Chute's north half is open: the chute the coins slid down, 4 m onto spikes (falling in kills).
+CHUTE = {(x, 14, 2) for x in (44, 46, 48)}
 holes = set()   # the cells whose ceiling fell in
 for key, g in cells.items():
 	if key in NO_PIECES:
@@ -135,6 +136,8 @@ for key, g in cells.items():
 	if key in STAIRS:
 		bottom, rot = STAIRS[key]
 		piece("stairs", cx, bottom, cz, rot)
+	elif key in CHUTE:
+		pass
 	elif key in GROOVED:
 		prop("dungeon/floor_grooved.glb", cx, fy, cz, 90.0, role="trap", label="Grooves (the coin presses land here)" if x == 56 else "")
 	elif key in SPECIAL_FLOOR:
@@ -197,8 +200,11 @@ def wall_piece(x, y, z, rot, yaw, top_row):
 		piece("wall", x, y, z, rot)
 
 
-# The dart wall: the Guard Corridor's west wall at z 34-36 (a tripwire runs across the corridor from its hole).
+# The dart wall: the Guard Corridor's west wall at z 34-36 (a tripwire runs across the corridor from its hole): a
+# crossbow in a guard slot. The push walls: the Coin Chute's south wall over the chute (x 44-50): a block slams out
+# and shoves you north into it. (Set one off and jump back, then slip past while it slides home.)
 DART = {("guard_corridor", "w", 38, 35.0)}
+PUSH = {("coin_chute", "s", 18, x) for x in (45.0, 47.0, 49.0)}
 torch_every = {}
 for g, side, line, along, rot, key in rock_edges:
 	x, z = wall_pos(rot, line, along)
@@ -211,7 +217,10 @@ for g, side, line, along, rot, key in rock_edges:
 	for r in range(rows):
 		y = fy + 2.0 * r
 		if r == 0 and (g, side, line, along) in DART:
-			prop("dungeon/trap_tripwire_wall_stone.glb", x, y, z, yaw, role="trap", label="Dart hole (green stain under it)")
+			prop("dungeon/trap_crossbow_wall_stone.glb", x, y, z, yaw, role="trap", label="A guard slot (something glints inside)")
+		elif r == 0 and (g, side, line, along) in PUSH:
+			prop("dungeon/trap_push_wall_stone.glb", x, y, z, yaw, role="trap",
+				label="A gap round a block in the wall" if along == 45.0 else "")
 		else:
 			wall_piece(x, y, z, rot, yaw, r == rows - 1 and rows >= 2)
 	if h % 2:
@@ -220,7 +229,7 @@ for g, side, line, along, rot, key in rock_edges:
 	# "make it darker": was every fourth wall; the game dims Hald's torches too, DungeonMap.HALD torch_energy.)
 	n = torch_every.get(g, 0)
 	torch_every[g] = n + 1
-	if g not in DARK and key not in STAIRS and (g, side, line, along) not in DART and n % 8 == 2:
+	if g not in DARK and key not in STAIRS and (g, side, line, along) not in DART | PUSH and n % 8 == 2:
 		ox, oz = {"w": (0.2, 0), "e": (-0.2, 0), "n": (0, 0.2), "s": (0, -0.2)}[side]
 		prop("decor/furn_wall_torch_iron.glb", x + ox, fy + 1.2, z + oz, yaw, role="light")
 		lights.append([round(x + ox * 3, 2), fy + 2.0, round(z + oz * 3, 2)])
@@ -307,7 +316,7 @@ chest("chest_small", 35.0, 41.0, 90.0, "Toll chest")
 chest("chest_small", 55.0, 49.0, 270.0, "Buried chest (under the loose stone)", True, "buried")
 
 # 8 Guard Corridor: a thin wire across it at ankle height, from the dart hole's sill (west wall) to the east wall:
-# step over it or cut it. (The tripwire crossbow comes in step 3.)
+# step over it or cut it, or the crossbow in the guard slot shoots down the wire.
 prop("dungeon/tripwire_iron.glb", 40.0, 0.24, 34.88, 0.0, role="trap", label="Tripwire (step over it, or cut it)",
 	stretch=round(4.0 - 0.3, 2))
 
@@ -331,7 +340,8 @@ chest("chest_small", 4.6, 21.0, 90.0, "The niche hoard (always): shoot it first"
 
 # 20 Treasury Corridor: two chests set by the walls, each with spike holes round it (shoot it first).
 for cx, tx, z, yaw in [(8.6, 9.0, 27.0, 90.0), (11.4, 11.0, 33.0, 270.0)]:
-	prop("dungeon/trap_chest_spikes_stone.glb", tx, 0.0, z, yaw, role="trap", label="Spike holes round the chest")
+	prop("dungeon/trap_chest_spikes_stone.glb", tx, 0.0, z, yaw, role="trap", label="Spike holes round the chest",
+		on_open=True)   # (F975: open it unshot and the spikes stab you; walking past is safe)
 	chest("chest_small", cx, z, yaw, "Treasury chest: shoot it first", True, "vault", y=0.24)
 
 # 21 Vault Hall: the Vault Captain waits at the back, about 8 m from the door (the Vault Key on him), two miners with him.
@@ -351,6 +361,11 @@ for i, x in enumerate((57.0, 59.0)):
 for x, z, yaw in [(55.0, 14.6, 60.0), (62.0, 15.0, 300.0)]:
 	creature("ghost_c", x, z, yaw, floor=D)
 chest("chest_small", 63.0, 13.0, 270.0, "Workers' chest", y=G)
+
+# 12 Coin Chute: the open chute along its north wall, 4 m down onto spikes (the push walls across it shove you in).
+for x, z, l in sorted(CHUTE):
+	prop("dungeon/trap_spikes.glb", x + 1.0, D - 4.0, z + 1.0, rng.choice([0, 90, 180, 270]), role="trap",
+		label="The coin chute: spikes at the bottom (falling in kills)" if x == 44 else "")
 
 # 13 Captain's Quarters: his bodyguard (a big miner leader and two miners); the portcullis drops behind you.
 creature("vault_guard", 36.0, 18.6, 90.0, floor=D)
@@ -470,7 +485,8 @@ for l in (1, 2):
 
 	def _ok(j):   # (no junk on a stair or past a room's edge)
 		x, z = j["pos"][0], j["pos"][2]
-		return (*junk.cell_of(x, z), l) in cells and (*junk.cell_of(x, z), l) not in STAIRS
+		k = (*junk.cell_of(x, z), l)
+		return k in cells and k not in STAIRS and k not in CHUTE
 	props += [j for j in _new if _ok(j)]
 
 # --- Write it out. ---

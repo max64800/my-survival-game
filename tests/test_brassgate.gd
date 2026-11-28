@@ -224,3 +224,108 @@ func test_the_captain_lowers_his_shield() -> void:
 	m.state = Monster.State.RECOVER
 	check(not mgr._shield_blocks(m, front, false), "it is down while he gets his breath back (the host's word)")
 	r.root.free()
+
+
+func _all(db: DungeonBuild, kind: String) -> Array:
+	return db.things.keys().filter(func(id): return db.things[id].kind == kind)
+
+
+## Step 3 (owner, F975): the Guard Corridor's thin wire fires a crossbow from a guard slot in the west wall: a heavy
+## bolt (no poison, unlike the old dart walls).
+func test_the_tripwire_fires_the_crossbow() -> void:
+	var r := _rig()
+	var db: DungeonBuild = r.db
+	var d: Dictionary = r.d
+	var wires := _all(db, "tripwire")
+	check_eq(wires.size(), 1, "one tripwire (the Guard Corridor)")
+	if wires.is_empty():
+		r.root.free()
+		return
+	var wire: int = wires[0]
+	var bow: int = db.mine._dart_of(wire)
+	check(bow >= 0 and MineTraps.is_crossbow(db.things[bow]), "the wire fires the crossbow in the guard slot")
+	if bow < 0:
+		r.root.free()
+		return
+	var player: Node3D = r.player
+	player.global_position = DungeonMap.to_world(d, Vector3(40.0, 0.24, 34.88))  # walking down the corridor
+	var hp0: float = r.ps.vitals.health
+	db.mine.host_check(r.auth, 1, player.global_position, 0.1)
+	check(db.is_broken(wire), "walked into: the wire snaps")
+	check(db.is_broken(bow), "and the crossbow shoots")
+	var lost: float = hp0 - r.ps.vitals.health
+	check(absf(lost - MineTraps.CROSSBOW_DAMAGE) < 0.5, "a heavy bolt hits you (%.0f lost)" % lost)
+	r.root.free()
+
+
+## Step 3: the Treasury Corridor's two chests stand on spike holes. Walking past is safe; opening one unshot stabs you;
+## shoot it first and the spikes go off harmlessly.
+func test_the_treasury_chests_stab_when_opened() -> void:
+	var r := _rig()
+	var db: DungeonBuild = r.db
+	var ps: GameAuthority.PlayerState = r.ps
+	var traps: Array = _all(db, "chest_spikes").filter(func(id): return MineTraps.fires_on_open(db.things[id]))
+	check_eq(traps.size(), 2, "two treasury chests on spike holes")
+	if traps.size() < 2:
+		r.root.free()
+		return
+	var id: int = traps[0]
+	var th: Dictionary = db.things[id]
+	var on: Vector3 = (th.xform as Transform3D) * Vector3(0, 0.25, 0.9)
+	(r.player as Node3D).global_position = on
+	var hp0: float = ps.vitals.health
+	for i in 6:
+		db.mine.host_check(r.auth, 1, on, 0.1)
+	check(not db.is_broken(id), "walking over the spike holes: nothing happens")
+	check_eq(db.mine.open_spikes_near(th.centre), id, "opening the chest finds its spikes")
+	db.ask_use(id)  # (what main.gd asks when you open a chest: host -> everyone)
+	check(db.is_broken(id), "opened unshot: the spikes fire")
+	await tree.create_timer(0.3).timeout
+	check(ps.vitals.health < hp0 - 20.0, "and stab you (%.0f -> %.0f)" % [hp0, ps.vitals.health])
+	check_eq(db.mine.open_spikes_near(th.centre), -1, "spent: the chest is safe now")
+	# The other one: shoot it first.
+	var id2: int = traps[1]
+	var th2: Dictionary = db.things[id2]
+	db.request_hit(1, id2, true)
+	check(db.is_broken(id2), "shot: its spikes go off with nobody on them")
+	await tree.create_timer(0.3).timeout
+	check_eq(db.mine.open_spikes_near(th2.centre), -1, "then it is safe to open")
+	r.root.free()
+
+
+## Step 3: the Coin Chute's south wall has three push walls; each slams out and shoves you north into the chute.
+func test_the_push_walls_shove_you_into_the_chute() -> void:
+	var r := _rig()
+	var db: DungeonBuild = r.db
+	var d: Dictionary = r.d
+	var walls := _all(db, "push")
+	check_eq(walls.size(), 3, "three push walls")
+	for id in walls:
+		var th: Dictionary = db.things[id]
+		var t: Transform3D = th.xform
+		check(th.get("block") != null, "it has a block that moves")
+		check_eq(DungeonMap.space_at(d, t.origin + t.basis.z * 0.5 + Vector3.UP), "coin_chute", "in the Coin Chute")
+		var front: Vector3 = t * Vector3(0.0, 0.0, 0.8)
+		db.mine.host_check(r.auth, 1, front, 0.1)
+		check_eq(int(th.pushes), 1, "stepping in front of it fires it")
+		db.mine.host_check(r.auth, 1, front, 0.1)
+		check_eq(int(th.pushes), 1, "it doesn't fire again while it is out")
+		check(MineTraps.in_push(th, front, 1.0), "out, it reaches where you stood")
+		var land := t.origin + t.basis.z * 2.2
+		check_eq(DungeonBuild.deadly_space(d, land + Vector3.DOWN * 3.7), "chute_pit", "its shove sends you down the chute")
+	r.root.free()
+
+
+## Step 3: only the chute's spike pit kills (the map's deadly list); its floor is open, the walkway beside it is not.
+func test_only_the_chute_kills() -> void:
+	var r := _rig()
+	var db: DungeonBuild = r.db
+	var d: Dictionary = r.d
+	check_eq(d.map.deadly, ["chute_pit"], "the spike pit is the only deadly place")
+	for safe in ["coin_chute", "workers_hall", "captains_quarters", "old_mint", "guard_shrine", "treasury_corridor"]:
+		check_eq(DungeonBuild.deadly_space(d, DungeonMap.space_floor(d, safe) + Vector3.UP * 0.3), "", "standing in %s is safe" % safe)
+	check_eq(DungeonBuild.deadly_space(d, DungeonMap.space_floor(d, "chute_pit") + Vector3.UP * 0.3), "chute_pit", "the chute's bottom kills")
+	await tree.physics_frame
+	check(not _blocked(db, DungeonMap.to_world(d, Vector3(47.0, DungeonMap.MINT - 0.1, 15.0))), "no floor over the chute")
+	check(_blocked(db, DungeonMap.to_world(d, Vector3(47.0, DungeonMap.MINT - 0.1, 17.0))), "a stone floor on the walkway beside it")
+	r.root.free()

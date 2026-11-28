@@ -337,9 +337,8 @@ const BRASSGATE := {
 	best = 140.0,
 	chase_out = true,
 	crushers_always = true,  # (the coin press stamps in its rhythm all the time: watch it and run)
-	deadly = ["no_pit_yet"],
+	deadly = ["chute_pit"],
 	no_raising = true,
-	## (deadly: a name no space has, because an empty list makes every room under 0 kill; the Coin Chute spikes are step 3)
 	spaces = [
 		["entry", 38, 62, 42, 70, 0, 3.5],                 # the way in
 		["brass_gate", 36, 54, 44, 62, 0, 5],              # 1 the round door; the barred gate in its west wall (the way out)
@@ -370,7 +369,8 @@ const BRASSGATE := {
 		["old_mint", 52, 28, 64, 40, MINT, 5],             # 10 cold furnaces, coin moulds; Drifting Shades
 		["mint_work", 56, 24, 60, 28, MINT, 3.5],
 		["workers_hall", 52, 12, 64, 24, MINT, 6],         # 11 the coin press (a crusher), Bearded Shades, a chest
-		["coin_chute", 40, 14, 52, 18, MINT, 4],           # 12 where the coins slid down (the push wall comes in step 3)
+		["coin_chute", 40, 14, 52, 18, MINT, 4],           # 12 where the coins slid down: push walls shove you into the chute
+		["chute_pit", 44, 14, 50, 16, MINT - 4.0, 5],     #    (4 m down onto spikes: falling in kills)
 		["captains_quarters", 32, 14, 40, 22, MINT, 5],    # 13 the bodyguard and his pack; the portcullis drops behind you
 		["shrine_door", 34, 12, 38, 14, MINT, 3.5],
 		["guard_shrine", 32, 2, 40, 12, MINT, 4.5],        # 14 the healing basin

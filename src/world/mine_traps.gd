@@ -31,6 +31,7 @@ extends Node
 ##                 or a hit sets it off from afar (use it up: whoever stands in the dart's line is still hit).
 ##   chest_spikes  the vault's spike floor: stand on it a moment (to open the chest) and the spikes slam up. Shoot the
 ##                 chest (or the floor) first: they slam up harmlessly and stay down.
+##                 Brassgate's treasury chests (prop on_open): the spikes fire when you open the chest instead.
 
 const CART_WAIT := 0.6        ## seconds of cracking and rattling after the wedge snaps, before the cart moves
 const CART_ACCEL := 4.0       ## m/s² down the lane (it reaches about 9 m/s at the foot)
@@ -55,9 +56,11 @@ const WIRE_REACH := 0.35      ## m either side of the wire that your feet touch 
 const WIRE_HIGH := 0.45       ## feet higher than this above the wire's foot clear it (a jump)
 const DART_DAMAGE := 18.0
 const DART_POISON := 100.0    ## a full dose: one dart poisons you (owner, Nov 20; Ailments.FULL)
+const CROSSBOW_DAMAGE := 30.0  ## Brassgate's guard-slot crossbow: a heavy bolt, no poison (F975)
 const DART_LINE := 0.6        ## m from the bolt's line that it hits you
 const DART_HOLE := Vector3(0.12, 0.95, 0.15)  ## the hole, in the dart wall model
 const PLATE_REACH := 0.55     ## m from the plate's middle that your feet press it
+const PLATE_COOLDOWN := 8.0   ## F618: seconds before the dart plate and wall reload for another shot
 const SPEAR_CYCLE := 2.6      ## seconds from one stab to the next
 const SPEAR_OUT := 0.15       ## seconds to stab out
 const SPEAR_HOLD := 0.35      ## seconds they stay out
@@ -85,6 +88,7 @@ const SPIKE_DEPTH := 0.62     ## the spikes wait this far down
 const SPIKE_DAMAGE := 30.0
 
 var db: DungeonBuild
+var _plate_cooling := {}  ## F618: host: plate/dart id -> unix time when it rearmed
 var _cart_hit := {}   ## host: "cart id:peer" -> true (a cart hits you once)
 var _swing_hit := {}  ## host: peer -> _clock when a boulder last hit them
 var _swing_mon := {}  ## host: creature uid -> _clock when a boulder last threw it
@@ -109,13 +113,13 @@ static func kind_of(p: Dictionary) -> String:
 			return "jaws"
 		"dungeon/tripwire.glb", "dungeon/tripwire_iron.glb":
 			return "tripwire"
-		"dungeon/trap_tripwire_wall.glb", "dungeon/trap_tripwire_wall_stone.glb":
+		"dungeon/trap_tripwire_wall.glb", "dungeon/trap_tripwire_wall_stone.glb", "dungeon/trap_crossbow_wall_stone.glb":
 			return "dart_wall"
 		"dungeon/trap_chest_spikes.glb", "dungeon/trap_chest_spikes_stone.glb":
 			return "chest_spikes"
 		"dungeon/trap_spear_wall.glb":
 			return "spears"
-		"dungeon/trap_push_wall.glb":
+		"dungeon/trap_push_wall.glb", "dungeon/trap_push_wall_stone.glb":
 			return "push"
 		"dungeon/lift_platform.glb":
 			return "lift" if p.has("travel") else ""
@@ -581,17 +585,26 @@ func _fire_bolt(th: Dictionary) -> void:
 			Fx.burst(db.get_parent(), bolt.global_position, DungeonBuild.WOOD, 6, 1.5))
 
 
-## Host: the wire was walked into: it snaps and the dart fires (whoever is in its line is hit).
-func _trip(wire_id: int, auth: GameAuthority) -> void:
-	db._break(wire_id)
-	_fire_dart(_dart_of(wire_id), auth)
+## Host: the wire was walked into (or the plate stepped on). `rearms=true` for plates (F618: they reload).
+func _trip(wire_id: int, auth: GameAuthority, rearms := false) -> void:
+	if rearms:
+		var now := Time.get_unix_time_from_system()
+		if _plate_cooling.get(wire_id, 0.0) > now:
+			return  # still cooling down
+		_plate_cooling[wire_id] = now + PLATE_COOLDOWN
+	else:
+		db._break(wire_id)
+	_fire_dart(_dart_of(wire_id), auth, rearms)
 
 
 ## Host: dart wall `dart` fires (its tripwire or plate went off): whoever is in its line is hit.
-func _fire_dart(dart: int, auth: GameAuthority) -> void:
+func _fire_dart(dart: int, auth: GameAuthority, rearms := false) -> void:
 	if dart < 0 or db.is_broken(dart):
 		return
-	db._break(dart)
+	if rearms:
+		_plate_cooling[dart] = Time.get_unix_time_from_system() + PLATE_COOLDOWN
+	else:
+		db._break(dart)
 	var line := dart_line(db.things[dart])
 	for pid in auth.players:
 		var node: Node3D = auth.players[pid].node
@@ -601,9 +614,19 @@ func _fire_dart(dart: int, auth: GameAuthority) -> void:
 		var along := (p - (line[0] as Vector3)).dot(line[1])
 		var off := (p - (line[0] as Vector3)) - (line[1] as Vector3) * along
 		if along > 0.0 and along < 4.6 and off.length() < DART_LINE + 0.5:
-			print("MINE: player %d hit by the dart" % pid)
-			auth.hurt(pid, DART_DAMAGE, {poison = DART_POISON})
-			auth.tell(pid, "A poisoned dart shoots out of the wall!")
+			if is_crossbow(db.things[dart]):
+				print("MINE: player %d hit by the crossbow bolt" % pid)
+				auth.hurt(pid, CROSSBOW_DAMAGE)
+				auth.tell(pid, "A crossbow bolt shoots out of the guard slot!")
+			else:
+				print("MINE: player %d hit by the dart" % pid)
+				auth.hurt(pid, DART_DAMAGE, {poison = DART_POISON})
+				auth.tell(pid, "A poisoned dart shoots out of the wall!")
+
+
+## Brassgate's dart wall is a crossbow in a guard slot (a heavy bolt, no poison).
+static func is_crossbow(th: Dictionary) -> bool:
+	return String(th.prop.model).contains("crossbow")
 
 
 # ------------------------------------------------------------------ the vault's spike floor
@@ -626,7 +649,7 @@ func on_spike_floor(th: Dictionary, p: Vector3) -> bool:
 	return absf(q.x) < 1.0 and absf(q.z) < 2.0 and q.y > -0.3 and q.y < 0.9
 
 
-func _fire_spikes(id: int, auth: GameAuthority) -> void:
+func _fire_spikes(id: int, auth: GameAuthority, opener := 0) -> void:
 	if db.is_broken(id):
 		return
 	db._break(id)
@@ -635,7 +658,7 @@ func _fire_spikes(id: int, auth: GameAuthority) -> void:
 	await db.get_tree().create_timer(0.12).timeout
 	for pid in auth.players:
 		var node: Node3D = auth.players[pid].node
-		if node and on_spike_floor(th, node.global_position):
+		if node and (pid == opener or on_spike_floor(th, node.global_position)):
 			auth.hurt(pid, SPIKE_DAMAGE)
 			auth.tell(pid, "Spikes shoot up out of the floor!")
 
@@ -650,6 +673,19 @@ func chest_by(th: Dictionary) -> Node3D:
 		if is_instance_valid(node) and node.global_position.distance_to(th.centre) < 2.5:
 			return node
 	return null
+
+
+## Brassgate's treasury chests (F975): their spikes fire when someone opens the chest (not from standing there).
+static func fires_on_open(th: Dictionary) -> bool:
+	return bool(th.prop.get("on_open", false))
+
+
+## The armed open-to-fire spike floor by a chest at `p` (someone opens it): its id, or -1.
+func open_spikes_near(p: Vector3) -> int:
+	var id := spikes_near(p)
+	if id < 0 or db.is_broken(id) or not fires_on_open(db.things[id]):
+		return -1
+	return id
 
 
 ## The spike floor near a point (a bolt hit the vault's chest): its id, or -1.
@@ -683,14 +719,14 @@ func on_hit(peer_id: int, id: int, by_bolt: bool) -> bool:
 				db._break(id)  # (a bolt cuts it too)
 			"plate":
 				print("MINE: the dart plate set off by a bolt")
-				_trip(id, auth)
+				_trip(id, auth, true)  # F618: plates rearm
 			"jaws":
 				print("MINE: bear jaws sprung by a bolt")
 				db._break(id)  # (they snap shut on nothing)
 		return true
 	if kind == "plate":  # (a hit with a long tool sets it off too)
 		print("MINE: the dart plate set off by a hit")
-		_trip(id, auth)
+		_trip(id, auth, true)  # F618: plates rearm
 		return true
 	if kind == "jaws":  # any hit springs them too
 		print("MINE: bear jaws sprung by a hit")
@@ -726,8 +762,13 @@ func request_use(peer_id: int, id: int) -> bool:
 	var auth := GameAuthority.instance
 	var ps := auth.get_player(peer_id) if auth else null
 	var th: Dictionary = db.things.get(id, {})
-	if th.is_empty() or not String(th.kind) in ["lamp", "jaws", "lift", "lift_call", "slide"]:
+	if th.is_empty() or not String(th.kind) in ["lamp", "jaws", "lift", "lift_call", "slide", "chest_spikes"]:
 		return false
+	if th.kind == "chest_spikes":  # (F975) someone opens a treasury chest without shooting it first: stab!
+		if fires_on_open(th) and not db.is_broken(id) and ps != null 				and ps.node.global_position.distance_to(th.centre) < DungeonBuild.USE_REACH + 2.5:
+			print("MINE: player %d opened a spike chest" % peer_id)
+			_fire_spikes(id, auth, peer_id)
+		return true
 	if th.kind == "slide":  # only from the top post: the host says go, the rider's own game slides them down
 		var t: Transform3D = th.xform
 		if ps != null and ps.node.global_position.distance_to(t.origin) < DungeonBuild.USE_REACH + 2.0:
@@ -786,7 +827,7 @@ func host_check(auth: GameAuthority, pid: int, p: Vector3, step: float) -> void:
 				var c: Vector3 = (th.xform as Transform3D).origin
 				if Vector2(p.x - c.x, p.z - c.z).length() < PLATE_REACH and absf(p.y - c.y) < 0.5:
 					print("MINE: player %d stepped on the dart plate" % pid)
-					_trip(id, auth)
+					_trip(id, auth, true)  # F618: plates rearm
 			"tripwire":
 				var q := (th.xform as Transform3D).affine_inverse() * p
 				if absf(q.x) < 0.5 and absf(q.z) < WIRE_REACH and q.y < WIRE_HIGH and q.y > -0.6:
@@ -799,7 +840,7 @@ func host_check(auth: GameAuthority, pid: int, p: Vector3, step: float) -> void:
 						print("MINE: player %d stepped in front of a push wall" % pid)
 						_ev_push.rpc(id)
 			"chest_spikes":
-				if on_spike_floor(th, p):
+				if not fires_on_open(th) and on_spike_floor(th, p):
 					_on_spikes[id] = float(_on_spikes.get(id, 0.0)) + step
 					if _on_spikes[id] >= SPIKE_STAND:
 						_on_spikes.erase(id)
