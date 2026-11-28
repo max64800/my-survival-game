@@ -234,6 +234,9 @@ Nothing was deleted. Newest fixes go at the top of their group. If a fixed thing
 - [x] ~~**F964. Bat fangs are too hard to get: raise the drop chance.** *From: you (PC, Nov 28, play test 2). Said: 1×*~~ ✅ Fixed Nov 28: bat fang drop chance 40% -> 75%.
 - [x] ~~**F965. Crystal torches belong in the Tools tab.** *From: you (PC, Nov 28, play test 2). Said: 1×*~~ ✅ Fixed Nov 28: Crystal Torch is now in the Tools tab.
 
+- [x] ~~**F952. Killed snails often can't be mined.** Maybe it started while the pickaxe was broken; after repairing it, one dead snail could be mined, the others still not. *From: you (PC, Nov 28, play test 2). Said: 1×*~~ ✅ Fixed Nov 28: the pickaxe now measures its reach to the nearest bit of stone. A dead snail's foot stays where it died while the shell rolls away, and the reach was measured to the middle of both, so a far-rolled shell said "too far" without a word. Loot now drops at the shell.
+- [x] ~~**F959. The mace says it's equipped but isn't in his hands, so block/parry silently fails.** *From: you (PC, Nov 28, play test 2). Said: 1×*~~ ✅ Fixed Nov 28: a weapon or shield you put on now goes straight into your hands (drawn). Right click with empty hands while it is put away says "Your … is put away. Press F to draw it."
+
 ## Done (older)
 
 - [x] ~~**F72. Creatures need variety, like the cave itself.**~~ Done Nov 14 (Claude 3, waiting for your look). Every part has its own texture (waxy shell, rock knobs, three pebble colors, mossy rock, glowing gem clusters, grainy shield). Each creature now has hand-built versions and the game picks one per creature, plus a slightly different size: beetles 4 each (horn curved / bent / broken / forked, gems amber / teal / violet, more or less moss), bats 4 colors (+ torn ears), snails 3 colors. Co-op friends see the same individual. *From: you. Said: 1×*
