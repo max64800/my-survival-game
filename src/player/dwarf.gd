@@ -32,6 +32,12 @@ const AIM_CAMERA := Vector3(0.45, 0.9, 2.0)
 const AIM_UP_RAISE := 0.55
 const AIM_UP_SIDE := 0.4
 const AIM_UP_IN := 0.6
+## F962 (owner, Nov 28, F927 again: "the camera sits in his shoulder... in a tall cave you can't aim high enough"):
+## aiming, the camera arm stops tipping at AIM_ORBIT_MAX (looking further up swung it down behind him, into the floor
+## and his shoulder); only the camera's own view tilts on up, to AIM_PITCH_MAX (about 83°, near straight up).
+const AIM_ORBIT_MAX := 0.5
+const AIM_PITCH_MAX := 1.45
+const PITCH_MAX := 1.1  ## looking up, not aiming
 ## F946 (owner, Nov 28: looking straight up "you see the inside of his belly"): not aiming, the floor behind him
 ## pushed the camera into him. Looking up, its pivot rises and slides out like F927's; if it still ends up this
 ## close (m) to his middle line, he is hidden on your own screen until it moves out again.
@@ -220,7 +226,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventMouseMotion and Controls.captured():
 		var sens := Controls.MOUSE_SENSITIVITY * Controls.mouse_scale
 		_yaw -= event.relative.x * sens
-		_pitch = clampf(_pitch - event.relative.y * sens, -1.35, 1.1)
+		_pitch = clampf(_pitch - event.relative.y * sens, -1.35, AIM_PITCH_MAX if _aim_t > 0.5 else PITCH_MAX)
 	var auth := GameAuthority.instance
 	if auth == null:
 		return
@@ -549,7 +555,10 @@ func _process(delta: float) -> void:
 	# his right shoulder, so the crosshair sits just past it. Letting go slides back to the normal camera.
 	_aim_t = move_toward(_aim_t, 1.0 if fight and fight.aiming() else 0.0, delta * 6.0)
 	var aim_k := smoothstep(0.0, 1.0, _aim_t)
-	var aim_up := aim_k * smoothstep(0.15, 1.0, _pitch)  # (F927: aiming AND looking up)
+	if _aim_t < 0.5 and _pitch > PITCH_MAX:  # (F962: let go while looking right up: ease back to the normal limit)
+		_pitch = move_toward(_pitch, PITCH_MAX, delta * 2.0)
+	var orbit := lerpf(_pitch, minf(_pitch, AIM_ORBIT_MAX), aim_k)  # how far the camera arm itself tips (F962)
+	var aim_up := aim_k * smoothstep(0.15, 1.0, minf(_pitch, PITCH_MAX))  # (F927: aiming AND looking up)
 	var look_up := (1.0 - aim_k) * smoothstep(0.3, 1.1, _pitch)  # (F946: looking up, not aiming)
 	var want_y := global_position.y + lerpf(SHOULDER.y, AIM_CAMERA.y, aim_k) + AIM_UP_RAISE * aim_up 		+ LOOK_UP_RAISE * look_up
 	if is_nan(_cam_y) or absf(_cam_y - want_y) > 2.0:
@@ -564,7 +573,8 @@ func _process(delta: float) -> void:
 		_cam_tick = tick
 	_cam_yaw.global_position = Vector3(global_position.x, _cam_y, global_position.z)
 	_cam_yaw.rotation.y = _yaw
-	_cam_pitch.rotation.x = _pitch
+	_cam_pitch.rotation.x = orbit
+	camera.rotation.x = _pitch - orbit  # (the view tilts on past the arm, F962)
 	var side := CameraRoom.best_side(_spring, lerpf(lerpf(0.08, SHOULDER.x, near), AIM_CAMERA.x, aim_k) + AIM_UP_SIDE * aim_up 		+ LOOK_UP_SIDE * look_up, [get_rid()])
 	_cam_side = side if side < _cam_side else lerpf(_cam_side, side, minf(1.0, delta * DwarfFeel.CAM_RETURN_SPEED))
 	_spring.position = Vector3(_cam_side, 0, 0)
@@ -574,7 +584,8 @@ func _process(delta: float) -> void:
 		tilt = lerpf(1.0, DwarfFeel.CAM_LOOK_DOWN_STRETCH, smoothstep(0.0, 1.35, -_pitch))
 	else:
 		tilt = lerpf(1.0, DwarfFeel.CAM_LOOK_UP_SQUEEZE, smoothstep(0.0, 1.1, _pitch))
-	var want_len := lerpf(_zoom * tilt, AIM_CAMERA.z - AIM_UP_IN * aim_up, aim_k)
+	var aim_in := AIM_UP_IN * aim_up * (1.0 - smoothstep(1.0, AIM_PITCH_MAX, _pitch))  # (F962: steeper, the arm no longer tips, so it can stay back)
+	var want_len := lerpf(_zoom * tilt, AIM_CAMERA.z - aim_in, aim_k)
 	_spring.spring_length = lerpf(_spring.spring_length, want_len, minf(1.0, delta * 10.0))  # smooth zoom
 	_place_camera(delta)
 	_kill_push_step(delta)

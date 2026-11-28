@@ -48,6 +48,16 @@ func _run() -> void:
 		await _wait(1.0)
 		await _shot("zoom_%.1f_aiming" % zoom)
 		Input.action_release("use")
+	# F962: aiming up at bats near a tall cave's roof (the camera stays behind him, the view tilts right up).
+	dwarf._zoom = Dwarf.CAMERA_DISTANCE
+	Input.action_press("use")
+	for pitch in [0.9, 1.25, Dwarf.AIM_PITCH_MAX]:
+		dwarf._pitch = pitch
+		await _wait(1.0)
+		await _shot("aiming_up_%.2f" % pitch)
+	Input.action_release("use")
+	dwarf._pitch = -0.05
+	await _wait(1.0)
 	# The reload bar under the crosshair (owner, Nov 20): halfway through a reload.
 	ps.inventory.add("bolt_stone", 5)
 	dwarf.fight.loaded = false

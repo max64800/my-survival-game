@@ -71,12 +71,17 @@ func test_aiming_looks_past_the_right_shoulder() -> void:
 	check(aimed.y > 0.75 and aimed.y < 1.1, "at shoulder height (the dwarf is about 1.2 m tall) (%.2f m up)" % aimed.y)
 	# F927 (owner, Nov 27): aiming while looking up showed the back of the dwarf. The crosshair line must pass clear
 	# of his body (feet to helmet top), with the camera not pressed against him.
-	for pitch in [0.5, 0.8, 1.1]:
+	# F962 (owner, Nov 28): still too hard, "the camera sits in his shoulder" and "you can't aim high enough": aiming
+	# goes up to near straight up, the crosshair line really points that way, and the camera stays out of him.
+	for pitch in [0.5, 0.8, 1.1, 1.3, Dwarf.AIM_PITCH_MAX]:
 		dwarf._pitch = pitch
 		for i in 60:
 			await tree.physics_frame
 		var clear := _ray_clearance(dwarf)
-		check(clear > 0.45, "looking up %.1f while aiming: the crosshair passes %.2f m clear of him" % [pitch, clear])
+		check(clear > 0.45, "looking up %.2f while aiming: the crosshair passes %.2f m clear of him" % [pitch, clear])
+		var up := asin(clampf(-dwarf.camera.global_basis.z.normalized().y, -1.0, 1.0))
+		check(absf(up - pitch) < 0.03, "the crosshair points %.2f up (wanted %.2f)" % [up, pitch])
+		check(_camera_gap(dwarf) > 0.55, "looking up %.2f while aiming: the camera is %.2f m from his middle" % [pitch, _camera_gap(dwarf)])
 	dwarf._pitch = -0.25
 	for i in 60:
 		await tree.physics_frame
