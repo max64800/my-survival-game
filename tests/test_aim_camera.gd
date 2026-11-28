@@ -88,3 +88,46 @@ func test_aiming_looks_past_the_right_shoulder() -> void:
 	Controls.set_captured(false)
 	Controls.robot = was_robot
 	root.queue_free()
+
+
+## How close the camera itself sits to the dwarf's middle line, feet to helmet top (minus his ~0.3 m body radius).
+func _camera_gap(dwarf: Dwarf) -> float:
+	var c := dwarf.camera.global_position
+	var best := INF
+	for k in 29:
+		best = minf(best, c.distance_to(dwarf.global_position + Vector3.UP * (k * 0.05)))
+	return best
+
+
+## F946 (owner, Nov 28): looking straight up without aiming (picking vines overhead), the camera went inside the
+## dwarf ("you see the inside of his belly"). On a flat floor, at any zoom and looking up, it stays outside him.
+func test_looking_up_never_puts_the_camera_inside_him() -> void:
+	Controls.setup()
+	var root := _room()
+	var auth := GameAuthority.new()
+	auth.drops_root = root
+	root.add_child(auth)
+	var dwarf := Dwarf.new()
+	root.add_child(dwarf)
+	dwarf.global_position = Vector3(0, 0.05, 0)
+	auth.add_player(1, dwarf)
+	var was_robot := Controls.robot
+	Controls.robot = true
+	for zoom in [Dwarf.ZOOM_MIN, Dwarf.CAMERA_DISTANCE, 5.0]:
+		dwarf._zoom = zoom
+		for pitch in [0.6, 0.9, 1.1]:
+			dwarf._pitch = pitch
+			for i in 60:
+				await tree.physics_frame
+			var gap := _camera_gap(dwarf)
+			check(gap > Dwarf.CAM_HIDE_GAP or not dwarf.model.visible,
+				"zoom %.1f, looking up %.1f: the camera is %.2f m from his middle (or he's hidden)" % [zoom, pitch, gap])
+	# The safety net: a camera pressed right against him (a tight tunnel) hides him, and he's back once it's out.
+	dwarf.camera.global_position = dwarf.global_position + Vector3(0.2, 0.7, 0.1)
+	dwarf._hide_if_camera_inside()
+	check(not dwarf.model.visible, "the camera inside him hides him on this screen")
+	dwarf.camera.global_position = dwarf.global_position + Vector3(0, 1.0, 2.0)
+	dwarf._hide_if_camera_inside()
+	check(dwarf.model.visible, "out again, he shows again")
+	Controls.robot = was_robot
+	root.queue_free()

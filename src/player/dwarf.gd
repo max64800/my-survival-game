@@ -32,6 +32,14 @@ const AIM_CAMERA := Vector3(0.45, 0.9, 2.0)
 const AIM_UP_RAISE := 0.55
 const AIM_UP_SIDE := 0.4
 const AIM_UP_IN := 0.6
+## F946 (owner, Nov 28: looking straight up "you see the inside of his belly"): not aiming, the floor behind him
+## pushed the camera into him. Looking up, its pivot rises and slides out like F927's; if it still ends up this
+## close (m) to his middle line, he is hidden on your own screen until it moves out again.
+const LOOK_UP_RAISE := 0.5
+const LOOK_UP_SIDE := 0.3
+const CAM_HIDE_GAP := 0.5
+const CAM_SHOW_GAP := 0.6
+var _cam_hid := false
 const POSE_SEND_TIME := 0.05  ## send our position 20 times a second
 const RUN_STAMINA := 8.0  ## per second
 const JUMP_STAMINA := 10.0
@@ -536,7 +544,8 @@ func _process(delta: float) -> void:
 	_aim_t = move_toward(_aim_t, 1.0 if fight and fight.aiming() else 0.0, delta * 6.0)
 	var aim_k := smoothstep(0.0, 1.0, _aim_t)
 	var aim_up := aim_k * smoothstep(0.15, 1.0, _pitch)  # (F927: aiming AND looking up)
-	var want_y := global_position.y + lerpf(SHOULDER.y, AIM_CAMERA.y, aim_k) + AIM_UP_RAISE * aim_up
+	var look_up := (1.0 - aim_k) * smoothstep(0.3, 1.1, _pitch)  # (F946: looking up, not aiming)
+	var want_y := global_position.y + lerpf(SHOULDER.y, AIM_CAMERA.y, aim_k) + AIM_UP_RAISE * aim_up 		+ LOOK_UP_RAISE * look_up
 	if is_nan(_cam_y) or absf(_cam_y - want_y) > 2.0:
 		_cam_y = want_y
 	# F781 (owner, Nov 22: climbing the spiral stairs was "very jittery"): the body only moves 60 times a second, but
@@ -550,7 +559,7 @@ func _process(delta: float) -> void:
 	_cam_yaw.global_position = Vector3(global_position.x, _cam_y, global_position.z)
 	_cam_yaw.rotation.y = _yaw
 	_cam_pitch.rotation.x = _pitch
-	var side := CameraRoom.best_side(_spring, lerpf(lerpf(0.08, SHOULDER.x, near), AIM_CAMERA.x, aim_k) + AIM_UP_SIDE * aim_up, [get_rid()])
+	var side := CameraRoom.best_side(_spring, lerpf(lerpf(0.08, SHOULDER.x, near), AIM_CAMERA.x, aim_k) + AIM_UP_SIDE * aim_up 		+ LOOK_UP_SIDE * look_up, [get_rid()])
 	_cam_side = side if side < _cam_side else lerpf(_cam_side, side, minf(1.0, delta * DwarfFeel.CAM_RETURN_SPEED))
 	_spring.position = Vector3(_cam_side, 0, 0)
 	# Looking down pulls the camera out a little, looking up brings it in (F766, "come in close when looking up").
@@ -596,6 +605,24 @@ func _place_camera(delta: float) -> void:
 	camera.position = _spring.position + Vector3(0, 0, _cam_len)
 	_cam_fade.update(get_world_3d(), camera.global_position, _cam_yaw.global_position, delta, [get_rid()], not dev_fly,
 		camera)
+	_hide_if_camera_inside()
+
+
+## F946: the camera this close to his middle line (feet to helmet top) would show the inside of him: hide him on
+## this screen (only the local camera's view; the others still see him), show him again once it's out a bit more.
+func _hide_if_camera_inside() -> void:
+	if model == null:
+		return
+	var c := camera.global_position
+	var foot := global_position
+	var t := clampf(c.y - foot.y, 0.0, 1.4)
+	var gap := Vector2(c.x - foot.x, c.z - foot.z).length() if c.y - foot.y == t 		else c.distance_to(foot + Vector3.UP * t)
+	if model.visible and gap < CAM_HIDE_GAP:
+		model.visible = false
+		_cam_hid = true
+	elif _cam_hid and gap > CAM_SHOW_GAP:
+		model.visible = true  # (only if this hid him: the photo robots hide him themselves)
+		_cam_hid = false
 
 
 ## How long this jump is expected to last in total (F807): `elapsed` seconds in already, moving at `vy` right now.
