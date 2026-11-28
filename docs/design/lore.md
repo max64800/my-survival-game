@@ -34,6 +34,6 @@ Trailer and tagline idea: "The kingdom fell... but dwarves never fall."
 
 ## Fits with what's already built
 - Mossy Hollows has old dwarf ruins.
-- The zone bosses are found through wall markings (Orrumhal in Mossy Hollows).
+- The zone bosses are found through wall markings (the Iron King in Mossy Hollows).
 - The Rune Slab is the skill system.
 - The world is a 7-zone star, with an "Ancient Dwarf City" above and "The Abyss" below.

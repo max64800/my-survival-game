@@ -133,8 +133,8 @@ A waterskin holds **5 sips**. Recipes that say "1 water" use either 1 `water_buc
 
 | id | Name | Stack | Where found | What it's for |
 |---|---|---|---|---|
-| `keeper_heartstone` | Keeper's Heartstone | 100 | Mossy Hollows main boss (Orrumhal), 1 per nearby player | Copper pickaxe |
-| `bloomheart_core` | Bloomheart Core | 100 | Fungal Jungle main boss (Thallus), 1 per nearby player | Silver pickaxe |
+| `keeper_heartstone` | King's Heartstone | 100 | Mossy Hollows main boss (the Iron King), 1 per nearby player | Copper pickaxe |
+| `bloomheart_core` | Bloomheart Core | 100 | Fungal Jungle main boss (not chosen yet), 1 per nearby player | Silver pickaxe |
 | `rune_<branch>_<set><n>` | Rune (e.g. `rune_miner_m1`) | 100 | See section 8 | Carve on the Rune Slab |
 | `rune_shard_<branch>` | Rune Shard (4 colours) | 100 | Duplicate runes turn into these | 3 shards → any missing rune of that colour |
 

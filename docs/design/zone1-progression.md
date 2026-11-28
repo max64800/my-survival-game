@@ -26,7 +26,7 @@ you trip over in the first cave. This page replaces anything older that disagree
    mace, keep searching. The Copper Pickaxe is known from your first ingot, so the boss is never down to luck.
    The Kiln turns wood into coal for the Smelter. A comfier base and cooked food give stronger buffs. Cooking Pot, Gem Bench. Workbench level 3 (copper-free
    Tool Rack: planks + rope), level 4 (Carpenter's Vise: needs copper). Brick needs a level-2 Mason's Table.
-6. **The boss, Orrumhal**: find the 3 wall markings that point to its lair. The lair is **sealed with hard stone
+6. **The boss, the Iron King** (was Orrumhal; owner, Nov 28): find the 3 wall markings that point to its lair. The lair is **sealed with hard stone
    that only copper tools can break** (owner, Nov 19): the Fang Pickaxe bounces off. Inside, summon it with an offering of
    **5 copper ingots + 3 bat fangs + 2 glow glands**. You must reach the Deeps AND hunt.
 7. Beating it gives the **Keeper's Heartstone**. Copper Pickaxe + Heartstone at the Anvil = **Keeper's Pickaxe**
@@ -37,7 +37,7 @@ Station levels (owner's pick): better gear needs a better-equipped Workbench / M
 (Not chosen for now: creature-part armor, flint tools, food buffs.)
 
 ## Still to decide later
-- First-hour ideas offered Nov 19, not picked yet: a rune stone at spawn showing Orrumhal; picking up a new item
+- First-hour ideas offered Nov 19, not picked yet: a rune stone at spawn showing the Iron King; picking up a new item
   reveals its recipes; the truffle hog as an easy first hunt (meat + hide) before the bats.
 - Not built yet (Nov 19): tower repair through its Builder's Chest, the copper-only seal stone at the lair, Copper
   Pickaxe without the Heartstone (`src/items/recipes.gd`), the new Keeper's Pickaxe.

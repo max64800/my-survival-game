@@ -355,10 +355,10 @@ Only fit the Steel **epic socket**. The first two are the owner's examples.
 
 | Epic gem | Effect | Numbers | Where it drops |
 |---|---|---|---|
-| **Cinder Wake** | While you run, you leave a fire trail. Enemies chasing you walk through it and burn. | Trail lasts **4 s**, **0.8 m** wide. **8 fire damage/s** + **30 burn buildup/s** to enemies standing in it. Friends take ×0.25. | Main boss Orrumhal (Mossy): first-kill choice |
-| **Hoarfrost Pulse** | Every 5th hit you land makes a small frost blast around you. | **3 m** circle, **20 frost damage**, **+60 chill buildup**. Counter resets if you don't hit for 5 s. | Main boss Orrumhal: first-kill choice |
-| **Echoing Guard** | Each perfect parry sends out a shockwave. | **4 m** circle, **15 blunt damage**, **+20 stun** to every enemy in it. | Main boss Thallus (Fungal): first-kill choice |
-| **Rootbound Heart** | When you drop below 25% health, you dig in. | **30%** less damage taken and **+3 HP/s** for **6 s**. Cooldown **90 s**. | Main boss Thallus: first-kill choice |
+| **Cinder Wake** | While you run, you leave a fire trail. Enemies chasing you walk through it and burn. | Trail lasts **4 s**, **0.8 m** wide. **8 fire damage/s** + **30 burn buildup/s** to enemies standing in it. Friends take ×0.25. | Main boss the Iron King (Mossy): first-kill choice |
+| **Hoarfrost Pulse** | Every 5th hit you land makes a small frost blast around you. | **3 m** circle, **20 frost damage**, **+60 chill buildup**. Counter resets if you don't hit for 5 s. | Main boss the Iron King: first-kill choice |
+| **Echoing Guard** | Each perfect parry sends out a shockwave. | **4 m** circle, **15 blunt damage**, **+20 stun** to every enemy in it. | Fungal Jungle main boss (not chosen yet): first-kill choice |
+| **Rootbound Heart** | When you drop below 25% health, you dig in. | **30%** less damage taken and **+3 HP/s** for **6 s**. Cooldown **90 s**. | Fungal Jungle main boss (not chosen yet): first-kill choice |
 | **Bloomrot** | Enemies that die while poisoned burst into a poison cloud. | **3 m** cloud, **6 poison damage/s** + **40 buildup/s**, lasts **5 s**. | Fungal side bosses (5% each kill) |
 | **Shiftstep** | Your dodge-roll becomes a short blink (teleport) that passes through enemies. | Blink **5 m**, i-frames for the whole **0.3 s**. Costs **+10** stamina (30 total). | Violet crystal monsters in Fungal Jungle (0.5%) |
 
@@ -661,53 +661,76 @@ Spec rule: some monsters come in crystal-colored versions with matching powers. 
 - **Lair walls:** the lair is sealed inside normal rock, and you **dig your way in** after the 3rd marking (world doc 3.1). When the fight starts, the lair walls glow and **can't be dug until the fight ends** (win or reset), so nobody can tunnel around the fight. Side-boss caverns are normal rock.
 - Bosses don't leash. They **reset to full HP** if every player is more than 60 m away or dead for **30 s**.
 
-### 8.2 Mossy Hollows main boss: **Orrumhal, the Mossbound Keeper**
+### 8.2 Mossy Hollows main boss: **the Iron King** (F981, owner Nov 28)
 
-**Look:** a 5 m stone guardian the old dwarves carved to protect their deepest hall, now wrapped in moss and roots, blue mushrooms growing from its shoulders, a cracked glowing stone in its chest.
+Replaces Orrumhal (and the Fungal Jungle's Thallus, both deleted Nov 28). **Boss first**; his sunken throne hall
+and his army of skeleton soldiers come after the owner has seen the boss in the game.
+
+**Look (owner's pick A, `assets/concepts/iron_king/iron_king_v1.png`):** the ghost of an ancient dwarf king, risen from
+his sunken throne hall. **About 2.6 m** (2x the dwarf). Solid, heavy, battle-worn iron plate armour (dents, rust,
+rivets, tarnished bronze trim), a tall **spiky iron crown** grown into his closed helmet, layered shoulder plates, a
+tattered faded-red cloak and a long braided beard of **pale-green ghost mist** threaded with iron rings. The ghost
+shows only **through the gaps**: eye slits, the beard, the joints of the armour. Grim and grown-up: real dwarf
+proportions (normal-sized head, long heavy arms), never the KayKit skeletons' toy look. Built by script in Blender in
+the workbench style (MODEL-RULES.md), not picture-to-3D.
 
 | Value | Number |
 |---|---|
-| Size | Huge |
-| HP | **2000** |
-| Armor | **30** (phase 3 heartstone: **0**) |
-| Slash / Blunt / Pierce | ×0.75 / ×1.25 / ×0.75 |
-| Fire / Frost / Poison | 25% / 25% / 100% (immune) |
-| Stun max | **200** (+30% each stun) |
-| Walk speed | 2.5 m/s |
+| Size | Huge (2.6 m) |
+| HP | **2000** (+ 60% per extra player, F745) |
+| Armor | **30** |
+| Slash / Blunt / Pierce | ×1.0 / ×1.25 / ×0.75 (iron plate: blunt dents it, points skid off) |
+| Fire / Frost / Poison | 50% / 50% / 100% (immune: he is a ghost) |
+| Stun max | **200** (+30% each stun; **+50% per extra player** so friends can't stun-lock him) |
+| Walk speed | 2.2 m/s (phase 3: 2.8) |
 
 **Phases:**
 
-| Phase | HP range | What changes |
-|---|---|---|
-| 1 "Awakening" | 100% → 65% | Uses Fist Slam, Sweep, Rubble Toss |
-| 2 "Rootbound" | 65% → 30% | Adds Moss Grasp and Hall Quake. Once, at the start, roars and **4 Mossnippers** crawl out of its moss. |
-| 3 "Open Heart" | 30% → 0% | Chest cracks open: the **heartstone** is a weak spot (×1.5 damage, 0 armor, hit from the front). All tells **×0.85** (never under 0.5 s). Adds Heart Pulse. |
+| Phase | HP range | Weapons | What changes |
+|---|---|---|---|
+| 1 "The King's Guard" | 100% → 60% | one-handed **warhammer** + round iron **shield** | Shield Bash, Shield Charge, Hammer Slam |
+| 2 "The Broken Shield" | 60% → 25% | **greataxe** (two hands) | He smashes his shield on the floor (2 s, nobody gets hurt: the break is the warning), pulls the greataxe off his back. Greataxe Chop, Greataxe Spin. |
+| 3 "Ghost Rage" | 25% → 0% | greataxe | The ghost glow pours out of every gap, he walks faster, all tells ×0.85 (never under 0.5 s). His axe blows leave **rings of ghost fire** on the floor. Adds the **Fade and Rush** after every 8% of health. |
 
-**Attacks:**
+**Attacks** (every one has a wind-up you can see, at least 0.34 s, F743; heavy blows longer):
 
-| Attack | Phase | Tell (s) | Damage | Parry | Tell you can see/hear |
-|---|---|---|---|---|---|
-| Fist Slam | 1+ | 1.1 | 35 blunt, KD | ⛨ Shield | Raises one fist high, dust falls from it. Smashes pillars it hits. |
-| Sweep | 1+ | 0.9 | 25 blunt | Any | Pulls arm back low. 6 m, 180° arc |
-| Rubble Toss | 1+ | 1.2 | 20 blunt | Reflect (shield reflect = **60** damage to boss) | Rips a chunk from the floor |
-| Moss Grasp | 2+ | 0.8 | 10 + rooted 2 s | Any | Green glow on the floor under a player |
-| Hall Quake | 2+ | 1.5 | 15 per ring, 3 rings | Gust (or jump/roll each ring) | Both fists raised, slams floor. Rings 1.0 s apart. |
-| Heart Pulse | 3 | 1.5 | 30 fire, 6 m circle | ⛨ Shield + Gust | Chest glows brighter and brighter. Every **20 s** |
+| Attack | Phase | Tell (s) | Damage | Parry | Tell you can see/hear | Move (already on the dwarf's skeleton) |
+|---|---|---|---|---|---|---|
+| Shield Bash | 1 | 0.6 | 20 blunt + push 3 m | Any | Shield rim glows green, he leans back | `bash` (UAL 2 `Shield_OneShot`) |
+| Shield Charge | 1 | 1.0 | 30 blunt, KD | Roll sideways | Plants a foot, scrapes the floor, shield glows; then runs 8 m straight | UAL 2 `Shield_Dash` (new to us, same pack) |
+| Hammer Slam | 1 | 1.1 | 35 blunt, KD in 2.5 m + 15 shockwave to 6 m | ⛨ Shield, or jump the wave | Hammer raised high over his crown, green sparks drip from it | `smash` (UAL 1 `Sword_Attack`) |
+| Greataxe Chop | 2+ | 0.9 | 40 slash | Any | Blade glows, he lifts the axe over his shoulder | `great_chop` (the Foreman's 2H chop the owner approved) |
+| Greataxe Spin | 2+ | 1.2 | 30 slash, all round him (3 m) | Roll out, or ⛨ Shield | Holds the axe out low and twists back, ghost wind howls | `great_spin` (the 2H spin the owner approved) |
+| Fire Rings | 3 | (comes with Chop / Spin) | 10 fire per s while you stand in one | — | A green ring stays on the floor 4 s where the axe hit | (no move: code) |
+| Fade and Rush | 3 | 0.4 fade | — then a fast Chop | — | Breaks into glowing dots, gathers 3-5 m away, rushes in | the dungeon ghosts' fade (`Ghost`, already built) |
 
-**Arena needs:** round hall **30 m** across, ceiling **12 m**, **4 stone pillars** (each breaks after 1 Fist Slam: cover that runs out), the hole you dug in is the only entrance: a stone door grows over it when the fight starts and opens on win or reset.
+**Co-op (host approves):** the host runs his brain (which attack, who he aims at, when a phase starts, where the fade
+lands) and tells everyone (`MonsterManager`, like the ghosts' `ghost_fade`). Each player's hits are a request to the
+host; the host takes them off his health and sends the new number to all. Aim: the player who hurt him most in the
+last 5 s, but every 3rd attack goes at the nearest other player, so nobody is ignored.
 
-**Drops (each nearby player):**
+**How his moves are made (owner: "easy, not as many tries as the other ones"):** no new hand-made clips, no video
+mocap. **Keep the moves, swap the body:** he is a dwarf model (`DwarfModel`, the dwarf's own skeleton and moves) with
+the dwarf's body hidden and the Iron King's armour bound to the same bones, exactly the way the dungeon ghosts work
+(`src/combat/ghost.gd`). The crown, loose shoulder plates, beard mist and cloak scraps are separate rigid parts
+moved by code (like `MonsterModel.animate`). How each old animation problem (ANIMATION-RULES.md) is avoided:
 
-| Drop | Count | Chance |
-|---|---|---|
-| **Keeper's Heartstone** (part for the **Copper Pickaxe**, which breaks the border into Fungal Jungle) | 1 | 100% |
-| Copper ingot | 10 | 100% |
-| Random rune | 2 | 100% |
-| Epic gem: **choose Cinder Wake or Hoarfrost Pulse** | 1 | 100% first kill, 20% re-summons |
-| Ancient blueprint "Keeper's Hall" (building style) | 1 | 100% first kill |
-| Keeper trophy (wall decoration) | 1 | 100% |
+| Old problem | How the Iron King avoids it |
+|---|---|
+| Godot renames bones and clips on import | No retarget at all: the moves already play on the dwarf's skeleton under names the game uses today (`ANIMS`). |
+| Bodies measured after their size was set | The armour is built in Blender **around the dwarf's measured rest skeleton** (bone positions exported first), then the whole model is scaled to 2.6 m in one place (`holder.scale`). Reach and hit ranges are measured **after** that scale. |
+| Ankle and foot bones mixed up | Each armour part is bound to a named dwarf bone (vertex groups named after his bones); a test checks every group's bone exists and that the boots follow the foot bone, not the ankle. |
+| Hit-frame timing off | Uses the swings' existing hit moment (0.40 of a swing, the great moves are already time-warped to it). New: Shield Dash's hit is measured from its fastest frame by script, and a test checks every attack's damage frame lands after its tell. |
+| Licence limits | Only Quaternius UAL (CC0) and KayKit Skeletons (CC0) moves, both already in the repo. No Mixamo, MoCap Online or Kevin Iglesias. |
+| Packs in another style didn't match | Only moves the owner already approved on the dwarf (plus `Shield_Dash` from his own UAL pack); the body is ours, hand-built. |
 
-**Re-summon offering:** 10 copper ingots + 5 blue glow crystals + 1 rune shard (any colour).
+**Arena, drops, offering and the army:** next step after the owner has seen him (the throne hall replaces the
+Keeper's hall; the wall markings, seal stone and border rock of `zone1-progression.md` still apply). The old drop list
+stays for now: **King's Heartstone** (was Keeper's Heartstone: part for the Copper Pickaxe), copper ingot ×10, random
+rune ×2, epic gem (choose Cinder Wake or Hoarfrost Pulse; 100% first kill, 20% re-summons), Iron King trophy.
+
+**First playable step:** the Iron King model on the dwarf's skeleton playing 2-3 attacks in a test world
+(`claude=iron_king`). The owner looks, then the fight, the hall and the army follow.
 
 ### 8.3 Mossy Hollows side bosses
 
@@ -750,55 +773,9 @@ Drops (each player): Queen's carapace ×1 (shield upgrade material), Copper ore 
 Arena: hall **20 m**, ceiling 8 m, 2 rows of pillars, ruin decorations.
 Drops (each player): Named weapon **"Brask's Rustbite"** (Copper-tier axe, Q4, Jolt Gem socketed), Ancient blueprint "Thane's Hall", Copper ingot ×6, Rune ×1 (100%), Jolt Gem (50%), Leech Gem (25%).
 
-### 8.4 Fungal Jungle main boss: **Thallus, the Grey Bloom**
+### 8.4 Fungal Jungle main boss: not chosen yet
 
-**Look:** a 6 m beast made of grey fungus grown over stolen beetle shells, four heavy legs like tree stumps, a crown of drooping caps, and **4 glowing spore sacs** on its back.
-
-| Value | Number |
-|---|---|
-| Size | Huge |
-| HP | **4400** |
-| Armor | **20** |
-| Slash / Blunt / Pierce | ×1.25 / ×1.0 / ×1.0 |
-| Fire / Frost / Poison | **−50%** (weak) / 0 / 100% (immune) |
-| Stun max | **260** (+30% each stun) |
-| Spore sacs | **4**, each **250 HP**, take ×1.5 pierce (crossbow and spear shine here) |
-
-**Phases:**
-
-| Phase | HP range | What changes |
-|---|---|---|
-| 1 "Grazing" | 100% → 70% | Cap Crush, Tendril Lash, Spore Volley |
-| 2 "Rooting" | 70% → 35% | Sinks into the arena's fungus floor, moves under it, and bursts up (Bloom Burst). Adds Choking Exhale. |
-| 3 "Grey Fog" | 35% → 0% | Every **15 s** a grey fog patch (6 m) grows somewhere in the arena (blocks sight, 10 poison buildup/s). Tells **×0.85** (min 0.5 s). |
-
-**Spore sacs:** destroying all 4 sacs removes Spore Volley and Grey Fog, and stuns Thallus instantly for **6 s**. This is the "smart" way to win.
-
-**Attacks:**
-
-| Attack | Phase | Tell (s) | Damage | Parry | Tell |
-|---|---|---|---|---|---|
-| Cap Crush | 1+ | 1.0 | 40 blunt, KD | ⛨ Shield | Rears up on hind legs |
-| Tendril Lash (3 hits) | 1+ | 0.7, 0.5, 0.5 | 15 slash each | Any | Tendrils curl back from its shoulders |
-| Spore Volley | 1+ (while a sac lives) | 1.2 | 15 blunt + 40 poison buildup, 3 bombs | Reflect (reflected bomb hits a sac for 100) | Sacs pulse, one per bomb |
-| Bloom Burst | 2+ | 1.3 | 45 blunt, KD | ⛨ Shield | Glowing ring on the floor under a player, floor trembles |
-| Choking Exhale | 2+ | 1.4 | Cone 8 m, cloud 6 s, 10 poison damage/s | Gust | Breathes in loudly, chest swells |
-| Trample | 3 | 1.1 | 30 blunt, KD | Any | Lowers head, runs 12 m |
-
-**Arena needs:** round cavern **40 m** across, ceiling **15 m**, floor of soft fungus mat (needed for Rooting), **6 giant mushroom stems** to hide behind (stems break after 2 Tramples), the hole you dug in is the only entrance, sealed by a wall of spore growth during the fight.
-
-**Drops (each nearby player):**
-
-| Drop | Count | Chance |
-|---|---|---|
-| **Bloomheart Core** (part for the **Silver Pickaxe**, which breaks the border into biome 3) | 1 | 100% |
-| Silver ingot | 10 | 100% |
-| Random rune | 2 | 100% |
-| Epic gem: **choose Echoing Guard or Rootbound Heart** | 1 | 100% first kill, 20% re-summons |
-| Ancient blueprint "Bloom Garden" (mushroom-brick style) | 1 | 100% first kill |
-| Grey Bloom trophy | 1 | 100% |
-
-**Re-summon offering:** 10 silver ingots + 5 green glow crystals + 3 giant mushroom flesh.
+Thallus, the Grey Bloom, was deleted (owner, Nov 28). A new main boss for this zone is picked later.
 
 ### 8.5 Fungal Jungle side bosses
 
@@ -950,8 +927,7 @@ Count = number of players within **60 m** when the fight starts (for bosses: ins
 | Mossnipper with Stone sword | ~2 s | 3 |
 | Rustwight with Copper mace | ~5 s | 5 |
 | Husk Charger with Silver mace, from behind | ~15 s | 8–10 |
-| Orrumhal, solo, Copper gear, good play | ~4–5 minutes | — |
-| Thallus, solo, Silver gear, good play | ~6 minutes | — |
+| Iron King, solo, Copper gear, good play | ~4–5 minutes | — |
 
 **Balance check (worked examples, Nov 14 review).** A real fight is not non-stop hitting: you wait for tells, dodge, and back off. So we guess you land hits about **40% of the time** ("uptime"). Fight time ≈ HP ÷ (damage per hit ÷ swing time × 0.4).
 
@@ -964,8 +940,7 @@ Count = number of players within **60 m** when the fight starts (for bosses: ins
 | Skerra (1000 HP, armor 15) | Copper sword | 13 × 1.25 × 100/115 = 14.1 every 0.55 s → 10.3 per s at 40% | **~1.6 min** (+ her adds ≈ 2 min) |
 | Brask (900 HP, armor 45) | Copper mace | 21.5 × 100/131.5 = 16.3 every 0.75 s → 8.7 per s | **~1.7 min** |
 | Sivix (1600 HP, armor 15) | Silver spear | 18.2 × 1.5 × 100/115 = 23.7 every 0.6 s → 15.8 per s | **~1.7 min** (+ swarm) |
-| Orrumhal (2000 HP, armor 30) | Copper sword | Phases 1–2: 13 × 0.75 × 100/130 = 7.5 → 5.5 per s. Phase 3 heartstone (0 armor, ×1.5): 14.6 → 10.6 per s | **~5 min** (mace: ~4 min) |
-| Thallus (4400 HP, armor 20) | Silver sword | 16.5 × 1.25 × 100/120 = 17.2 → 12.5 per s | **~6 min** (~4 min with an Ember Gem) |
+| Iron King (2000 HP, armor 30; was Orrumhal's numbers) | Copper sword | Phases 1–2: 13 × 0.75 × 100/130 = 7.5 → 5.5 per s. Phase 3 heartstone (0 armor, ×1.5): 14.6 → 10.6 per s | **~5 min** (mace: ~4 min) |
 
 Before this review, Orrumhal had 2400 HP and 50 armor: a Copper sword needed about **370 light hits** (over 8 minutes). That was too long, so HP and armor came down.
 
