@@ -104,9 +104,9 @@ Fixed items get ~~crossed out~~, never deleted, so we can see the whole history.
 - [ ] **F951. The wood-chopping and crafting sounds are too arcade-like.** (Same family as F934 and F707.) *From: you (PC, Nov 28, play test). Said: 1×* 🛠 in progress (Nov 28 play test fixes, Nov 28)
 
 **Nov 28 play test 2 (owner, while playing):**
-- [ ] **F953. Show on the left how long the lantern will last.** It ran out fast because it was fed wood, not crystals, and nothing said so. *From: you (PC, Nov 28, play test 2). Said: 1×*
-- [ ] **F954. When the lantern is refilled, show on the left which crystal it used.** *From: you (PC, Nov 28, play test 2). Said: 1×*
-- [ ] **F955. The campfire needs a better menu: show how long the cooking takes, also when cooking several at once.** (Its sound is still a crafting sound: F937.) *From: you (PC, Nov 28, play test 2). Said: 1×*
+- [ ] **F953. Show on the left how long the lantern will last.** It ran out fast because it was fed wood, not crystals, and nothing said so. *From: you (PC, Nov 28, play test 2). Said: 1×* 🛠 in progress (Nov 28 play test fixes, Nov 28)
+- [ ] **F954. When the lantern is refilled, show on the left which crystal it used.** *From: you (PC, Nov 28, play test 2). Said: 1×* 🛠 in progress (Nov 28 play test fixes, Nov 28)
+- [ ] **F955. The campfire needs a better menu: show how long the cooking takes, also when cooking several at once.** (Its sound is still a crafting sound: F937.) *From: you (PC, Nov 28, play test 2). Said: 1×* 🛠 in progress (Nov 28 play test fixes, Nov 28)
 - [ ] **F956. Choose which bolts to shoot: holding R when the crossbow is already loaded opens a wheel of your bolt types.** *From: you (PC, Nov 28, play test 2). Said: 1×*
 - [ ] **F961. Some spiders and bats (the other creature types) have weird glowing butts, sometimes purple, sometimes red.** *From: you (PC, Nov 28, play test 2). Said: 1×*
 - [ ] **F962. Aiming high to shoot bats is very hard: the camera sits right in his shoulder or in the middle, and in a tall cave you can't aim high enough to hit bats near the ceiling.** (F927 was the aim-and-look-up fix, Nov 27: see Things that keep coming back.) *From: you (PC, Nov 28, play test 2). Said: 1×*
