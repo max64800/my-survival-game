@@ -28,3 +28,13 @@ func test_dungeon_spot_is_inside_its_first_room() -> void:
 			break
 	check_eq(DungeonMap.space_at(d, spot), first, "the robot stands in the first room past the way in")
 	check(DungeonMap.sdf(d, spot) > 0.0, "in the room's air, not in rock")
+
+
+func test_lantern_shadow_is_two_sided_except_on_ultra() -> void:
+	var was := GraphicsSettings.preset
+	for p in ["potato", "low", "medium", "high"]:
+		GraphicsSettings.preset = p
+		check_eq(GraphicsSettings.lantern_shadow_mode(), OmniLight3D.SHADOW_DUAL_PARABOLOID, "%s: the cheap 2-sided shadow" % p)
+	GraphicsSettings.preset = "ultra"
+	check_eq(GraphicsSettings.lantern_shadow_mode(), OmniLight3D.SHADOW_CUBE, "ultra keeps the 6-sided cube")
+	GraphicsSettings.preset = was

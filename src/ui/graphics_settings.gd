@@ -124,6 +124,12 @@ static func chunk_share() -> float:
 	return {"potato": 0.4, "low": 0.65}.get(preset, 1.0)
 
 
+## F337 (Nov 28): the lantern's shadow: 2 sides (dual paraboloid) on every preset but Ultra, which keeps the 6-sided
+## cube. Measured in a dungeon: the cube cost 2.5 ms more of the graphics card and looked the same.
+static func lantern_shadow_mode() -> OmniLight3D.ShadowMode:
+	return OmniLight3D.SHADOW_CUBE if preset == "ultra" else OmniLight3D.SHADOW_DUAL_PARABOLOID
+
+
 ## A small decorative light (a torch, a glowing creature, a place's lamp): it switches off smoothly when far away, so
 ## the graphics card never works on lights you can't see (owner, Nov 19: cheaper lights).
 static func cheap_light(l: Light3D, far := 30.0) -> void:

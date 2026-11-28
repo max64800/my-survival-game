@@ -126,6 +126,17 @@ func _run() -> void:
 			await _fight(dwarf, a.substr(6))
 			get_tree().quit()
 			return
+	if args.has("lantern"):  # F337: the lantern's shadow: 6-side cube vs 2-side paraboloid vs none, each twice
+		await _lantern_modes(dwarf)
+		print("======================================")
+		get_tree().quit()
+		return
+	if args.has("split"):  # F337: where the main processor's time goes, part by part (averaged)
+		await _split_avg(5.0)
+		print("  objects drawn: %d, draw calls %.0f, nodes %d" % [Performance.get_monitor(Performance.RENDER_TOTAL_OBJECTS_IN_FRAME), Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME), Performance.get_monitor(Performance.OBJECT_NODE_COUNT)])
+		print("======================================")
+		get_tree().quit()
+		return
 	if args.has("quick"):  # only "everything on" + walking and digging (for before/after checks of one fix)
 		await _hitches(dwarf)
 		print("======================================")
@@ -373,6 +384,96 @@ func _split_process() -> void:
 				top += "%s %.0f ms, " % [c[1], c[0]]
 			print("    process split (%.0f ms): %s" % [tot, top])
 	add_child(endst)
+
+
+## F337 (Nov 28): the lantern's shadow three ways, in turn twice (so another program's load shows up as a mismatch),
+## with a screenshot of each in user://perf_lantern_<mode>.png to compare the look.
+func _lantern_modes(dwarf: Dwarf) -> void:
+	var lights := dwarf.find_children("*", "OmniLight3D", true, false)
+	var lamp: OmniLight3D = null
+	for l: OmniLight3D in lights:
+		if l.shadow_enabled:
+			lamp = l
+	if lamp == null:
+		print("  no shadowed lantern light found")
+		return
+	for round_i in 2:
+		for mode in ["cube", "paraboloid", "off"]:
+			lamp.shadow_enabled = mode != "off"
+			lamp.omni_shadow_mode = OmniLight3D.SHADOW_DUAL_PARABOLOID if mode == "paraboloid" else OmniLight3D.SHADOW_CUBE
+			var r := await _measure(3.0)
+			_line("lantern shadow: %s" % mode, r)
+			if round_i == 0:
+				get_viewport().get_texture().get_image().save_png("user://perf_lantern_%s.png" % mode)
+	lamp.shadow_enabled = true
+	lamp.omni_shadow_mode = OmniLight3D.SHADOW_CUBE
+
+
+## F337 (Nov 28): `split`: the AVERAGE cost per frame of each part of the world, for game code (_process) and for
+## physics scripts (_physics_process), over `seconds`. Same stamps as _split_process, but summed, not only spikes.
+func _split_avg(seconds: float) -> void:
+	var targets: Array[Node] = []
+	for c in _main.get_children():
+		targets.append(c)
+		for g in c.get_children():
+			if g.get_child_count() > 0 or g.is_processing() or g.is_physics_processing():
+				targets.append(g)
+	var names: Array[String] = []
+	var n := targets.size()
+	var tp := []  # plain Arrays: the little timer functions below share them (packed arrays would be copied)
+	var tq := []
+	var sum_p := []
+	var sum_q := []
+	for a in [tp, tq]:
+		a.resize(n + 1)
+		a.fill(0)
+	for a in [sum_p, sum_q]:
+		a.resize(n)
+		a.fill(0.0)
+	var stamps: Array[Node] = []
+	for i in n:
+		var t := targets[i]
+		var st := _Stamp.new()
+		st.pcb = func() -> void: tp[i] = Time.get_ticks_usec()
+		st.cb = func() -> void: tq[i] = Time.get_ticks_usec()
+		t.get_parent().add_child(st)
+		t.get_parent().move_child(st, t.get_index())
+		stamps.append(st)
+		names.append(String(t.get_path()).trim_prefix(String(_main.get_path())))
+	var counts := [0, 0]
+	var endst := _Stamp.new()
+	endst.process_priority = 999999
+	endst.process_physics_priority = 999999
+	endst.pcb = func() -> void:
+		tp[n] = Time.get_ticks_usec()
+		for j in n:
+			if tp[j] > 0 and tp[j + 1] >= tp[j]:
+				sum_p[j] += (tp[j + 1] - tp[j]) / 1000.0
+		counts[0] += 1
+	endst.cb = func() -> void:
+		tq[n] = Time.get_ticks_usec()
+		for j in n:
+			if tq[j] > 0 and tq[j + 1] >= tq[j]:
+				sum_q[j] += (tq[j + 1] - tq[j]) / 1000.0
+		counts[1] += 1
+	_main.add_child(endst)
+	stamps.append(endst)
+	await _wait(seconds)
+	for s in stamps:
+		s.queue_free()
+	for pair in [["game code (_process), ms per frame", sum_p, counts[0]], ["physics scripts, ms per physics step", sum_q, counts[1]]]:
+		var sums: Array = pair[1]
+		var cnt: int = maxi(1, pair[2])
+		var rows := []
+		var tot := 0.0
+		for j in n:
+			rows.append([sums[j] / cnt, names[j]])
+			tot += sums[j] / cnt
+		rows.sort_custom(func(a, b): return a[0] > b[0])
+		print("  %s: total %.2f" % [pair[0], tot])
+		for r in rows.slice(0, 14):
+			if r[0] >= 0.05:
+				print("    %6.2f  %s" % r)
 
 
 ## Walk a slow circle for 90 s, then jump 60 m away twice (new cave to load), like exploring.

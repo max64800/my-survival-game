@@ -77,6 +77,9 @@ func _ready() -> void:
 	# and let some light into the shadows.
 	light.light_size = 0.12
 	light.shadow_blur = 1.5
+	# F337 (Nov 28): a 2-sided shadow, not a 6-sided cube: in a dungeon the cube drew every nearby piece 6 more times
+	# (graphics card 10.4 -> 7.9 ms, 86 -> 97 FPS) and the screenshots looked the same. Ultra keeps the cube.
+	light.omni_shadow_mode = GraphicsSettings.lantern_shadow_mode()
 	light.shadow_opacity = 0.85
 	light.light_color = WARM
 	light.omni_attenuation = ATTENUATION
@@ -169,6 +172,9 @@ func _process(delta: float) -> void:
 		t = 0.55 + 0.45 * absf(sin(_flicker) * sin(_flicker * 0.37))
 	var energy := lerpf(EMPTY_ENERGY, FULL_ENERGY, t)
 	light.omni_range = lerpf(light.omni_range, lerpf(EMPTY_RANGE, full_range, t), minf(1.0, delta * 4.0))
+	var shadow_mode := GraphicsSettings.lantern_shadow_mode()
+	if light.omni_shadow_mode != shadow_mode:  # (follows the graphics preset, also when it changes mid-game)
+		light.omni_shadow_mode = shadow_mode
 	light.light_energy = lerpf(light.light_energy, energy, minf(1.0, delta * 6.0))
 	if mine:  # F870: your own lantern tells the rock where it is, so copper and tin twinkle in its light
 		var p := light.global_position
