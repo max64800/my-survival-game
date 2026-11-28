@@ -1697,6 +1697,9 @@ func cancel_equip() -> void:
 
 
 func _send_equip(index: int, id: String) -> void:
+	var me := get_player(local_peer_id())
+	if me and not me.inventory.is_worn(index) and Inventory.equip_slot_for(id) in ["weapon", "shield"]:
+		me.weapon_drawn = true  # F959: show it in your hands right away (the host does the same in request_equip)
 	if is_host():
 		request_equip(local_peer_id(), index, id)
 	else:
@@ -1719,6 +1722,8 @@ func request_equip(peer_id: int, index: int, id: String) -> String:
 	var why := ps.inventory.equip_problem(index)
 	if why == "" and not ps.inventory.toggle_equip(index):
 		why = "?"
+	if why == "" and ps.inventory.is_worn(index) and Inventory.equip_slot_for(id) in ["weapon", "shield"]:
+		ps.weapon_drawn = true  # F959 (owner, Nov 28): a weapon you just put on goes straight into your hands
 	if why != "" and peer_id == local_peer_id():
 		hud_message.emit(why)
 	return why

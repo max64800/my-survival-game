@@ -166,6 +166,25 @@ func test_equip_ring_takes_time_and_a_hit_stops_it() -> void:
 	auth.queue_free()
 
 
+## F959 (owner, Nov 28): "it says the mace is equipped, but I don't see it in my hands": a weapon put on from
+## the bag goes straight into your hands (drawn), so block/parry works without pressing F first.
+func test_weapon_put_on_from_the_bag_is_in_your_hands() -> void:
+	var auth := GameAuthority.new()
+	tree.root.add_child(auth)
+	var ps := auth.add_player(1, null, false)
+	ps.inventory.slots[12] = {id = "mace_stone", count = 1}  # in the bag, not on the hotbar
+	ps.inventory.changed.emit()
+	ps.selected_slot = 0
+	auth.ask_equip(12)
+	auth.tick_equip(1.0)
+	check(ps.inventory.is_worn(12), "the mace is on")
+	check(ps.weapon_drawn, "...and drawn")
+	check_eq(ps.selected_item(), "mace_stone", "...so it's in his hands")
+	auth.request_select_slot(1, 1)
+	check_eq(ps.selected_item() == "mace_stone", false, "picking a hotbar slot still puts it away (F brings it back)")
+	auth.queue_free()
+
+
 ## F828 (owner, Nov 24): armour comes off with a ring too; several pieces fill their rings together; dragging into
 ## a gear slot fills the ring first. F829: swapping to a one-hand weapon keeps the shield on.
 func test_armour_off_ring_queue_and_drag() -> void:

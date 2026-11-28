@@ -252,6 +252,12 @@ func _unhandled_input(event: InputEvent) -> void:
 		_zoom = maxf(ZOOM_MIN, _zoom - ZOOM_STEP)
 	if event.is_action_pressed("zoom_out") and not lifting:
 		_zoom = minf(ZOOM_MAX, _zoom + ZOOM_STEP)
+	# F959 (owner, Nov 28): "it says the mace is equipped, but I don't see it in my hands": right click with empty
+	# hands while a weapon or shield is on (but put away) tells you how to get it out, instead of failing silently.
+	if ps and event.is_action_pressed("use") and Controls.captured() and fight.item() == "" and ps.can_draw() 			and not ps.weapon_drawn:
+		var worn := ps.inventory.equipped("weapon")
+		worn = worn if worn != "" else ps.inventory.equipped("shield")
+		fight.message.emit("Your %s is put away. Press F to draw it." % Items.display_name(worn), Color.WHITE)
 	if event.is_action_pressed("use") and Controls.captured() and not _holding_hammer() and not fight.weapon_mode():
 		var hit := aim_far(20.0) if ps and Items.kind(ps.selected_item()) == "throw" else aim()  # you can throw far
 		var using := Items.kind(ps.selected_item()) if ps else ""
