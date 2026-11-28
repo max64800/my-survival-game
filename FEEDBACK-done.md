@@ -253,6 +253,8 @@ Nothing was deleted. Newest fixes go at the top of their group. If a fixed thing
 
 - [x] ~~**F925. Getting hit by a bat sounds like a 'ding'. It shouldn't.** *From: you (PC, Nov 27, play session). Said: 1×*~~ ✅ Nov 28: rounds 12-14 found no bite you liked, so (your idea) a bite now plays only the dwarf's own "oof" grunt that every hit already plays; the mace knock on top is gone.
 
+- [x] ~~**F944. The level-up sound is too arcade-like. Change it.** (Same family as F934, skill-up sounds.) *From: you (PC, Nov 28, play test). Said: 1×*~~ ✅ Nov 28 (good for now, owner): after rounds 13-15, a new level plays "Men Shouting Hey" (round 15) instead of the treasure chest. The owner says it's not the best yet; a better cheer can come later.
+
 ## Done (older)
 
 - [x] ~~**F72. Creatures need variety, like the cave itself.**~~ Done Nov 14 (Claude 3, waiting for your look). Every part has its own texture (waxy shell, rock knobs, three pebble colors, mossy rock, glowing gem clusters, grainy shield). Each creature now has hand-built versions and the game picks one per creature, plus a slightly different size: beetles 4 each (horn curved / bent / broken / forked, gems amber / teal / violet, more or less moss), bats 4 colors (+ torn ears), snails 3 colors. Co-op friends see the same individual. *From: you. Said: 1×*

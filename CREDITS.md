@@ -252,7 +252,8 @@ The new `refill_0..1` (lantern) replace the older refill rows above (heavy_swall
 | crab walking | stuniverso | https://freesound.org/s/761559/ | CC0 | beetle_move_0 (round 8) |
 | Whoosh Short | FartCTO | https://freesound.org/s/789840/ | CC0 | swing_light_0 (round 8) |
 | Yeaah-hah-hah.wav | HenKonen | https://freesound.org/s/682138/ | CC0 | boss_cheer_0 (round 9: plays with the boss-defeated music) |
-| Treasure Chest Reveal | Qvantor | https://freesound.org/s/878615/ | CC0 | level_up_0 (round 10) |
+| Treasure Chest Reveal | Qvantor | https://freesound.org/s/878615/ | CC0 | level_up_0 (round 10) (replaced Nov 28 by round 15) |
+| Men Shouting Hey.wav | Jace | https://freesound.org/s/57204/ | CC0 | level_up_0 (round 15: a new level, the owner's "good for now" pick, F944) |
 | Insect | NoisyRedFox | https://freesound.org/s/760564/ | CC0 | warn_spider_0 (round 11) |
 | Bones Breaking | hudbud321 | https://freesound.org/s/579802/ | CC0 | warn_bones_0 (round 11) |
 | Stretch - Medium | NearTheAtmoshphere | https://freesound.org/s/676987/ | CC0 | warn_bones_1 (cut to 1 s) (round 11) |

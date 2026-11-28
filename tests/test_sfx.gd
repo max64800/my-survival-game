@@ -86,7 +86,7 @@ func test_round_6_and_7_sounds() -> void:
 	check_eq(MonsterManager.death_sound("ghost_lord"), "ghost_boss_death", "a ghost boss's own last wail (round 8)")
 	check_eq(MonsterManager.death_sound("ghost_a"), "ghost_death", "small ghosts keep theirs")
 	check(Sfx._variants("swing_light").size() >= 1, "one-handed swings swish")
-	check(Sfx._variants("level_up").size() >= 1, "a skill going up opens a treasure chest (round 10)")
+	check(Sfx._variants("level_up").size() >= 1, "a new level: men shout Hey! (round 15, F944)")
 	check(Sfx._variants("boss_cheer").size() >= 1, "a boss down: the dwarf cheers (round 9)")
 	for s: String in ["warn_spider", "warn_bones", "warn_ghost", "warn_ghost_sting", "jump", "land", "ladder", "crossbow_shot", "crossbow_reload", "key_unlock"]:
 		check(Sfx._variants(s).size() >= 1, "round 11 sound %s is in the game" % s)

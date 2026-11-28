@@ -101,7 +101,6 @@ Fixed items get ~~crossed out~~, never deleted, so we can see the whole history.
 ## Open (still to do)
 
 **Nov 28 play test:**
-- [ ] **F944. The level-up sound is too arcade-like. Change it.** (Same family as F934, skill-up sounds.) *From: you (PC, Nov 28, play test). Said: 1×* (Nov 28: round 13 all NO) (Nov 28: round 14 all NO too: earthy and metal both miss) 🛠 in progress (Nov 28 play test fixes, Nov 28): asking you which new direction to try
 
 **Nov 28 play test 2 (owner, while playing):**
 - **Nov 28 play test 2, flying over the map (owner): talk these through first ("brainstorm and discuss before changing the cave system"), after the other Nov 28 items.**
