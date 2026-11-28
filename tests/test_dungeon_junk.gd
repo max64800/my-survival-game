@@ -172,7 +172,7 @@ func test_no_junk_over_drops_rails_or_the_plank_walk() -> void:
 			var at := _xz(p.pos)
 			for s in _on(map, float(p.pos[1])):
 				var nm := String(s[0])
-				var drop: bool = (float(s[5]) < 0.0 and not map.id in ["pell", "hald", "barrows", "brassgate"]) or nm in map.get("deadly", []) or nm == "chasm" or nm.begins_with("shaft_") or nm == "spike_pit"   # (and 0.8 m from its edge)
+				var drop: bool = (float(s[5]) < 0.0 and not map.id in ["pell", "hald", "barrows", "brassgate", "shieldbearers"]) or nm in map.get("deadly", []) or nm == "chasm" or nm.begins_with("shaft_") or nm == "spike_pit"   # (and 0.8 m from its edge)
 				var rails := nm.contains("rail") or nm == "old_shaft"   # (the rail pieces themselves: 1 m, test above)
 				check(not (drop and _inside(s, at, 0.8)) and not (rails and _inside(s, at)), "%s junk %s at %s keeps off %s" % [map.id, p.model, at, nm])
 

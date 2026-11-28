@@ -382,7 +382,78 @@ const BRASSGATE := {
 	],
 }
 
-const MAPS := [MOSSGATE, LAMPWICK, PELL, MOSSPROP, HALD, BARROWS, BRASSGATE]
+## Hall of the Shieldbearers (owner, Nov 28, F977): a medium Stonehold-stone barracks, two levels: the barracks at 0 and
+## the drill cellars at CELLAR = -8. Skeleton soldiers everywhere; Sergeant Halfhelm (a big shield-bash skeleton) holds
+## the Armoury Key to the Captain's Armoury. Two straight stairs: the Cellar Stair down east off the Training Yard, the
+## Back Stair up south into the Armoury Door hall. The Shield Bridge crosses a 10 m chasm (open both sides). The way out:
+## the bolt-hole from the Captain's Armoury ends behind the barred gate in the Muster Gate's west wall (a lever opens it).
+## Built by tools/dungeons/make_shieldbearers.py (docs/design/zone1-dungeons/2026-11-28-shieldbearers-decisions.md).
+## `since = 99`: only its test world has it until the owner says it is done.
+const CELLAR := -8.0
+const SHIELDBEARERS := {
+	id = "shieldbearers",
+	name = "Hall of the Shieldbearers",
+	mouth = Vector2(46, 70),
+	since = 99,
+	mood = "tomb",
+	torch_energy = 1.0,
+	torch_range = 7.0,
+	best = 140.0,
+	chase_out = true,
+	deadly = ["practice_spikes", "chasm"],
+	no_raising = true,
+	spaces = [
+		["entry", 44, 62, 48, 70, 0, 3.5],                 # the way in
+		["muster_gate", 42, 54, 50, 62, 0, 5],             # 1 the round door; the barred gate in its west wall (the way out)
+		["bolt_hole", 24, 58, 42, 62, 0, 3.5],             # 21 the soldiers' old way home from the Captain's Armoury: the lever
+		["muster_door", 44, 52, 48, 54, 0, 3.5],
+		["parade_ground", 40, 40, 52, 52, 0, 6],           # 2 Hollow Miners still drilling
+		["sentry_door", 52, 44, 54, 48, 0, 3.5],
+		["sentry_walk", 54, 40, 58, 52, 0, 4],             # 3 guards and a chest at its end
+		["mess_door", 44, 38, 48, 40, 0, 3.5],
+		["mess_hall", 40, 26, 52, 38, 0, 6],               # 4 long tables, Bone Rots, a chest
+		["kitchen_door", 52, 30, 54, 34, 0, 3.5],
+		["kitchens", 54, 28, 62, 36, 0, 4.5],              # 5 the loose stone (a buried chest)
+		["row_door", 36, 30, 40, 34, 0, 3.5],
+		["barracks_row", 24, 30, 36, 34, 0, 4],            # 6 spears stab out of the walls
+		["bunk_door", 28, 34, 32, 36, 0, 3.5],
+		["bunk_rooms", 26, 36, 34, 44, 0, 4.5],            # 7 Bone Rots in the bunks; the cracked west wall
+		["deserters_stash", 22, 38, 26, 42, 0, 3],         # 8 behind the cracked wall
+		["yard_door", 28, 26, 32, 30, 0, 3.5],
+		["training_yard", 24, 14, 36, 26, 0, 6],           # 9 bear jaws in the sand, Bone Rots
+		["forced_door", 22, 16, 24, 20, 0, 3.5],
+		["armoury_door", 14, 14, 22, 22, 0, 5],            # 10 the hall before the armoury (its door forced long ago)
+		["armoury_way", 12, 16, 14, 20, 0, 3.5],
+		["armoury", 4, 14, 12, 22, 0, 4.5],                # 17 racks of old shields; the hidden boulder (a spiked chest)
+		["boulder_niche", 2, 18, 4, 20, 0, 3],             #    behind the hidden boulder
+		["bridge_way", 6, 22, 10, 24, 0, 3.5],
+		["shield_bridge", 4, 24, 12, 38, 0, 6],            # 18 slabs down the middle over the chasm, open both sides
+		["chasm", 4, 26, 12, 36, -10, 10.5],               #    10 m down onto spikes (falling in kills)
+		["banner_hall", 6, 38, 10, 50, 0, 4.5],            # 19 a quiet walk before the end
+		["captain_door", 6, 50, 10, 52, 0, 3.5],
+		["captains_hall", 2, 52, 14, 66, 0, 6],            # 20 Sergeant Halfhelm and two soldiers (the Armoury Key)
+		["armoury_lock", 14, 58, 16, 62, 0, 3.5],          #    the Captain's Armoury's round door: locked (the Armoury Key)
+		["captains_armoury", 16, 56, 24, 64, 0, 4.5],      # 21 the recipe stand, the big chest
+		["cellar_a", 36, 14, 38, 18, -2, 6],               # 11 the Cellar Stair: 8 m down in four steps, east
+		["cellar_b", 38, 14, 40, 18, -4, 8],
+		["cellar_c", 40, 14, 42, 18, -6, 10],
+		["cellar_foot", 42, 14, 46, 18, CELLAR, 12],
+		["drill_cellar", 46, 10, 54, 18, CELLAR, 5],       # 12 the tripwire crossbow, soldiers
+		["pit_door", 46, 8, 50, 10, CELLAR, 3.5],
+		["practice_pit", 42, 0, 50, 8, CELLAR, 5],         # 13 old slabs over spikes in the middle: keep to the edge
+		["practice_spikes", 44, 2, 48, 6, CELLAR - 4.0, 5],  #  (4 m down onto spikes: falling in kills)
+		["quarters_door", 40, 2, 42, 6, CELLAR, 3.5],
+		["sergeants_quarters", 32, 0, 40, 8, CELLAR, 5],   # 14 the bodyguard and his pack; the portcullis drops behind you
+		["infirmary_door", 30, 2, 32, 6, CELLAR, 3.5],
+		["infirmary", 22, 0, 30, 8, CELLAR, 4.5],          # 15 the healing basin
+		["back_foot", 18, 4, 22, 8, CELLAR, 12],           # 16 the Back Stair: 8 m up in four steps, north to south
+		["back_c", 18, 8, 22, 10, -6, 10],
+		["back_b", 18, 10, 22, 12, -4, 8],
+		["back_a", 18, 12, 22, 14, -2, 6],
+	],
+}
+
+const MAPS := [MOSSGATE, LAMPWICK, PELL, MOSSPROP, HALD, BARROWS, BRASSGATE, SHIELDBEARERS]
 
 
 ## One placed dungeon: where its mouth is in the world, which way it faces, and its boxes in world terms.

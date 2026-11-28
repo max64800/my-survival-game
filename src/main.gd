@@ -185,6 +185,8 @@ func _ready() -> void:
 			dungeon_test_layout = CaveMaker.DUNGEON_ONLY_6
 		elif arg == "dungeon7":  # with dungeontest: the menu's "Dungeon 7" (the Brassgate Vault's test world)
 			dungeon_test_layout = CaveMaker.DUNGEON_ONLY_7
+		elif arg == "dungeon8":  # with dungeontest: the menu's "Dungeon 8" (the Hall of the Shieldbearers' test world)
+			dungeon_test_layout = CaveMaker.DUNGEON_ONLY_8
 		elif arg == "minercheck":  # photos of the skeleton miners lying, rising, running, swinging, turning to stone
 			debug_script = "res://src/debug/minercheck.gd"
 			dungeon_test = true
@@ -434,6 +436,13 @@ func _show_menu() -> void:
 			dungeon_test = true
 			_new_world(seed, "Dungeon 7 Test")
 			add_child(load("res://src/debug/dungeon_test_start.gd").new()), seed, CaveMaker.DUNGEON_ONLY_7))
+	_menu.connect("test_dungeon8", func():  # (owner, Nov 28: Dungeon 8 = the Hall of the Shieldbearers, F977)
+		_close_menu()
+		dungeon_test_layout = CaveMaker.DUNGEON_ONLY_8
+		_with_loading(func():
+			dungeon_test = true
+			_new_world(seed, "Dungeon 8 Test")
+			add_child(load("res://src/debug/dungeon_test_start.gd").new()), seed, CaveMaker.DUNGEON_ONLY_8))
 	_menu.connect("test_ruin", func(key: String, wood: bool):  # (owner, Nov 21: a column of ruins beside the dungeons)
 		_close_menu()
 		_start_ruin_test(key)

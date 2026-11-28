@@ -18,7 +18,8 @@ const LOOKS := ["mossy", "ember", "frost", "spore"]
 ## Foreman and the Prop Warden have one each. tools/asset_forge/builds/kaykit_miners.py makes them.
 const RIG_LOOKS := {"tunnel_rat": ["tunnel_rat_grime", "tunnel_rat_soot", "tunnel_rat_rust"],
 	"lost_miner": ["lost_miner_frost", "lost_miner_rime", "lost_miner_ghost"], "foreman": ["foreman"], "prop_warden": ["prop_warden"],
-	"vault_captain": ["vault_captain"], "vault_guard": ["foreman"]}
+	"vault_captain": ["vault_captain"], "vault_guard": ["foreman"],
+	"halfhelm": ["prop_warden"], "shield_guard": ["foreman"]}  # (Halfhelm: the Prop Warden's body until his own look, F977 step 2)
 
 
 static func look_of(variant: String, seed: int) -> String:

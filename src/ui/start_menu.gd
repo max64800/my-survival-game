@@ -17,6 +17,7 @@ signal test_dungeon4  ## dev builds only: the same at the fourth dungeon, Mosspr
 signal test_dungeon5  ## dev builds only: the same at the fifth dungeon, the Tomb of Hald Ironbrow
 signal test_dungeon6  ## dev builds only: the same at the sixth dungeon, the Quiet Barrows
 signal test_dungeon7  ## dev builds only: the same at the seventh dungeon, the Brassgate Vault
+signal test_dungeon8  ## dev builds only: the same at the eighth dungeon, the Hall of the Shieldbearers
 signal test_ruin(key: String, wood: bool)  ## dev builds only: a cave with just that ruin (RuinTests), at its chest
 
 var _status: Label
@@ -128,7 +129,7 @@ func _ready() -> void:
 		for d in [["Dungeon 1, Mossgate Hold", test_dungeon], ["Dungeon 2, Lampwick Drift", test_dungeon2],
 				["Dungeon 3, Old Pell's Diggings", test_dungeon3], ["Dungeon 4, Mossprop Workings", test_dungeon4],
 				["Dungeon 5, Tomb of Hald Ironbrow", test_dungeon5], ["Dungeon 6, The Quiet Barrows", test_dungeon6],
-				["Dungeon 7, Brassgate Vault", test_dungeon7]]:
+				["Dungeon 7, Brassgate Vault", test_dungeon7], ["Dungeon 8, Hall of the Shieldbearers", test_dungeon8]]:
 			var sig: Signal = d[1]
 			_button(dcol, d[0], func(): sig.emit()).add_theme_stylebox_override("normal", purple)
 		# Ruins (owner, Nov 21): a cave with just that ruin; opening its Rebuilding Chest rebuilds it at once, in

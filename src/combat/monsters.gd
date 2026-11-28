@@ -238,6 +238,25 @@ static var LIST := {
 		color = Color(0.66, 0.6, 0.48), shape = "foreman", recover = 1.4,
 		attacks = [{name = "Pick Crack", anim = "2H_Melee_Attack_Chop", warn_sound = "warn_bones", tell = 0.9, damage = 16, type = "blunt", reach = 2.2, parry = "any", knock = 2.5, rest = 4.0}],
 		drops = []},
+	# Sergeant Halfhelm (owner, Nov 28, F977): the Hall of the Shieldbearers' boss, a shield-bash skeleton sergeant.
+	# For now he fights like the Vault Captain (shield in front, charge); his own bash and soldier look are step 2.
+	# He holds the Armoury Key (DungeonKeys.KEYS.key_armoury) to the Captain's Armoury.
+	"halfhelm": {name = "Sergeant Halfhelm", dungeon_only = true, rises = true, rise_near = 10.0, sleeps = true, no_variant = true, ragdoll = false, statue_hits = 5, boss = true,
+		front_shield = true, shield_drops = true, no_push = true, key = "key_armoury", size = 1.25, height = 2.35, hp = 420,
+		armor = 60, stun = 300, slash = 1.0, blunt = 1.25, pierce = 0.75,
+		fire = 1.0, frost = 0.5, poison = 1.0, walk = 1.3, run = 3.3, pack = [1, 1], xp = 100,
+		color = Color(0.62, 0.6, 0.55), shape = "foreman", recover = 1.6,
+		attacks = [{name = "Axe Chop", anim = "1H_Melee_Attack_Chop", warn_sound = "beetle_rumble", tell = 0.9, damage = 24, type = "slash", reach = 2.6, rest = 5.0, parry = "any", knock = 2.5},
+			{name = "Shield Sweep", anim = "2H_Melee_Attack_Spin", warn_sound = "beetle_rumble", tell = 0.97, damage = 18, type = "blunt", reach = 2.6, rest = 8.0, parry = "shield", knockdown = true, knock = 3.5},
+			{name = "Shield Charge", anim = "Running_B", warn_sound = "beetle_rumble", tell = 1.2, damage = 22, type = "blunt", reach = 8.0, min_reach = 3.5, rest = 9.0, parry = "shield", knockdown = true, lunge = true, straight = true, lunge_reach = 3.0}],  # (no Rally Slam: the Vault's map says no_raising)
+		drops = []},
+	# His bodyguard leader in the Sergeant's Quarters (Claude, F977): like the Vault Guard.
+	"shield_guard": {name = "Shield Guard", dungeon_only = true, rises = true, rise_near = 10.0, sleeps = true, no_variant = true, ragdoll = false,
+		no_push = true, size = 1.1, height = 1.9, hp = 220, armor = 30, stun = 120, slash = 1.0, blunt = 1.25, pierce = 0.75,
+		fire = 0.0, frost = 0.5, poison = 1.0, walk = 1.2, run = 3.0, pack = [1, 1], xp = 35,
+		color = Color(0.66, 0.6, 0.48), shape = "foreman", recover = 1.4,
+		attacks = [{name = "Pick Crack", anim = "2H_Melee_Attack_Chop", warn_sound = "warn_bones", tell = 0.9, damage = 16, type = "blunt", reach = 2.2, parry = "any", knock = 2.5, rest = 4.0}],
+		drops = []},
 }
 
 
