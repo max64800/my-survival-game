@@ -171,3 +171,29 @@ func test_station_cards_say_upgrade_or_own_station() -> void:
 	check(CraftPanel.station_role("kiln").begins_with("Its own station"), "the Charcoal Kiln is its own station")
 	check(CraftPanel.station_role("workbench").contains("Tool Rack"), "the workbench names its upgrades")
 	check_eq(CraftPanel.station_role("stone"), "", "stone is no station")
+
+
+## F949 (owner, Nov 28): at the workbench, Materials -> Stations often stretched the whole menu, with a big empty
+## space at the bottom right. The station's "what it does" line wraps; the menu must end up exactly as big as it shows.
+func test_stations_tab_does_not_stretch_the_menu() -> void:
+	await _setup()
+	for id in Recipes.LIST:
+		var u = Recipes.LIST[id].unlock
+		if u is Array:
+			for item in u:
+				ps.seen[str(item).trim_suffix("*")] = true
+	var panel := CraftPanel.new()
+	panel.peer_id = 1
+	auth.get_parent().add_child(panel)
+	panel.open_for(auth.stations[7])
+	for tab in ["Materials", "Stations", "Materials", "Stations"]:
+		panel._tab = tab
+		panel._picked = ""
+		panel.refresh()
+		for i in 4:
+			await tree.process_frame
+		check_eq(panel._tab, tab, "the %s tab is open" % tab)
+		var want := panel.get_combined_minimum_size()
+		check(panel.size.y <= want.y + 1.0 and panel.size.x <= want.x + 1.0,
+			"%s: the menu is as big as what it shows (%s, needs %s)" % [tab, panel.size, want])
+	auth.get_parent().queue_free()

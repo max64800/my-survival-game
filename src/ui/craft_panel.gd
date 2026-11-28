@@ -642,6 +642,9 @@ func _card(recipe_id: String, inv: Inventory) -> Control:
 	return b
 
 
+const DETAIL_TEXT_WIDTH := 300  ## wrapping lines beside the big picture (the column is ~330 wide)
+
+
 ## The picked recipe at the bottom: big picture, every ingredient as have / need (missing in red).
 func _show_detail(inv: Inventory) -> void:
 	UiKit.clear(_detail_needs)
@@ -816,7 +819,10 @@ func _food_lines(item: String) -> void:
 	UiKit.clear(_detail_food)
 	var role := station_role(item)
 	if role != "":
-		UiKit.label(_detail_food, "•  " + role, 14, UiKit.AMBER).autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		var rl := UiKit.label(_detail_food, "•  " + role, 14, UiKit.AMBER)
+		rl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		rl.custom_minimum_size.x = DETAIL_TEXT_WIDTH  # F949: a fresh wrapping line has no width yet, so it measured
+		# one word a line, very tall, and the menu sized itself to that (Materials -> Stations: big empty space)
 	var hits := Combat.damage_text({id = item})  # (owner F571: weapons show their damage)
 	if hits != "":
 		UiKit.label(_detail_food, "•  " + hits, 15, UiKit.AMBER)
@@ -825,6 +831,7 @@ func _food_lines(item: String) -> void:
 		kind.fit_content = true
 		kind.scroll_active = false
 		kind.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		kind.custom_minimum_size.x = DETAIL_TEXT_WIDTH  # (F949, as above)
 		kind.add_theme_font_size_override("normal_font_size", 14)
 		kind.add_theme_color_override("default_color", UiKit.AMBER)
 		kind.text = Combat.type_text(item)
