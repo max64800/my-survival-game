@@ -70,7 +70,7 @@ Fixed items get ~~crossed out~~, never deleted, so we can see the whole history.
 | Controls + camera | F18, F23, F27, F385 | |
 | Making the game / tools | F4, F5, F6, F7, F16 |
 | Rebuilding the tower (price, menu, chest, lag) | (F557, F559, F560, F565, F567, F578, F579, F581 done Nov 21; F631, F633, F634, F635, F636, F565 🔁, F733 done Nov 22) | Nov 21: one play of the tower rebuild gave 8 notes. The price and the menu came back again. Nov 22: still needed a hammer and someone standing there, and the menu had more rough edges | |
-| Sound | F8, F15, F67, F353, F377, F551, F558, F577 | Sounds must feel old-world: wood, stone, leather, metal. No beeps or whooshes. Every hit sounds like what it hits (F558 done Nov 21: wood no longer plays the rock sound) |
+| Sound | F8, F15, F67, F353, F377, F551, F558, F577, F925, F934, F937, F944, F951 | Sounds must feel old-world: wood, stone, leather, metal. No beeps or whooshes. Every hit sounds like what it hits (F558 done Nov 21: wood no longer plays the rock sound) |
 | The start of the game (first 5 minutes) | F10, F11 | |
 | A world that feels alive (enemies, ruins, cave life) | F9, F21, F188-F190, F237, F404 🔁, F412-F415, F418, F479 | Columns asked for 3× (F9, F21, F189); caves feel hollow/empty (F9, F188); not enough places to discover (F237); more ruins (F479). Then too much: "we overdid it with the ground" (F404): calm floors, a few special things |
 | Fixes lost in merges | F350 | A big "save everyone's work" merge put older copies of files back and quietly deleted a finished fix. Every fix needs a test, so a lost fix shows up as a failing test |
