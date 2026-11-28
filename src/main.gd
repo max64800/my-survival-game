@@ -173,6 +173,12 @@ func _ready() -> void:
 			_saving = false
 			if mode == "menu":
 				mode = "solo"
+		elif arg == "ironking":  # the Iron King's moves test (F981): src/debug/iron_king_show.gd
+			debug_script = "res://src/debug/iron_king_show.gd"
+			dungeon_test = true
+			_saving = false
+			if mode == "menu":
+				mode = "solo"
 		elif arg == "dungeon2":  # with dungeontest: the menu's "Dungeon 2" (Lampwick Drift's test world)
 			dungeon_test_layout = CaveMaker.DUNGEON_ONLY_2
 		elif arg == "dungeon3":  # with dungeontest: the menu's "Dungeon 3" (Old Pell's Diggings' test world)
