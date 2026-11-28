@@ -62,10 +62,18 @@ static func plan(maker: CaveMaker) -> Array[Dictionary]:
 			var bottom := GlowPlacer._march(maker, at, Vector3.DOWN, 20.0)
 			if top == Vector3.INF or bottom == Vector3.INF:
 				continue
+			width = maxf(width, (top.y - bottom.y) * 0.9)  # tall ones stay massive, not stretched thin (in-game look: still thin at 0.6)
+			for _i in 3:  # (F948; felt again from the new foot: a lower start can reach under an overhang)
+				var low := _lowest_foot(maker, bottom, width)
+				if low == Vector3.INF or low.y > bottom.y - 0.05:
+					bottom = low if low == Vector3.INF else bottom
+					break
+				bottom = low
+			if bottom == Vector3.INF:
+				continue
 			var h := top.y - bottom.y
 			if h < 5.0 or h > 22.0:  # (up to 22 m: the first cave's ceiling is high; owner saw no trees there)
 				continue
-			width = maxf(width, h * 0.9)  # tall ones stay massive, not stretched thin (in-game look: still thin at 0.6)
 			if maker.on_bridge(top, 2.0) or maker.on_bridge(bottom, 2.0):
 				continue  # up to a real ceiling, never into a bridge (and not standing on one)
 			if not _clear(maker, at, width * 0.45, out):
@@ -75,6 +83,37 @@ static func plan(maker: CaveMaker) -> Array[Dictionary]:
 			out.append({top = top + Vector3.UP * 0.3, bottom = bottom - Vector3.UP * 0.3, width = width, model = model, spin = spin})
 			placed += 1
 	return out
+
+
+## F948 (owner, Nov 28: "a floating tree", its roots ended well above the ground): the foot was the floor under the
+## trunk's middle only, so on sloping floor the wide roots hung in the air on the low side. Now the floor is felt in two
+## rings round the trunk too and the foot goes to the lowest of them (the roots sink into the high side, like real
+## roots). Near the trunk a drop deeper than FOOT_MAX_DROP is a ledge edge: no tree there. Out at the root tips
+## (the models' roots reach half the width out) a deeper drop is a cliff beside it: ignored.
+const FOOT_RING := 12
+const FOOT_RADIUS := 0.4   ## x the tree's width: the outer ring (the inner one is half as far out)
+const FOOT_MAX_DROP := 4.0
+
+
+## The foot: the lowest floor in the rings, or Vector3.INF on a ledge edge.
+static func _lowest_foot(maker: CaveMaker, bottom: Vector3, width: float) -> Vector3:
+	var low := bottom
+	var misses := 0  # (one or two inner points over a gap is a crack, not a ledge)
+	for r in [FOOT_RADIUS * 0.5, FOOT_RADIUS]:
+		for i in FOOT_RING:
+			var a := TAU * i / FOOT_RING
+			var p := Vector3(bottom.x + cos(a) * width * r, bottom.y + 3.0, bottom.z + sin(a) * width * r)
+			if maker.sdf_at(p) <= 0.05:
+				continue  # rock there: the roots go into it
+			var f := GlowPlacer._march(maker, p, Vector3.DOWN, 3.0 + FOOT_MAX_DROP)
+			if f == Vector3.INF:
+				if r < FOOT_RADIUS:
+					misses += 1
+					if misses > FOOT_RING / 6:
+						return Vector3.INF  # a ledge edge right by the trunk: no tree here
+				continue
+			low.y = minf(low.y, f.y)
+	return low
 
 
 ## The placement rule: not on kept-clear ground, a bridge, a stone column, a place, a path or another tree.

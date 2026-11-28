@@ -258,3 +258,27 @@ func test_swarms_drift_slowly() -> void:
 			last = now
 	check(fastest < GlowSwarms.MAX_SPEED + 0.05, "never faster than %.1f m/s (fastest %.2f m/s, %s)" % [GlowSwarms.MAX_SPEED, fastest, where])
 	sw.free()
+
+
+## F948 (owner, Nov 28): "a floating tree": a big root tree's trunk and roots ended well above the ground. Its foot
+## was measured at the trunk's middle only; on sloping floor the roots on the low side hung in the air. Now no part
+## of the foot ring is above the floor.
+func test_root_trees_stand_on_the_floor() -> void:
+	for sd in [42, 2024, 7]:
+		var w := World.new()
+		tree.root.add_child(w)
+		w.setup(sd)
+		var m := w.maker
+		var worst := 0.0
+		for t in RootPillars.plan(m):
+			var b: Vector3 = t.bottom + Vector3.UP * 0.3  # (the stored foot is sunk 0.3 m)
+			for i in RootPillars.FOOT_RING:
+				var a := TAU * i / RootPillars.FOOT_RING
+				var p := Vector3(b.x + cos(a) * t.width * RootPillars.FOOT_RADIUS, b.y + 3.0, b.z + sin(a) * t.width * RootPillars.FOOT_RADIUS)
+				if m.sdf_at(p) <= 0.05:
+					continue  # rock there: the roots go into it
+				var floor := GlowPlacer._march(m, p, Vector3.DOWN, 3.0 + RootPillars.FOOT_MAX_DROP)  # (deeper: a cliff beside it)
+				if floor != Vector3.INF:
+					worst = maxf(worst, b.y - floor.y)
+		check(worst < 0.35, "seed %d: no root tree's foot hangs over the floor (worst %.2f m)" % [sd, worst])
+		w.queue_free()
