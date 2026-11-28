@@ -27,10 +27,10 @@ global uniform vec4 lantern_at;
 // Glow colour of the alpha-marked veins, per material number.
 const vec3 GLOW[16] = vec3[16](
 	vec3(0.0), vec3(0.0), vec3(0.0),
-	vec3(0.95, 0.42, 0.12) * 0.55,  // 3 copper
+	vec3(0.95, 0.42, 0.12) * 0.45,  // 3 copper
 	vec3(0.40, 0.20, 0.75) * 1.2,   // 4 border rock
 	vec3(0.0),
-	vec3(0.80, 0.84, 0.88) * 0.35,  // 6 tin (a soft grey glint, dimmer than copper)
+	vec3(0.80, 0.84, 0.88) * 0.3,   // 6 tin (a soft grey glint, dimmer than copper)
 	vec3(0.0), vec3(0.0),
 	vec3(0.75, 0.85, 1.0) * 0.6,    // 9 silver
 	vec3(0.0), vec3(0.0), vec3(0.0),
@@ -272,6 +272,26 @@ void fragment() {
 			a.a = 0.0;
 			vec3 sn = normalize(wn + vec3(vnoise(v_world * 23.0) - 0.5, 0.0, vnoise(v_world * 23.0 + 7.0) - 0.5) * 0.25);
 			n = normalize(mix(n, sn, up));
+		}
+		if (id == 3 || id == 6) {
+			// F966 (owner, Nov 28: "copper and tin ore are hard to spot", copper was never seen): chunky lopsided nuggets
+			// painted over the rock, about a hand wide. Copper: orange metal ringed with a green-blue crust (real copper
+			// rock wears one); tin: bigger silver-grey chips. The nuggets are the shiny, faintly glowing vein.
+			bool cu = id == 3;
+			float sc = cu ? 5.0 : 6.5;
+			vec3 q = v_world * sc + vec3(vnoise(v_world * 13.0 + vec3(3.1, 0.0, 8.0)) * 0.5);
+			float nv = vnoise(q + (cu ? vec3(11.0, 5.0, 2.0) : vec3(-7.0, 19.0, 4.0)));
+			float vein = vnoise(v_world * 0.9 + vec3(5.0, 2.0, 9.0));  // the chips gather in bands, with plain rock between
+			float cut = (cu ? 0.70 : 0.72) - 0.12 * smoothstep(0.45, 0.7, vein);
+			float chunk = smoothstep(cut, cut + 0.02, nv);
+			float rim = smoothstep(cut - 0.08, cut - 0.03, nv) * (1.0 - chunk);
+			float lum = dot(a.rgb, vec3(0.299, 0.587, 0.114));
+			float facet = hash(floor(q * 2.5)) * 0.35;  // flat chipped faces, each a little lighter or darker
+			vec3 metal_c = cu ? vec3(0.90, 0.46, 0.18) : vec3(0.60, 0.63, 0.68);
+			vec3 crust_c = cu ? vec3(0.20, 0.60, 0.50) : vec3(0.36, 0.38, 0.41);
+			a.rgb = mix(a.rgb, crust_c * (0.75 + 0.6 * lum), rim * (cu ? 0.9 : 0.6));
+			a.rgb = mix(a.rgb, metal_c * (0.6 + facet + 0.3 * lum), chunk);
+			a.a = max(a.a, chunk);
 		}
 		col += a.rgb * ws[k];
 		emit += GLOW[id] * a.a * ws[k];

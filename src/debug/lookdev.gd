@@ -17,18 +17,29 @@ var _ore := false  ## true = only the dwarf's lantern on the nearest copper / ti
 
 ## F870: walks the dwarf up to the nearest copper or tin wall and takes 6 pictures in a row (the glints twinkle).
 func _ore_shots(dwarf: Dwarf, maker: CaveMaker) -> void:
-	var c := Vector3i(maker.spawn_point.round())
+	# Near the start, and around the Copper Deeps (the only copper in Mossy Hollows, far away; F966).
+	var centers: Array[Vector3] = [maker.spawn_point]
+	for d in maker.deeps:
+		centers.append(d.center)
 	var spots: Array[Vector3] = []
-	for x in range(-70, 71, 2):
-		for z in range(-70, 71, 2):
-			for y in range(-8, 9, 2):
-				var v := c + Vector3i(x, y, z)
-				var m := maker.material_at(v)
-				if (m == Mat.COPPER or m == Mat.TIN) and absf(maker.sdf_at(Vector3(v))) < 1.2:
-					spots.append(Vector3(v))
-	spots.sort_custom(func(a, b): return a.distance_to(maker.spawn_point) < b.distance_to(maker.spawn_point))
+	for ci in centers.size():
+		var c := Vector3i(centers[ci].round())
+		var r := 70 if ci == 0 else 30
+		var near: Array[Vector3] = []
+		for x in range(-r, r + 1, 2):
+			for z in range(-r, r + 1, 2):
+				for y in range(-8, 9, 2):
+					var v := c + Vector3i(x, y, z)
+					var m := maker.material_at(v)
+					if (m == Mat.COPPER or m == Mat.TIN) and absf(maker.sdf_at(Vector3(v))) < 1.2:
+						near.append(Vector3(v))
+		near.sort_custom(func(a, b): return a.distance_to(centers[ci]) < b.distance_to(centers[ci]))
+		spots.append_array(near)
 	var found := 0
+	var seen := {}  # one wall of each ore
 	for p in spots:
+		if seen.has(maker.material_at(Vector3i(p))):
+			continue
 		var e := 0.5
 		var n := Vector3(maker.sdf_at(p + Vector3(e, 0, 0)) - maker.sdf_at(p - Vector3(e, 0, 0)), 0.0,
 			maker.sdf_at(p + Vector3(0, 0, e)) - maker.sdf_at(p - Vector3(0, 0, e)))
@@ -39,6 +50,7 @@ func _ore_shots(dwarf: Dwarf, maker: CaveMaker) -> void:
 		if maker.sdf_at(stand + Vector3.UP) < 1.0:
 			continue
 		var m := maker.material_at(Vector3i(p))
+		seen[m] = true
 		print("  ore wall: ", Mat.NAMES[m], " at ", p)
 		await _teleport(dwarf, stand, p)
 		var cam := Camera3D.new()  # a close-up of the wall, lit only by his own lantern 2.6 m away
@@ -51,6 +63,10 @@ func _ore_shots(dwarf: Dwarf, maker: CaveMaker) -> void:
 		for i in 6:
 			await _shot("ore_%d_%s_%d" % [found, Mat.NAMES[m].replace(" ", "_"), i])
 			await _wait(0.25)
+		cam.global_position = p + n * 4.0 + Vector3.UP * 0.8  # (F966: how a passing dwarf sees it)
+		cam.look_at(p, Vector3.UP)
+		await _wait(0.3)
+		await _shot("ore_%d_%s_far" % [found, Mat.NAMES[m].replace(" ", "_")])
 		dwarf.camera.make_current()
 		cam.queue_free()
 		found += 1
