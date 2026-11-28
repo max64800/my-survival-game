@@ -107,8 +107,8 @@ func _make(p: Dictionary) -> Node3D:
 				var a := i * TAU / 6.0 + 0.4
 				var at := _on_floor(p, Vector3(cos(a), 0, sin(a)) * 4.6)
 				_col(root, p, i, at, rng.randf_range(3.6, 4.6), 0.7, 0.0 if rng.randf() < 0.3 else rng.randf_range(0.2, 0.75), rng)
-			RuinKit.broken_wall(root, _on_floor(p, Vector3(-2.5, 0, -3.6)), _on_floor(p, Vector3(2.5, 0, -3.6)), 3, rng)
-			RuinKit.broken_wall(root, _on_floor(p, Vector3(-3.8, 0, 1.0)), _on_floor(p, Vector3(-3.8, 0, -2.2)), 2, rng)
+			_col_rids.append(RuinKit.broken_wall(root, _on_floor(p, Vector3(-2.5, 0, -3.6)), _on_floor(p, Vector3(2.5, 0, -3.6)), 3, rng).get_rid())  # (the floor rays look through the wall too)
+			_col_rids.append(RuinKit.broken_wall(root, _on_floor(p, Vector3(-3.8, 0, 1.0)), _on_floor(p, Vector3(-3.8, 0, -2.2)), 2, rng).get_rid())  # (the floor rays look through the wall too)
 			RuinTreasure.dress(root, p, _on_floor)  # coins, candles and books by the loot chest (owner, Nov 19)
 		"colonnade":
 			# A row of great columns standing in a cavern, some broken (F9/F21).

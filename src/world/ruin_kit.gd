@@ -94,7 +94,12 @@ static func column(parent: Node3D, pos: Vector3, height: float, width: float, br
 
 
 ## A stretch of old wall, built from cut blocks with some missing (a ruin, not a wall).
-static func broken_wall(parent: Node3D, from: Vector3, to: Vector3, rows: int, rng: RandomNumberGenerator, color: Color = DARK) -> void:
+## Returns its solid body (F968, owner Nov 28: "some stone blocks can be walked through": the blocks were only pictures).
+static func broken_wall(parent: Node3D, from: Vector3, to: Vector3, rows: int, rng: RandomNumberGenerator, color: Color = DARK) -> StaticBody3D:
+	var body := StaticBody3D.new()
+	body.collision_layer = World.TERRAIN_LAYER
+	body.collision_mask = 0
+	body.add_to_group(GROUP)
 	var m := PoiField._mat(color)
 	var m2 := PoiField._mat(color.lightened(0.08))
 	var length := from.distance_to(to)
@@ -113,11 +118,25 @@ static func broken_wall(parent: Node3D, from: Vector3, to: Vector3, rows: int, r
 			var p := from + dir * along + Vector3.UP * (row * 0.5 + 0.25)
 			var b := _mesh(parent, _box(Vector3(0.5, 0.48, 0.76)), m if (i + row) % 3 else m2, p)
 			b.rotation.y = yaw + rng.randf_range(-0.05, 0.05)
+			_block_shape(body, b, Vector3(0.5, 0.48, 0.76))
 	# A few blocks that fell off lie at the foot.
 	for k in rng.randi_range(2, 4):
 		var p := from + dir * rng.randf_range(0.0, length) + Vector3(rng.randf_range(-1, 1), 0.22, rng.randf_range(-1, 1))
 		var b := _mesh(parent, _box(Vector3(0.5, 0.45, 0.76)), m, p)
 		b.rotation = Vector3(rng.randf_range(-0.4, 0.4), rng.randf_range(0, TAU), rng.randf_range(-0.4, 0.4))
+		_block_shape(body, b, Vector3(0.5, 0.45, 0.76))
+	parent.add_child(body)
+	return body
+
+
+## A box you bump into, exactly where the block's picture is.
+static func _block_shape(body: StaticBody3D, block: Node3D, size: Vector3) -> void:
+	var cs := CollisionShape3D.new()
+	var sh := BoxShape3D.new()
+	sh.size = size
+	cs.shape = sh
+	cs.transform = block.transform
+	body.add_child(cs)
 
 
 static func _mesh(parent: Node3D, mesh: Mesh, mat: Material, pos: Vector3) -> MeshInstance3D:

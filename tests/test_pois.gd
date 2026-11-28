@@ -92,6 +92,8 @@ func test_ruin_columns_break_for_stone() -> void:
 	var c := pf.column(cid)
 	player.global_position = pf.column_middle(cid) + Vector3(float(c.width) + 0.8, -1.0, 0)
 	ps.inventory.slots[0] = {id = "pickaxe_stone", count = 1}
+	if not ps.inventory.is_worn(0):
+		ps.inventory.toggle_equip(0)  # a pickaxe works once it's put on (worn in place)
 	ps.selected_slot = 0
 	var stone_before := _stone_on_floor()
 	var last := ""
@@ -171,3 +173,28 @@ func test_columns_stand_on_rock() -> void:
 	check(cols >= 10, "there are ruin columns (%d)" % cols)
 	check_eq(hanging.size(), 0, "none hanging over a drop %s" % str(hanging.slice(0, 6)))
 	CaveMaker.use_layout(was)
+
+
+## F968 (owner, Nov 28): "some of its stone blocks can be walked through" (the broken block wall by the glowing pool).
+## Every block of a broken wall, standing or fallen, has a solid box exactly where you see it.
+func test_broken_wall_blocks_are_solid() -> void:
+	var root := Node3D.new()
+	tree.root.add_child(root)
+	root.global_position = Vector3(300, 50, 300)
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 5
+	var body := RuinKit.broken_wall(root, Vector3(-2.5, 0, 0), Vector3(2.5, 0, 0), 3, rng)
+	var blocks := 0
+	for c in root.get_children():
+		if c is MeshInstance3D:
+			blocks += 1
+	check(blocks > 4, "the wall has blocks")
+	check_eq(body.get_child_count(), blocks, "every block has its own solid box")
+	check(body.collision_layer & World.TERRAIN_LAYER != 0, "you bump into it like rock")
+	await tree.physics_frame
+	await tree.physics_frame
+	# A ray along the bottom row hits the wall from the side.
+	var q := PhysicsRayQueryParameters3D.create(Vector3(300, 50.25, 303), Vector3(300, 50.25, 297), World.TERRAIN_LAYER)
+	var hit := root.get_world_3d().direct_space_state.intersect_ray(q)
+	check(not hit.is_empty() and hit.collider == body, "walking into the wall stops at the blocks")
+	root.free()
